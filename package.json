@@ -1,0 +1,45 @@
+{
+  "name": "lol-companion-prototype",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "mock:lcu": "node scripts/mock-lcu-server.mjs",
+    "mock:live": "node scripts/mock-live-client-server.mjs",
+    "mock:riot": "node scripts/mock-riot-api-server.mjs",
+    "data:opgg:import": "node scripts/import-opgg-stats.mjs",
+    "data:opgg:check": "node scripts/import-opgg-stats.mjs --check",
+    "data:opgg:details:import": "node scripts/import-opgg-champion-details.mjs",
+    "data:opgg:details:check": "node scripts/import-opgg-champion-details.mjs --from-cache --check",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.10.1",
+    "lucide-react": "^1.16.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@tauri-apps/cli": "^2.10.1",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.2.4",
+    "vitest": "^4.1.6"
+  }
+}

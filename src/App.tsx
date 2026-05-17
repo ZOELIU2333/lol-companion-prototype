@@ -1,0 +1,43 @@
+import './App.css'
+import { useCompanionSession } from './app/useCompanionSession'
+import { GameShell } from './components/GameShell'
+import { OverlayPanel } from './components/OverlayPanel'
+import { Toast } from './components/Toast'
+
+function App() {
+  const session = useCompanionSession()
+
+  return (
+    <>
+      <GameShell activeMode={session.activeMode} champion={session.champion} match={session.match}>
+        <OverlayPanel
+          activeMode={session.activeMode}
+          activePhase={session.effectivePhase}
+          brief={session.brief}
+          champion={session.champion}
+          connectionStatusLabel={session.connectionStatusLabel}
+          diagnostics={session.diagnostics}
+          isAlwaysOnTop={session.isAlwaysOnTop}
+          isChampionDataSyncing={session.isChampionDataSyncing}
+          isCompact={session.isCompact}
+          isDetected={session.isDetected}
+          match={session.match}
+          matches={session.availableMatches}
+          recommendations={session.recommendations}
+          onApplyLoadout={session.applyLoadout}
+          onApplyRunePage={session.applyRunePage}
+          onCopy={session.copyBrief}
+          onRefreshDiagnostics={session.refreshDiagnostics}
+          onRefresh={session.refreshMatch}
+          onScenarioChange={session.selectScenario}
+          onSimulateSend={session.simulateSend}
+          onToggleAlwaysOnTop={session.toggleAlwaysOnTop}
+          onToggleCompact={session.toggleCompact}
+        />
+      </GameShell>
+      {session.toast && <Toast message={session.toast} />}
+    </>
+  )
+}
+
+export default App

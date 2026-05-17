@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "patch": "16.10",
+    "queue": "ranked",
+    "rank": "diamond+",
+    "region": "kr",
+    "sampleSize": 28275698,
+    "source": "opgg-kr-high-elo",
+    "sourceLabel": "OP.GG 韩服钻石+",
+    "sourceUrl": "https://op.gg/zh-cn/lol/champions?region=kr&tier=diamond_plus"
+  },
+  "rows": [
+    {
+      "championKey": "ahri",
+      "championName": "九尾妖狐",
+      "counters": [
+        { "championKey": "fizz", "championName": "潮汐海灵" },
+        { "championKey": "diana", "championName": "皎月女神" },
+        { "championKey": "lissandra", "championName": "冰霜女巫" }
+      ],
+      "href": "/zh-cn/lol/champions/ahri/build/mid?region=kr&tier=diamond_plus",
+      "pickRate": 9.32,
+      "position": "mid",
+      "rank": 58,
+      "winRate": 51.03
+    },
+    {
+      "championKey": "camille",
+      "championName": "青钢影",
+      "counters": [
+        { "championKey": "poppy", "championName": "圣锤之毅" },
+        { "championKey": "jax", "championName": "武器大师" },
+        { "championKey": "shen", "championName": "暮光之眼" }
+      ],
+      "href": "/zh-cn/lol/champions/camille/build/top?region=kr&tier=diamond_plus",
+      "pickRate": 2.45,
+      "position": "top",
+      "rank": 42,
+      "winRate": 52.24
+    },
+    {
+      "championKey": "draven",
+      "championName": "荣耀行刑官",
+      "counters": [
+        { "championKey": "ashe", "championName": "寒冰射手" },
+        { "championKey": "caitlyn", "championName": "皮城女警" },
+        { "championKey": "varus", "championName": "惩戒之箭" }
+      ],
+      "href": "/zh-cn/lol/champions/draven/build/adc?region=kr&tier=diamond_plus",
+      "pickRate": 2.38,
+      "position": "adc",
+      "rank": 127,
+      "winRate": 49.78
+    },
+    {
+      "championKey": "ezreal",
+      "championName": "探险家",
+      "counters": [
+        { "championKey": "smolder", "championName": "炽炎雏龙" },
+        { "championKey": "vayne", "championName": "暗夜猎手" },
+        { "championKey": "tristana", "championName": "麦林炮手" }
+      ],
+      "href": "/zh-cn/lol/champions/ezreal/build/adc?region=kr&tier=diamond_plus",
+      "pickRate": 26.13,
+      "position": "adc",
+      "rank": 84,
+      "winRate": 47.87
+    },
+    {
+      "championKey": "kaisa",
+      "championName": "虚空之女",
+      "counters": [
+        { "championKey": "caitlyn", "championName": "皮城女警" },
+        { "championKey": "ashe", "championName": "寒冰射手" },
+        { "championKey": "jinx", "championName": "暴走萝莉" }
+      ],
+      "href": "/zh-cn/lol/champions/kaisa/build/adc?region=kr&tier=diamond_plus",
+      "pickRate": 11.88,
+      "position": "adc",
+      "rank": 145,
+      "winRate": 47.58
+    },
+    {
+      "championKey": "leesin",
+      "championName": "盲僧",
+      "counters": [
+        { "championKey": "fiddlesticks", "championName": "远古恐惧" },
+        { "championKey": "skarner", "championName": "上古领主" },
+        { "championKey": "reksai", "championName": "虚空遁地兽" }
+      ],
+      "href": "/zh-cn/lol/champions/leesin/build/jungle?region=kr&tier=diamond_plus",
+      "pickRate": 27.08,
+      "position": "jungle",
+      "rank": 2,
+      "winRate": 52.69
+    },
+    {
+      "championKey": "mordekaiser",
+      "championName": "铁铠冥魂",
+      "counters": [
+        { "championKey": "gangplank", "championName": "海洋之灾" },
+        { "championKey": "vayne", "championName": "暗夜猎手" },
+        { "championKey": "olaf", "championName": "狂战士" }
+      ],
+      "href": "/zh-cn/lol/champions/mordekaiser/build/top?region=kr&tier=diamond_plus",
+      "pickRate": 3.12,
+      "position": "top",
+      "rank": 132,
+      "winRate": 49.19
+    },
+    {
+      "championKey": "nautilus",
+      "championName": "深海泰坦",
+      "counters": [
+        { "championKey": "rell", "championName": "镕铁少女" },
+        { "championKey": "braum", "championName": "弗雷尔卓德之心" },
+        { "championKey": "taric", "championName": "瓦洛兰之盾" }
+      ],
+      "href": "/zh-cn/lol/champions/nautilus/build/support?region=kr&tier=diamond_plus",
+      "pickRate": 13.25,
+      "position": "support",
+      "rank": 77,
+      "winRate": 49.22
+    },
+    {
+      "championKey": "syndra",
+      "championName": "暗黑元首",
+      "counters": [
+        { "championKey": "fizz", "championName": "潮汐海灵" },
+        { "championKey": "ekko", "championName": "时间刺客" },
+        { "championKey": "yasuo", "championName": "疾风剑豪" }
+      ],
+      "href": "/zh-cn/lol/champions/syndra/build/mid?region=kr&tier=diamond_plus",
+      "pickRate": 2.85,
+      "position": "mid",
+      "rank": 169,
+      "winRate": 50.13
+    },
+    {
+      "championKey": "thresh",
+      "championName": "魂锁典狱长",
+      "counters": [
+        { "championKey": "rell", "championName": "镕铁少女" },
+        { "championKey": "karma", "championName": "天启者" },
+        { "championKey": "leona", "championName": "曙光女神" }
+      ],
+      "href": "/zh-cn/lol/champions/thresh/build/support?region=kr&tier=diamond_plus",
+      "pickRate": 10.64,
+      "position": "support",
+      "rank": 13,
+      "winRate": 52.49
+    }
+  ]
+}
