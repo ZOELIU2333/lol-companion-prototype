@@ -12,6 +12,25 @@ The project is currently focused on a plugin-style overlay experience:
 - Local League Client/LCU detection, Live Client Data reads, and OP.GG MCP integration.
 - Demo and cache fallback paths when real data is unavailable.
 
+## Windows Quick Install
+
+For normal Windows testing, you should not need Node.js, Rust, Cargo, or Tauri prerequisites.
+
+1. Open the GitHub repo:
+
+   https://github.com/ZOELIU2333/lol-companion-prototype
+
+2. Go to `Actions` -> `Windows Installer`.
+3. Click the latest successful run.
+4. Download the `LOL-Companion-Windows-Installer` artifact.
+5. Unzip it and run one installer:
+   - Prefer `LOL Companion_*_x64-setup.exe` if available.
+   - Use `.msi` if Windows blocks the setup executable.
+
+The app is currently unsigned, so Windows SmartScreen may show a warning. For this early internal build, choose `More info` -> `Run anyway` only if you downloaded it from this repo's GitHub Actions.
+
+To create a fresh installer from GitHub, open `Actions` -> `Windows Installer` -> `Run workflow`. GitHub will build the Windows installer in the cloud and publish it as an artifact.
+
 ## Tech Stack
 
 - React 19
@@ -24,7 +43,7 @@ The project is currently focused on a plugin-style overlay experience:
 
 ## Requirements
 
-Install these first:
+These are only required for local development:
 
 - Node.js 20+
 - npm
@@ -37,6 +56,8 @@ For Windows, follow the official Tauri prerequisites:
 https://v2.tauri.app/start/prerequisites/
 
 League of Legends real-client testing is Windows-first. The browser demo works on macOS, but LCU and Live Client Data need a local League Client/game process.
+
+If you only want to install and try the app on Windows, use the `Windows Quick Install` flow above instead.
 
 ## Install
 
@@ -75,11 +96,7 @@ In the app, open the `诊断` panel to check:
 
 ## Windows Test Flow
 
-1. Start the desktop app:
-
-   ```bash
-   npm run tauri:dev
-   ```
+1. Install the app with the Windows installer from GitHub Actions, or start the desktop app with `npm run tauri:dev` if you are developing locally.
 
 2. Before opening LOL:
    - `Desktop Shell` should be normal.
