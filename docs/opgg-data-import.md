@@ -58,3 +58,19 @@ Outputs:
 - `src/data/arenaAugments.ts`
 
 This is an external data pull, but it is metadata only. It does not contain augment win rate, placement, or combo strength. Those need a separate Arena stats layer from public aggregate sources or our own Riot Match-V5 sample aggregation.
+
+## Chinese Arena Augment Tier Import
+
+Chinese Arena augment tier and popularity data is imported from MetaBot.GG:
+
+```bash
+npm run data:arena:metabot:import
+npm run data:arena:metabot:check
+```
+
+Outputs:
+
+- `data/arena/metabot-zh-cn-augments-current.json`
+- `src/data/metabotArenaAugments.ts`
+
+This source currently provides patch, Chinese augment name, S/A/B/C/D/F tier, tier rank, global rank, icon URL, and pick rate. It should be treated as Chinese public-site popularity/tier context, not precise `selected augments -> next augment -> placement` combo data.
