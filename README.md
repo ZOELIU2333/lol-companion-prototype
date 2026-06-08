@@ -165,6 +165,16 @@ npm run tauri:dev
 - Riot API as an optional keyed fallback for account, match, ranked, and mastery data.
 - Data Dragon for item/champion/rune icons.
 
+Refresh local OP.GG cache after a live patch:
+
+```bash
+npm run data:opgg:details:import -- --patch 16.11
+npm run data:opgg:import
+npm run test
+```
+
+Update `src/services/dataDragon.ts` when Riot publishes a new Data Dragon version. The current default is `16.11.1`.
+
 See:
 
 - `docs/data-source-matrix.md`

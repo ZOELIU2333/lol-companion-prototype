@@ -1,4 +1,4 @@
-export const DATA_DRAGON_VERSION = '16.10.1'
+export const DATA_DRAGON_VERSION = '16.11.1'
 
 const DATA_DRAGON_CDN = 'https://ddragon.leagueoflegends.com/cdn'
 const DATA_DRAGON_CDN_IMG = `${DATA_DRAGON_CDN}/img`

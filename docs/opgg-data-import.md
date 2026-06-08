@@ -6,13 +6,13 @@ The preferred detail source is the official OP.GG MCP HTTP service at `https://m
 
 Current commands:
 
-- `npm run data:opgg:import`: regenerate the champion ranking seed from `data/opgg/kr-diamond-plus-16.10-prototype.json`.
+- `npm run data:opgg:import`: regenerate the champion ranking seed from `data/opgg/kr-diamond-plus-current-prototype.json`.
 - `npm run data:opgg:details:import`: call OP.GG MCP `lol_get_champion_analysis` for the seeded champions and regenerate detail cache.
 - `npm run data:opgg:details:check`: verify the generated TypeScript detail module matches the JSON cache.
 
 Detail cache outputs:
 
-- `data/opgg/kr-diamond-plus-16.10-details.json`
+- `data/opgg/kr-diamond-plus-current-details.json`
 - `src/data/opggKrHighEloDetails.ts`
 
 The app now prefers MCP detail data for:
@@ -34,4 +34,11 @@ Direct command-line requests to public OP.GG pages can return a CloudFront/WAF c
 4. Save the payload under `data/opgg/`.
 5. Run `npm run data:opgg:import -- --input <payload.json>`.
 
-For this prototype, `data/opgg/kr-diamond-plus-16.10-prototype.json` intentionally keeps the 10 champions used by the visible mock matches. The generated MCP detail cache is still local and version-pinned; refresh it when the patch or target tier changes. Runtime MCP results are cached in the browser profile after the first successful request; later we can promote that into a managed on-disk cache with patch expiry.
+For this prototype, `data/opgg/kr-diamond-plus-current-prototype.json` intentionally keeps the 10 champions used by the visible mock matches. The generated MCP detail cache is still local and should be refreshed when the live patch or target tier changes. Runtime MCP results are cached in the browser profile after the first successful request; later we can promote that into a managed on-disk cache with patch expiry.
+
+Refresh for a new live patch:
+
+```bash
+npm run data:opgg:details:import -- --patch 16.11
+npm run data:opgg:import
+```

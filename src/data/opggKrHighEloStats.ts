@@ -13,7 +13,7 @@ export type OpggChampionStat = {
 }
 
 export const opggKrHighEloMeta = {
-  patch: '16.10',
+  patch: '16.11',
   queue: 'ranked',
   rank: 'diamond+',
   region: 'kr',

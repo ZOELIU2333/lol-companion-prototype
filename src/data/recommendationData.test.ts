@@ -37,7 +37,7 @@ describe('recommendation data layer', () => {
   it('marks short-term meta data as OP.GG Korean high-elo seed data', () => {
     expect(getRecommendationDataMeta()).toMatchObject({
       confidence: 'medium',
-      patch: '16.10',
+      patch: '16.11',
       rank: 'diamond+',
       region: 'kr',
       sampleSize: 28275698,
@@ -45,14 +45,14 @@ describe('recommendation data layer', () => {
       sourceLabel: 'OP.GG 韩服钻石+',
     })
     expect(getChampionBuildData(ezreal).loadouts[0].meta).toMatchObject({
-      championRank: 81,
-      pickRate: 20,
+      championRank: 85,
+      pickRate: 19,
       sourceUrl: 'https://op.gg/zh-cn/lol/champions/ezreal/build/adc?region=kr&tier=diamond_plus',
       source: 'opgg-kr-high-elo',
       winRate: 47,
     })
     expect(getChampionRunePages(ezreal)[0].meta).toMatchObject({
-      pickRate: 20,
+      pickRate: 19,
       source: 'opgg-kr-high-elo',
       winRate: 47,
     })

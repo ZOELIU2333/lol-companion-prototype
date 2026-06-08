@@ -2,8 +2,8 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const endpoint = 'https://mcp-api.op.gg/mcp'
-const championsInput = 'data/opgg/kr-diamond-plus-16.10-prototype.json'
-const defaultJsonOutput = 'data/opgg/kr-diamond-plus-16.10-details.json'
+const championsInput = 'data/opgg/kr-diamond-plus-current-prototype.json'
+const defaultJsonOutput = 'data/opgg/kr-diamond-plus-current-details.json'
 const defaultTsOutput = 'src/data/opggKrHighEloDetails.ts'
 const fields = [
   'champion',
@@ -299,6 +299,7 @@ const inputPath = resolve(argValue('--input', championsInput))
 const jsonOutputPath = resolve(argValue('--json-out', defaultJsonOutput))
 const tsOutputPath = resolve(argValue('--ts-out', defaultTsOutput))
 const seed = JSON.parse(await readFile(inputPath, 'utf8'))
+const patch = argValue('--patch', seed.meta.patch)
 
 let payload
 if (process.argv.includes('--from-cache')) {
@@ -312,6 +313,7 @@ if (process.argv.includes('--from-cache')) {
   payload = {
     meta: {
       ...seed.meta,
+      patch,
       detailSource: 'OP.GG MCP lol_get_champion_analysis',
       endpoint,
       importedAt: new Date().toISOString(),

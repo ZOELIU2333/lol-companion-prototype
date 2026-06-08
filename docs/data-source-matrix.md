@@ -32,7 +32,7 @@ The first implementation lives in `src/data/recommendationData.ts`.
 - Build data is keyed by champion id and now prefers OP.GG MCP detail cache for core items and item branches.
 - Rune data is keyed by champion id and now prefers OP.GG MCP detail cache for the top rune page.
 - OP.GG Korean Diamond+ champion stats live in `src/data/opggKrHighEloStats.ts`; the first seed covers the 10 champions visible in the prototype.
-- OP.GG MCP champion details live in `src/data/opggKrHighEloDetails.ts`; `data/opgg/kr-diamond-plus-16.10-details.json` is the local cache.
+- OP.GG MCP champion details live in `src/data/opggKrHighEloDetails.ts`; `data/opgg/kr-diamond-plus-current-details.json` is the local cache.
 - Runtime champion details are loaded through `src/services/opggChampionData.ts` when the desktop host is available. If the current champion is not covered by the local seed, the app calls OP.GG MCP, registers an in-memory cache entry, and recomputes builds/runes without blocking the demo fallback.
 - The import flow is documented in `docs/opgg-data-import.md`; `npm run data:opgg:import` regenerates the ranking seed and `npm run data:opgg:details:import` refreshes MCP details.
 - Augment data contains selected-augment profiles, tag bridges, and item-chain presets.

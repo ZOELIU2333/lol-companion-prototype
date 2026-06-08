@@ -4,7 +4,7 @@ import { getRecommendationSourceDisplay } from './recommendationMeta'
 
 const baseMeta: RecommendationDataMeta = {
   confidence: 'medium',
-  patch: '16.10',
+  patch: '16.11',
   rank: 'diamond_plus',
   region: 'kr',
   source: 'opgg-kr-high-elo',

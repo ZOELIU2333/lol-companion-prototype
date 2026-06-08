@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const positions = new Set(['top', 'jungle', 'mid', 'adc', 'support'])
-const defaultInput = 'data/opgg/kr-diamond-plus-16.10-prototype.json'
+const defaultInput = 'data/opgg/kr-diamond-plus-current-prototype.json'
 const defaultOutput = 'src/data/opggKrHighEloStats.ts'
 
 function argValue(name, fallback) {
