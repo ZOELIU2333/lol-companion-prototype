@@ -123,6 +123,7 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
   const selectedProfiles = match.liveState.selectedAugments.map(getSelectedAugmentProfile)
   const selectedTags = Array.from(new Set(selectedProfiles.flatMap((profile) => profile.tags)))
   const selectedPlans = Array.from(new Set(selectedProfiles.map((profile) => profile.plan)))
+  const augmentDataSourceLabel = '本地规则推理 · 待接入版本聚合数据'
 
   return match.augmentCandidates
     .map((augment) => {
@@ -182,6 +183,16 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
         ...augment,
         score,
         probability,
+        dataSourceLabel: augmentDataSourceLabel,
+        scoreLabel: '路线潜力',
+        scoreReason:
+          selectedSynergyScore >= 24
+            ? '已选强化能直接接上同一条构筑链，优先级高。'
+            : bridgeMatches.length > 0
+              ? '和已选强化有桥接标签，适合作为下一轮转向。'
+              : tagMatches > 0
+                ? '更依赖英雄契合度，组合收益一般。'
+                : '缺少已选强化协同，只建议在其他两个更差时选。',
         comboTags: comboTags.length > 0 ? comboTags : augment.tags.slice(0, 2),
         synergy: tagMatches > 1 ? '高度契合当前英雄标签' : tagMatches === 1 ? '有明确单点契合' : '偏通用收益',
         selectedSynergy,

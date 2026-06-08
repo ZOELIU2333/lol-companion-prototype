@@ -2654,6 +2654,14 @@ a,
   background: rgba(2, 6, 23, 0.36);
 }
 
+.augment-source-note {
+  display: block;
+  margin-top: 0.18rem;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .augment-card-icon {
   display: grid;
   width: 2.75rem;
@@ -2680,6 +2688,10 @@ a,
   color: #94a3b8;
   font-size: 0.75rem;
   line-height: 1.38;
+}
+
+.augment-score-reason {
+  color: #cbd5e1;
 }
 
 .rank-label {
@@ -2730,6 +2742,7 @@ a,
   color: #93c5fd;
   font-size: 0.68rem;
   font-weight: 800;
+  text-align: center;
 }
 
 .combo-tags {

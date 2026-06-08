@@ -6,10 +6,15 @@ type AugmentRecommendationProps = {
 }
 
 export function AugmentRecommendation({ augments }: AugmentRecommendationProps) {
+  const dataSourceLabel = augments[0]?.dataSourceLabel ?? '本地规则推理'
+
   return (
     <section className="panel-section recommendation-card">
       <div className="section-title">
-        <h3>本轮待选海克斯</h3>
+        <div>
+          <h3>本轮待选海克斯</h3>
+          <span className="augment-source-note">{dataSourceLabel}</span>
+        </div>
         <span className="demo-pill">3 选 1</span>
       </div>
       <div className="augment-list">
@@ -29,10 +34,11 @@ export function AugmentRecommendation({ augments }: AugmentRecommendationProps) 
                   <strong>协同 {augment.selectedSynergyScore}</strong>
                 </div>
                 <p className="augment-reason">{augment.selectedSynergy}</p>
+                <p className="augment-reason augment-score-reason">{augment.scoreReason}</p>
               </div>
               <div className="augment-score">
                 <strong>{augment.score}</strong>
-                <span>{augment.probability}%</span>
+                <span>{augment.scoreLabel}</span>
               </div>
             </article>
           )

@@ -302,6 +302,9 @@ export type RunePageRecommendation = {
 export type AugmentRecommendation = Augment & {
   score: number
   probability: number
+  dataSourceLabel: string
+  scoreLabel: string
+  scoreReason: string
   comboTags: string[]
   synergy: string
   selectedSynergy: string
