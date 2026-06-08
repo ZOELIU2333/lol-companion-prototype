@@ -1,16 +1,17 @@
-const COMMUNITY_DRAGON_AUGMENT_ICON_BASE =
-  'https://raw.communitydragon.org/14.4/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons'
+import { getArenaAugmentByApiName, getArenaAugmentByName } from '../data/arenaAugments'
 
-const augmentIconSlugs: Record<string, string> = {
-  主菜上桌: 'breadandbutter',
-  地震波: 'earthwake',
-  法术苏醒: 'spellwake',
-  现象级邪恶: 'phenomenalevil',
+const COMMUNITY_DRAGON_BASE = 'https://raw.communitydragon.org/latest'
+
+const localizedAugmentApiNames: Record<string, string> = {
+  主菜上桌: 'BreadAndButter',
+  地震波: 'Earthwake',
+  法术苏醒: 'Spellwake',
+  现象级邪恶: 'PhenomenalEvil',
 }
 
 export function getAugmentIconUrl(name: string) {
-  const slug = augmentIconSlugs[name]
-  if (!slug) return null
+  const augment = getArenaAugmentByName(name) ?? getArenaAugmentByApiName(localizedAugmentApiNames[name] ?? name)
+  if (!augment?.iconSmall) return null
 
-  return `${COMMUNITY_DRAGON_AUGMENT_ICON_BASE}/${slug}_small.arena_augments_v2.png`
+  return `${COMMUNITY_DRAGON_BASE}/${augment.iconSmall}`
 }

@@ -11,7 +11,7 @@ This matrix keeps product claims tied to data we can actually obtain.
 | Rank / LP tier | OP.GG MCP `lol_get_summoner_profile`, Riot League-V4 as keyed fallback | Medium-high | OP.GG adapter wired, Riot adapter wired | Demo rank | OP.GG route is best first pass for desktop users without an API key. |
 | Champion mastery / champion pool top 3 | OP.GG MCP ranked-most champions, Riot Champion-Mastery-V4 as keyed fallback | Medium | OP.GG adapter wired, Riot adapter wired | Demo mastery | OP.GG gives champion pool and win rate; Riot mastery gives mastery points/level. |
 | Item/rune/champion names and icons | Data Dragon | High | Partially wired | Version-pinned static URLs | Cache later so the overlay stays usable offline. |
-| Arena augment icons | CommunityDragon | Medium | Partially wired | Text-only fallback | Community resource paths can move across patches. |
+| Arena augment metadata/icons | CommunityDragon `cdragon/arena/en_us.json` | High | External import wired | Text-only fallback | `npm run data:arena:augments:import` pulls current augment ids, names, rarity, descriptions, and icon paths. |
 | Version strong builds/runes | OP.GG MCP `lol_get_champion_analysis`, cached locally and refreshed at runtime | Medium-high | Static seed + runtime MCP fetch wired | Built-in curated tables | UI label is "OP.GG 韩服钻石+" with cache freshness in the underlying meta. Riot does not directly provide public aggregate win-rate tables. |
 | Augment combination scores | Multi-source Arena data: OP.GG Arena pages, LeagueOfGraphs augment popularity, METAsrc Arena samples, and later our own Riot Match-V5 aggregate | Medium-low until self-aggregated | Static data layer wired | Explainable local scoring | Do not rely on OP.GG alone. Separate popularity, sample win rate, champion fit, selected-augment synergy, and local game state. |
 | Premade party detection | Derived from shared recent matches | Medium | Demo inference exists | Hide/mark inferred | This is an inference, not official party data. |
@@ -35,12 +35,14 @@ The first implementation lives in `src/data/recommendationData.ts`.
 - OP.GG MCP champion details live in `src/data/opggKrHighEloDetails.ts`; `data/opgg/kr-diamond-plus-current-details.json` is the local cache.
 - Runtime champion details are loaded through `src/services/opggChampionData.ts` when the desktop host is available. If the current champion is not covered by the local seed, the app calls OP.GG MCP, registers an in-memory cache entry, and recomputes builds/runes without blocking the demo fallback.
 - The import flow is documented in `docs/opgg-data-import.md`; `npm run data:opgg:import` regenerates the ranking seed and `npm run data:opgg:details:import` refreshes MCP details.
-- Augment data contains selected-augment profiles, tag bridges, and item-chain presets. It is currently a local rule model, not an OP.GG win-rate or pick-rate cache.
+- Augment metadata now comes from external CommunityDragon import: `data/arena/communitydragon-augments-current.json` and `src/data/arenaAugments.ts`.
+- Augment combination scoring still contains selected-augment profiles, tag bridges, and item-chain presets. It is currently a local rule model, not an OP.GG win-rate or pick-rate cache.
 - New patch augment combos need a dedicated refresh path. Do not treat OP.GG as the only source:
   - OP.GG Arena pages: useful for champion-specific Arena build, augment, item, and skill references.
   - LeagueOfGraphs Arena augment pages: useful for broad augment popularity by patch, region, and rank filter.
   - METAsrc Arena pages: useful as a second opinion for champion-specific sample size, augment, item, and win-rate style rankings.
   - Riot Match-V5 self-aggregation: the target high-confidence source for our own `champion + selected augments + candidate augment + final placement + item path` model.
+- LeagueOfGraphs and METAsrc currently return Cloudflare challenges to direct CLI fetches, so they should not be treated as reliable unattended import jobs until we use an approved API path, browser-mediated export, or our own Riot Match-V5 aggregation.
 - Until the self-aggregated model exists, the UI must label augment output as source-mixed route guidance, not precise global probability.
 - `src/lib/recommendations.ts` is responsible for dynamic scoring only: enemy composition, selected augments, current state, and conflict penalties.
 - Short-term version data is marked as `source: opgg-kr-high-elo`; for covered champions, the concrete build/rune data comes from OP.GG MCP detail cache rather than hand-written templates.

@@ -187,6 +187,7 @@ Refresh local OP.GG cache after a live patch:
 ```bash
 npm run data:opgg:details:import -- --patch 16.11
 npm run data:opgg:import
+npm run data:arena:augments:import
 npm run test
 ```
 
@@ -215,6 +216,7 @@ npm run tauri:dev
 npm run test
 npm run lint
 npm run build
+npm run data:arena:augments:check
 npm run data:opgg:details:check
 ```
 

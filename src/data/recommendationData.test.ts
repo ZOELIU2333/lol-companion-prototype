@@ -8,7 +8,9 @@ import {
   listRecommendationChampionIds,
 } from './recommendationData'
 import { getOpggKrHighEloChampionStat, opggKrHighEloChampionStats, opggKrHighEloMeta } from './opggKrHighEloStats'
+import { arenaAugments, arenaAugmentsMeta, getArenaAugmentByApiName } from './arenaAugments'
 import { mockMatches } from './mockMatches'
+import { getAugmentIconUrl } from '../services/augmentIcons'
 import type { Champion } from '../types'
 
 const ezreal = mockMatches[0].champions.find((champion) => champion.id === 'ezreal')!
@@ -75,6 +77,20 @@ describe('recommendation data layer', () => {
       tags: expect.arrayContaining(['cooldown']),
     })
     expect(augmentItemChains.some((chain) => chain.id === 'haste-poke')).toBe(true)
+  })
+
+  it('uses externally imported CommunityDragon arena augment metadata', () => {
+    expect(arenaAugmentsMeta).toMatchObject({
+      count: 227,
+      source: 'communitydragon',
+      sourceUrl: 'https://raw.communitydragon.org/latest/cdragon/arena/en_us.json',
+    })
+    expect(arenaAugments.length).toBeGreaterThan(200)
+    expect(getArenaAugmentByApiName('Spellwake')).toMatchObject({
+      name: 'Spellwake',
+      iconSmall: expect.stringContaining('spellwake_small.png'),
+    })
+    expect(getAugmentIconUrl('法术苏醒')).toContain('spellwake_small.png')
   })
 
   it('covers the first match player champion pool with builds and runes', () => {

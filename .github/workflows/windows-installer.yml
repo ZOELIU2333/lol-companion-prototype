@@ -33,6 +33,9 @@ jobs:
       - name: Test frontend and data adapters
         run: npm run test
 
+      - name: Check imported arena augment metadata
+        run: npm run data:arena:augments:check
+
       - name: Lint frontend
         run: npm run lint
 

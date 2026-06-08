@@ -42,3 +42,19 @@ Refresh for a new live patch:
 npm run data:opgg:details:import -- --patch 16.11
 npm run data:opgg:import
 ```
+
+## Arena Augment Metadata Import
+
+Arena augment names, ids, rarity, descriptions, and icon paths are imported from CommunityDragon:
+
+```bash
+npm run data:arena:augments:import
+npm run data:arena:augments:check
+```
+
+Outputs:
+
+- `data/arena/communitydragon-augments-current.json`
+- `src/data/arenaAugments.ts`
+
+This is an external data pull, but it is metadata only. It does not contain augment win rate, placement, or combo strength. Those need a separate Arena stats layer from public aggregate sources or our own Riot Match-V5 sample aggregation.
