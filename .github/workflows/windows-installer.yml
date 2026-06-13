@@ -25,12 +25,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          registry-url: https://registry.npmjs.org
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Pin npm
+        run: npm install -g npm@10
+
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm ci --registry=https://registry.npmjs.org
 
       - name: Test frontend and data adapters
         run: npm run test
