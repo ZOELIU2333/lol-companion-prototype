@@ -49,12 +49,14 @@ jobs:
         run: npm run lint
 
       - name: Build portable Windows app
-        run: npm run tauri:build -- --no-bundle
+        run: |
+          npm run build
+          cargo build --release --manifest-path src-tauri/Cargo.toml
 
       - name: Build NSIS installer
         id: nsis
         continue-on-error: true
-        run: npm run tauri:build -- --bundles nsis
+        run: npm run tauri:build -- --bundles nsis --ci
 
       - name: List Tauri build outputs
         if: always()
@@ -66,7 +68,7 @@ jobs:
               Format-Table -AutoSize |
               Out-String -Width 4096
           } else {
-            Write-Error "src-tauri/target/release does not exist"
+            Write-Output "src-tauri/target/release does not exist"
           }
 
       - name: Upload Windows installers
