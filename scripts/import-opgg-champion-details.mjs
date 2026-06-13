@@ -326,7 +326,7 @@ const tsOutput = renderTs(payload)
 
 if (process.argv.includes('--check')) {
   const current = await readFile(tsOutputPath, 'utf8')
-  if (current !== tsOutput) {
+  if (current.replaceAll('\r\n', '\n') !== tsOutput.replaceAll('\r\n', '\n')) {
     throw new Error(`${tsOutputPath} is out of date. Run npm run data:opgg:details:import.`)
   }
 } else {

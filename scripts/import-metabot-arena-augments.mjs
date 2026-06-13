@@ -172,7 +172,7 @@ const tsOutputText = renderTs(payload)
 
 if (check) {
   const current = await readFile(tsOutput, 'utf8')
-  if (current !== tsOutputText) {
+  if (current.replaceAll('\r\n', '\n') !== tsOutputText.replaceAll('\r\n', '\n')) {
     throw new Error(`${tsOutput} is out of date. Run npm run data:arena:metabot:import.`)
   }
 } else {
