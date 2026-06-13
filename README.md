@@ -22,14 +22,16 @@ For normal Windows testing, you should not need Node.js, Rust, Cargo, or Tauri p
 
 2. Go to `Actions` -> `Windows Installer`.
 3. Click the latest successful run.
-4. Download the `LOL-Companion-Windows-Installer` artifact.
-5. Unzip it and run one installer:
+4. Download one artifact:
+   - `LOL-Companion-Windows-Portable`: unzip and double-click `lol-companion.exe`. This is the fastest test path.
+   - `LOL-Companion-Windows-Installer`: unzip and run an installer.
+5. If you choose the installer artifact, run one installer:
    - Prefer `LOL Companion_*_x64-setup.exe` if available.
    - Use `.msi` if Windows blocks the setup executable.
 
-The app is currently unsigned, so Windows SmartScreen may show a warning. For this early internal build, choose `More info` -> `Run anyway` only if you downloaded it from this repo's GitHub Actions.
+The app is currently unsigned, so Windows SmartScreen may show a warning. For this early internal build, choose `More info` -> `Run anyway` only if you downloaded it from this repo's GitHub Actions. Always unzip the artifact before running the `.exe` or `.msi`.
 
-To create a fresh installer from GitHub, open `Actions` -> `Windows Installer` -> `Run workflow`. GitHub will build the Windows installer in the cloud and publish it as an artifact.
+Every push to `main` creates a fresh Windows artifact. You can also open `Actions` -> `Windows Installer` -> `Run workflow` to build one manually.
 
 ## Tech Stack
 
@@ -96,7 +98,7 @@ In the app, open the `诊断` panel to check:
 
 ## Windows Test Flow
 
-1. Install the app with the Windows installer from GitHub Actions, or start the desktop app with `npm run tauri:dev` if you are developing locally.
+1. Start the app with `LOL-Companion-Windows-Portable`, install it with the Windows installer from GitHub Actions, or run `npm run tauri:dev` if you are developing locally.
 
 2. Before opening LOL:
    - `Desktop Shell` should be normal.

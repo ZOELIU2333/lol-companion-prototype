@@ -3,6 +3,8 @@ name: Windows Installer
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - "v*"
 
@@ -51,4 +53,11 @@ jobs:
           path: |
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error
+
+      - name: Upload portable Windows exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: LOL-Companion-Windows-Portable
+          path: src-tauri/target/release/lol-companion.exe
           if-no-files-found: error
