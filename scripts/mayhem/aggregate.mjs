@@ -176,6 +176,7 @@ export function aggregateMayhemRecords(input) {
 
   return {
     schemaVersion: 1,
+    queue: 'aram-mayhem',
     patch: input.patch,
     generatedAt,
     expiresAt,

@@ -4,9 +4,10 @@ import type { MayhemSnapshot } from '../features/mayhem/snapshot'
 
 export const mayhemSnapshot: MayhemSnapshot = {
   "schemaVersion": 1,
+  "queue": "aram-mayhem",
   "patch": "26.12",
-  "generatedAt": "2026-06-14T09:16:31.206Z",
-  "expiresAt": "2026-06-15T21:16:31.206Z",
+  "generatedAt": "2026-06-14T09:54:08.684Z",
+  "expiresAt": "2026-06-15T21:54:08.684Z",
   "completeness": 0.5,
   "officialCoverage": 1,
   "sources": [

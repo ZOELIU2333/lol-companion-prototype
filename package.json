@@ -27,6 +27,8 @@
     "data:mayhem:metasrc:import": "node scripts/mayhem/import-metasrc.mjs --patch 26.12",
     "data:mayhem:opgg:import": "node scripts/mayhem/import-opgg.mjs --patch 26.12",
     "data:mayhem:candidates:import": "node scripts/mayhem/import-community-candidates.mjs --patch 26.12",
+    "data:mayhem:refresh": "npm run data:mayhem:patch:detect && node scripts/mayhem/refresh-current.mjs",
+    "data:mayhem:check": "node scripts/mayhem/validate-snapshot.mjs --current",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"

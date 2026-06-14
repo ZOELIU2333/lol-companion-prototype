@@ -4,6 +4,7 @@ import { rankMayhemCandidates } from './scoring'
 
 const snapshot: MayhemSnapshot = {
   schemaVersion: 1,
+  queue: 'aram-mayhem',
   patch: '26.12',
   generatedAt: '2026-06-14T00:00:00.000Z',
   expiresAt: '2026-06-15T12:00:00.000Z',

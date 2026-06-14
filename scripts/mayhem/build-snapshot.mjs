@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { aggregateMayhemRecords } from './aggregate.mjs'
-import { argValue, hasFlag } from './shared.mjs'
+import { argValue, hasFlag, readJson } from './shared.mjs'
 
 // snapshot.ts 的 aggregateMayhemRecords 是权威实现；本脚本经 ./aggregate.mjs 复用同一套
 // 聚合/去重/off-meta 门槛逻辑（JS 镜像），由 snapshot.test.ts 的 parity 测试守护一致性。
@@ -17,20 +17,6 @@ function quote(value) {
     .replaceAll("'", "\\'")
     .replaceAll('\r', '\\r')
     .replaceAll('\n', '\\n')}'`
-}
-
-async function readJson(path) {
-  let raw
-  try {
-    raw = await readFile(path, 'utf8')
-  } catch (err) {
-    throw new Error(`failed to read ${path}: ${err.message}`)
-  }
-  try {
-    return JSON.parse(raw)
-  } catch (err) {
-    throw new Error(`failed to parse ${path}: ${err.message}`)
-  }
 }
 
 function isUnavailable(payload) {

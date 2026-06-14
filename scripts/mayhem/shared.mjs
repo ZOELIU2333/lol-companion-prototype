@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 
 const userAgent = 'LOL-Companion-Data/0.1 (+https://github.com/ZOELIU2333/lol-companion-prototype)'
@@ -27,6 +27,20 @@ export async function fetchText(url) {
 export async function writeJson(path, payload) {
   await mkdir(dirname(path), { recursive: true })
   await writeFile(path, `${JSON.stringify(payload, null, 2)}\n`)
+}
+
+export async function readJson(path) {
+  let raw
+  try {
+    raw = await readFile(path, 'utf8')
+  } catch (err) {
+    throw new Error(`failed to read ${path}: ${err.message}`)
+  }
+  try {
+    return JSON.parse(raw)
+  } catch (err) {
+    throw new Error(`failed to parse ${path}: ${err.message}`)
+  }
 }
 
 export function cleanText(value) {

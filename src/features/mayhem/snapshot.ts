@@ -67,6 +67,7 @@ export type MayhemRecommendation = {
 
 export type MayhemSnapshot = {
   schemaVersion: 1
+  queue: 'aram-mayhem'
   patch: string
   generatedAt: string
   expiresAt: string
@@ -271,6 +272,7 @@ export function aggregateMayhemRecords(input: AggregateInput): MayhemSnapshot {
 
   return {
     schemaVersion: 1,
+    queue: 'aram-mayhem',
     patch: input.patch,
     generatedAt,
     expiresAt,
