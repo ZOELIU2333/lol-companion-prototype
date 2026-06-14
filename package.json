@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:scripts": "node --test scripts/mayhem/*.test.mjs",
     "mock:lcu": "node scripts/mock-lcu-server.mjs",
     "mock:live": "node scripts/mock-live-client-server.mjs",
     "mock:riot": "node scripts/mock-riot-api-server.mjs",
