@@ -23,10 +23,12 @@ function App() {
           isDetected={session.isDetected}
           match={session.match}
           matches={session.availableMatches}
+          mayhemRecommendationMode={session.mayhemRecommendationMode}
           recommendations={session.recommendations}
           onApplyLoadout={session.applyLoadout}
           onApplyRunePage={session.applyRunePage}
           onCopy={session.copyBrief}
+          onMayhemModeChange={session.onMayhemModeChange}
           onRefreshDiagnostics={session.refreshDiagnostics}
           onRefresh={session.refreshMatch}
           onScenarioChange={session.selectScenario}

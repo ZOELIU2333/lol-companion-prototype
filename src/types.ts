@@ -320,6 +320,12 @@ export type AugmentRecommendation = Augment & {
     probability: number
     reason: string
   }[]
+  // Real Mayhem snapshot evidence; only present when the version-aggregate path is taken.
+  // Absent on local-fallback entries so the UI can show honest placeholders instead of
+  // fabricated numbers.
+  mayhemGames?: number
+  mayhemConfidence?: MayhemConfidence
+  observing?: boolean
 }
 
 export type MayhemScoreBreakdown = {

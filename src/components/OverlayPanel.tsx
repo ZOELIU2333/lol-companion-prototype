@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Activity, Minimize2, Pin, RefreshCcw } from 'lucide-react'
 import type { Champion, ConnectionDiagnostic, DiagnosticStatus, GameMode, Match, RecommendationViewModel } from '../types'
+import type { MayhemRecommendationMode } from '../features/mayhem/types'
 import { AugmentRecommendation } from './AugmentRecommendation'
 import { ChampionSummary } from './ChampionSummary'
 import { ChatBriefPanel } from './ChatBriefPanel'
@@ -22,11 +23,13 @@ type OverlayPanelProps = {
   isDetected: boolean
   match: Match
   matches: Match[]
+  mayhemRecommendationMode: MayhemRecommendationMode
   recommendations: RecommendationViewModel
   onRefreshDiagnostics: () => void
   onCopy: () => void
   onApplyLoadout: (loadoutName: string) => void
   onApplyRunePage: (pageName: string) => void
+  onMayhemModeChange: (mode: MayhemRecommendationMode) => void
   onToggleAlwaysOnTop: () => void
   onToggleCompact: () => void
   onRefresh: () => void
@@ -47,11 +50,13 @@ export function OverlayPanel({
   isDetected,
   match,
   matches,
+  mayhemRecommendationMode,
   recommendations,
   onRefreshDiagnostics,
   onCopy,
   onApplyLoadout,
   onApplyRunePage,
+  onMayhemModeChange,
   onToggleAlwaysOnTop,
   onToggleCompact,
   onRefresh,
@@ -158,7 +163,11 @@ export function OverlayPanel({
       {activeMode === 'augment' && (
         <>
           <LiveDecisionPanel activeMode={activeMode} match={match} recommendations={recommendations} />
-          <AugmentRecommendation augments={recommendations.augments} />
+          <AugmentRecommendation
+            augments={recommendations.augments}
+            mode={mayhemRecommendationMode}
+            onModeChange={onMayhemModeChange}
+          />
         </>
       )}
     </aside>

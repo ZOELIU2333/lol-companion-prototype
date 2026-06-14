@@ -9,6 +9,7 @@ import {
 } from '../data/recommendationData'
 import type { MayhemSnapshot } from '../features/mayhem/snapshot'
 import { rankMayhemCandidates } from '../features/mayhem/scoring'
+import type { MayhemRecommendationMode } from '../features/mayhem/types'
 import type {
   AugmentRecommendation,
   BuildRecommendation,
@@ -230,25 +231,29 @@ function rankAugmentsByTagRules(match: Match, champion: Champion): AugmentRecomm
  * 现阶段 mock 候选的字符串 id 与官方数字 id 没有可信映射，因此实际总是走兜底；
  * 一旦 Task 7 把真实数字 id 接进来，本入口会用快照分数对候选重排并标注版本来源。
  */
-export function rankAugments(match: Match, champion: Champion): AugmentRecommendation[] {
+export function rankAugments(
+  match: Match,
+  champion: Champion,
+  mayhemMode: MayhemRecommendationMode = 'strength',
+): AugmentRecommendation[] {
   const resolvedIds = match.augmentCandidates.map((augment) =>
     resolveMayhemAugmentId(augment.id, mayhemSnapshot),
   )
   const allResolved = resolvedIds.every((id): id is number => id !== null)
+  const modeEntries =
+    mayhemMode === 'off-meta'
+      ? mayhemSnapshot.recommendations.offMeta
+      : mayhemSnapshot.recommendations.strength
   const coveredBySnapshot =
     allResolved &&
-    resolvedIds.every(
-      (id) =>
-        mayhemSnapshot.recommendations.strength.some((entry) => entry.augmentId === id) ||
-        mayhemSnapshot.recommendations.offMeta.some((entry) => entry.augmentId === id),
-    )
+    resolvedIds.every((id) => modeEntries.some((entry) => entry.augmentId === id))
 
   if (!coveredBySnapshot) {
     return rankAugmentsByTagRules(match, champion)
   }
 
   const ranked = rankMayhemCandidates({
-    mode: 'strength',
+    mode: mayhemMode,
     // Champion.id 现在是英雄名字符串，Number() 会得到 NaN。本分支当前不可达（见上方注释），
     // Task 7 接入真实数字 id 时必须先做 英雄名→数字 映射并兜住 NaN，否则 championFit 全为 NaN。
     championId: Number(champion.id),
@@ -260,12 +265,20 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
   const numericIdByCandidate = new Map(
     match.augmentCandidates.map((augment, index) => [augment.id, resolvedIds[index]]),
   )
+  const evidenceByAugmentId = new Map(modeEntries.map((entry) => [entry.augmentId, entry]))
 
   return rankAugmentsByTagRules(match, champion)
-    .map((recommendation) => ({
-      ...recommendation,
-      dataSourceLabel: `26.12 版本聚合 · ${mayhemSnapshot.patch}`,
-    }))
+    .map((recommendation) => {
+      const numericId = numericIdByCandidate.get(recommendation.id) ?? undefined
+      const evidence = numericId !== undefined ? evidenceByAugmentId.get(numericId) : undefined
+      return {
+        ...recommendation,
+        dataSourceLabel: `26.12 版本聚合 · ${mayhemSnapshot.patch}`,
+        mayhemGames: evidence?.games,
+        mayhemConfidence: evidence?.confidence,
+        observing: evidence?.observing,
+      }
+    })
     .sort((a, b) => {
       const aOrder = orderByAugmentId.get(numericIdByCandidate.get(a.id) ?? -1) ?? Number.MAX_SAFE_INTEGER
       const bOrder = orderByAugmentId.get(numericIdByCandidate.get(b.id) ?? -1) ?? Number.MAX_SAFE_INTEGER
@@ -301,11 +314,15 @@ export function createArenaRecommendation(match: Match, mode: GameMode): Recomme
   }
 }
 
-export function createRecommendations(match: Match, mode: GameMode): RecommendationViewModel {
+export function createRecommendations(
+  match: Match,
+  mode: GameMode,
+  mayhemMode: MayhemRecommendationMode = 'strength',
+): RecommendationViewModel {
   const champion = match.champions.find((candidate) => candidate.id === match.currentChampionId) ?? match.champions[0]
   const build = createBuildRecommendation(match, champion)
   const runes = createRuneRecommendations(champion)
-  const augments = rankAugments(match, champion)
+  const augments = rankAugments(match, champion, mayhemMode)
   const nextItem = build.situationalItems[0] ?? build.coreItems[Math.min(1, build.coreItems.length - 1)]
   const bestAugment = augments[0]
   const augmentItemPlan = createAugmentItemPlan(match, bestAugment)

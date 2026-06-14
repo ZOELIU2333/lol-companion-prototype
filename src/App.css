@@ -2745,6 +2745,51 @@ a,
   text-align: center;
 }
 
+.mayhem-mode-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 0.12rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(2, 6, 23, 0.5);
+}
+
+.mayhem-mode-switch button {
+  padding: 0.18rem 0.6rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mayhem-mode-switch button[aria-pressed='true'] {
+  background: rgba(56, 189, 248, 0.18);
+  color: #bae6fd;
+}
+
+.augment-evidence {
+  display: inline-block;
+  margin-top: 0.3rem;
+  color: #93c5fd;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.status-muted {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
 .combo-tags {
   display: flex;
   flex-wrap: wrap;

@@ -8,6 +8,7 @@ import { mockPluginActions } from '../services/pluginActions'
 import { createTauriOpggMcpHost, isRunningInTauri, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from '../services/tauriHost'
 import type { ConnectionDiagnostic, DiagnosticStatus, GameMode, InfoPhase, PlayerFilter } from '../types'
 import type { LcuGamePhase, LcuPlayerSnapshot } from '../services/lcuAdapter'
+import type { MayhemRecommendationMode } from '../features/mayhem/types'
 
 const companionDataSource = createCompanionDataSource(tauriLcuAdapter)
 const pluginActions = mockPluginActions
@@ -65,6 +66,7 @@ function getOpggDiagnostic(status: DiagnosticStatus): ConnectionDiagnostic {
 
 export function useCompanionSession() {
   const [activeMode, setActiveMode] = useState<GameMode>('ranked')
+  const [mayhemRecommendationMode, setMayhemRecommendationMode] = useState<MayhemRecommendationMode>('strength')
   const [matchIndex, setMatchIndex] = useState(0)
   const [activePhase, setActivePhase] = useState<InfoPhase>('pregame')
   const [isDetected, setIsDetected] = useState(false)
@@ -96,9 +98,9 @@ export function useCompanionSession() {
   const recommendations = useMemo(
     () => {
       void recommendationDataVersion
-      return createRecommendations(match, activeMode)
+      return createRecommendations(match, activeMode, mayhemRecommendationMode)
     },
-    [activeMode, match, recommendationDataVersion],
+    [activeMode, match, mayhemRecommendationMode, recommendationDataVersion],
   )
   const brief = useMemo(() => buildChatBrief(match, match.players), [match])
   const diagnostics = useMemo(
@@ -297,6 +299,8 @@ export function useCompanionSession() {
     isCompact,
     isDetected,
     match,
+    mayhemRecommendationMode,
+    onMayhemModeChange: setMayhemRecommendationMode,
     playerFilter,
     recommendations,
     refreshDiagnostics,
