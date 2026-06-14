@@ -23,36 +23,55 @@ function App() {
     return () => document.removeEventListener('mousedown', handleMouseDown, true)
   }, [])
 
+  const overlayPanel = (
+    <OverlayPanel
+      activeMode={session.activeMode}
+      activePhase={session.effectivePhase}
+      brief={session.brief}
+      champion={session.champion}
+      connectionStatusLabel={session.connectionStatusLabel}
+      diagnostics={session.diagnostics}
+      hasActiveSession={session.hasActiveSession}
+      hasTrustedRecommendationData={session.isDemoEnabled}
+      isAlwaysOnTop={session.isAlwaysOnTop}
+      isChampionDataSyncing={session.isChampionDataSyncing}
+      isClientConnected={session.isClientConnected}
+      isCompact={session.isCompact}
+      isDemoEnabled={session.isDemoEnabled}
+      isDetected={session.isDetected}
+      match={session.match}
+      matches={session.availableMatches}
+      mayhemRecommendationMode={session.mayhemRecommendationMode}
+      recommendations={session.recommendations}
+      onApplyLoadout={session.applyLoadout}
+      onApplyRunePage={session.applyRunePage}
+      onCopy={session.copyBrief}
+      onMayhemModeChange={session.onMayhemModeChange}
+      onRefreshDiagnostics={session.refreshDiagnostics}
+      onRefresh={session.refreshMatch}
+      onScenarioChange={session.selectScenario}
+      onSimulateSend={session.simulateSend}
+      onToggleAlwaysOnTop={session.toggleAlwaysOnTop}
+      onToggleCompact={session.toggleCompact}
+    />
+  )
+
   return (
     <>
-      <GameShell activeMode={session.activeMode} champion={session.champion} match={session.match}>
-        <OverlayPanel
+      {session.hasActiveSession ? (
+        <GameShell
           activeMode={session.activeMode}
-          activePhase={session.effectivePhase}
-          brief={session.brief}
+          allowDemoData={session.isDemoEnabled}
           champion={session.champion}
-          connectionStatusLabel={session.connectionStatusLabel}
-          diagnostics={session.diagnostics}
-          isAlwaysOnTop={session.isAlwaysOnTop}
-          isChampionDataSyncing={session.isChampionDataSyncing}
-          isCompact={session.isCompact}
-          isDetected={session.isDetected}
           match={session.match}
-          matches={session.availableMatches}
-          mayhemRecommendationMode={session.mayhemRecommendationMode}
-          recommendations={session.recommendations}
-          onApplyLoadout={session.applyLoadout}
-          onApplyRunePage={session.applyRunePage}
-          onCopy={session.copyBrief}
-          onMayhemModeChange={session.onMayhemModeChange}
-          onRefreshDiagnostics={session.refreshDiagnostics}
-          onRefresh={session.refreshMatch}
-          onScenarioChange={session.selectScenario}
-          onSimulateSend={session.simulateSend}
-          onToggleAlwaysOnTop={session.toggleAlwaysOnTop}
-          onToggleCompact={session.toggleCompact}
-        />
-      </GameShell>
+        >
+          {overlayPanel}
+        </GameShell>
+      ) : (
+        <main className="game-shell game-shell--idle" data-tauri-drag-region>
+          {overlayPanel}
+        </main>
+      )}
       {session.toast && <Toast message={session.toast} />}
     </>
   )

@@ -21,6 +21,10 @@ type OverlayPanelProps = {
   isChampionDataSyncing: boolean
   isCompact: boolean
   isDetected: boolean
+  isDemoEnabled: boolean
+  hasActiveSession: boolean
+  hasTrustedRecommendationData: boolean
+  isClientConnected: boolean
   match: Match
   matches: Match[]
   mayhemRecommendationMode: MayhemRecommendationMode
@@ -48,6 +52,10 @@ export function OverlayPanel({
   isChampionDataSyncing,
   isCompact,
   isDetected,
+  isDemoEnabled,
+  hasActiveSession,
+  hasTrustedRecommendationData,
+  isClientConnected,
   match,
   matches,
   mayhemRecommendationMode,
@@ -110,7 +118,7 @@ export function OverlayPanel({
           <span className={isDetected ? 'dot online' : 'dot'} />
           {connectionStatusLabel}
         </span>
-        <strong>{match.map}</strong>
+        {hasActiveSession && <strong>{match.map}</strong>}
         <button
           className={`diagnostic-toggle diagnostic-toggle--${worstStatus}`}
           type="button"
@@ -140,9 +148,26 @@ export function OverlayPanel({
         </div>
       )}
 
-      <DemoScenarioSwitcher matches={matches} selectedMatchId={match.id} onSelect={onScenarioChange} />
+      {isDemoEnabled && (
+        <DemoScenarioSwitcher matches={matches} selectedMatchId={match.id} onSelect={onScenarioChange} />
+      )}
 
-      {activeMode === 'ranked' && activePhase === 'pregame' && (
+      {!hasActiveSession && (
+        <section className="connection-waiting" aria-live="polite">
+          <span className={isClientConnected ? 'connection-waiting-dot online' : 'connection-waiting-dot'} />
+          <h2>{isClientConnected ? '已连接客户端，等待对局' : '等待 League Client'}</h2>
+          <p>{isClientConnected ? '进入选人或游戏后，情报会自动出现。' : '启动英雄联盟客户端后会自动连接，无需手动刷新。'}</p>
+        </section>
+      )}
+
+      {hasActiveSession && !hasTrustedRecommendationData && (
+        <section className="session-intel-waiting">
+          <h2>真实对局已连接</h2>
+          <p>正在同步玩家公开数据。英雄与版本推荐会在确认真实英雄后显示。</p>
+        </section>
+      )}
+
+      {hasActiveSession && hasTrustedRecommendationData && activeMode === 'ranked' && activePhase === 'pregame' && (
         <>
           <div className="recommendation-source-line" title={sourceDisplay.title}>
             <span>数据来源：{sourceDisplay.label}</span>
@@ -160,7 +185,7 @@ export function OverlayPanel({
         </>
       )}
 
-      {activeMode === 'augment' && (
+      {hasActiveSession && hasTrustedRecommendationData && activeMode === 'augment' && (
         <>
           <LiveDecisionPanel activeMode={activeMode} match={match} recommendations={recommendations} />
           <AugmentRecommendation

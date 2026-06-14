@@ -89,6 +89,25 @@ describe('companion data source', () => {
     })
   })
 
+  it('removes unmatched mock player slots for production sessions', () => {
+    const match = mockCompanionDataSource.listMatches()[0]
+    const hydrated = applyLcuPlayersToMatch(
+      match,
+      [
+        {
+          id: 'ally-3',
+          team: 'ally',
+          role: '下路',
+          summonerName: 'Live ADC',
+        },
+      ],
+      false,
+    )
+
+    expect(hydrated.players).toHaveLength(1)
+    expect(hydrated.players[0].name).toBe('Live ADC')
+  })
+
   it('keeps player intel available for the augment stage board', () => {
     const augmentMatch = mockCompanionDataSource.listMatches().find((match) => match.mode === 'augment')
 
@@ -129,7 +148,13 @@ describe('companion data source', () => {
     })
   })
 
-  it('falls back to the demo source when LCU is unavailable', async () => {
+  it('does not fall back to demo data by default when LCU is unavailable', async () => {
+    const dataSource = createCompanionDataSource(createLcuStub(null))
+
+    await expect(dataSource.detectSession()).resolves.toBeNull()
+  })
+
+  it('uses a demo source only when one is explicitly enabled', async () => {
     const fallback: CompanionDataSource = {
       async detectSession() {
         return {
@@ -156,7 +181,7 @@ describe('companion data source', () => {
     })
   })
 
-  it('keeps demo match access available while real history is not wired', () => {
+  it('keeps structural match templates available for an active real session', () => {
     const dataSource = createCompanionDataSource(createLcuStub(null))
     const firstMatch = mockCompanionDataSource.listMatches()[0]
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { buildChatBrief } from '../lib/chatBrief'
 import { createRecommendations } from '../lib/recommendations'
-import { applyLcuPlayersToMatch, createCompanionDataSource } from '../services/companionDataSource'
+import { applyLcuPlayersToMatch, createCompanionDataSource, mockCompanionDataSource } from '../services/companionDataSource'
 import { applyLiveClientSnapshotToMatch, createTauriLiveClientDataHost, type LiveClientSnapshot } from '../services/liveClientData'
 import { loadOpggChampionDetail } from '../services/opggChampionData'
 import { mockPluginActions } from '../services/pluginActions'
@@ -9,15 +9,18 @@ import { createTauriOpggMcpHost, isRunningInTauri, setOverlayAlwaysOnTop, setOve
 import type { ConnectionDiagnostic, DiagnosticStatus, GameMode, InfoPhase, PlayerFilter } from '../types'
 import type { LcuGamePhase, LcuPlayerSnapshot } from '../services/lcuAdapter'
 import type { MayhemRecommendationMode } from '../features/mayhem/types'
+import { isDevelopmentDemoEnabled } from '../services/runtimeMode'
 
-const companionDataSource = createCompanionDataSource(tauriLcuAdapter)
+const isDemoEnabled = isDevelopmentDemoEnabled(import.meta.env.VITE_ENABLE_DEMO)
+const companionDataSource = createCompanionDataSource(tauriLcuAdapter, isDemoEnabled ? mockCompanionDataSource : null)
 const pluginActions = mockPluginActions
 const connectedPhases = new Set(['ChampSelect', 'GameStart', 'InProgress', 'WaitingForStats', 'EndOfGame'])
 
-type ConnectionStatus = 'detecting' | 'demo' | 'client' | 'match'
+type ConnectionStatus = 'detecting' | 'disconnected' | 'demo' | 'client' | 'match'
 
 const connectionLabels: Record<ConnectionStatus, string> = {
   detecting: '检测客户端中',
+  disconnected: '等待 League Client',
   demo: 'Demo 模式 · 未连接客户端',
   client: '已连接客户端',
   match: '已检测到对局',
@@ -46,7 +49,11 @@ function getLcuDiagnostic(connectionStatus: ConnectionStatus, phase: LcuGamePhas
     return { id: 'lcu', label: 'League Client', status: 'checking', detail: '正在查找 LCU lockfile' }
   }
 
-  return { id: 'lcu', label: 'League Client', status: 'demo', detail: '未连接客户端，当前使用 Demo 场景' }
+  if (connectionStatus === 'demo') {
+    return { id: 'lcu', label: 'League Client', status: 'demo', detail: '开发 Demo 已显式开启' }
+  }
+
+  return { id: 'lcu', label: 'League Client', status: 'offline', detail: '未发现 League Client，应用会继续自动检测' }
 }
 
 function getLiveClientDiagnostic(hostReady: boolean, snapshot: LiveClientSnapshot | null): ConnectionDiagnostic {
@@ -94,7 +101,10 @@ export function useCompanionSession() {
   const availableMatches = matches
   const baseMatch = availableMatches[matchIndex] ?? availableMatches[0]
   const match = useMemo(
-    () => applyLiveClientSnapshotToMatch(applyLcuPlayersToMatch(baseMatch, lcuPlayers), liveSnapshot),
+    () => applyLiveClientSnapshotToMatch(
+      applyLcuPlayersToMatch(baseMatch, lcuPlayers, isDemoEnabled),
+      liveSnapshot,
+    ),
     [baseMatch, lcuPlayers, liveSnapshot],
   )
   const champion = match.champions.find((candidate) => candidate.id === match.currentChampionId) ?? match.champions[0]
@@ -121,7 +131,16 @@ export function useCompanionSession() {
     let isStale = false
 
     const detectSession = () => companionDataSource.detectSession().then((session) => {
-      if (isStale || !session) return
+      if (isStale) return
+
+      if (!session) {
+        setConnectionStatus('disconnected')
+        setLcuPhase(null)
+        setLcuPlayers([])
+        setLiveSnapshot(null)
+        setIsDetected(false)
+        return
+      }
 
       if (session.source === 'lcu') {
         const detectedIndex = availableMatches.findIndex((candidate) => candidate.id === session.matchId)
@@ -180,10 +199,11 @@ export function useCompanionSession() {
   }, [toast])
 
   useEffect(() => {
-    if (!opggMcpHost || activeMode !== 'ranked') {
+    const hasVisibleSession = connectionStatus === 'match' || (isDemoEnabled && connectionStatus === 'demo')
+    if (!hasVisibleSession || !opggMcpHost || activeMode !== 'ranked') {
       const timer = window.setTimeout(() => {
         setIsChampionDataSyncing(false)
-        setOpggMcpStatus(opggMcpHost ? 'online' : 'demo')
+        setOpggMcpStatus(opggMcpHost ? 'online' : isDemoEnabled ? 'demo' : 'offline')
       }, 0)
       return () => window.clearTimeout(timer)
     }
@@ -209,7 +229,7 @@ export function useCompanionSession() {
     return () => {
       isStale = true
     }
-  }, [activeMode, champion, diagnosticRefreshKey, opggMcpHost])
+  }, [activeMode, champion, connectionStatus, diagnosticRefreshKey, opggMcpHost])
 
   const resetForMatch = (nextMode: GameMode) => {
     setIsDetected(false)
@@ -221,6 +241,12 @@ export function useCompanionSession() {
   }
 
   const refreshMatch = () => {
+    if (!isDemoEnabled) {
+      setDiagnosticRefreshKey((value) => value + 1)
+      setToast('已重新检测客户端')
+      return
+    }
+
     if (availableMatches.length === 0 || !match) return
 
     const currentVisibleIndex = availableMatches.findIndex((candidate) => candidate.id === match.id)
@@ -275,14 +301,14 @@ export function useCompanionSession() {
     const nextValue = !isAlwaysOnTop
     const didApply = await setOverlayAlwaysOnTop(nextValue)
     setIsAlwaysOnTop(nextValue)
-    setToast(didApply ? (nextValue ? '悬浮窗已置顶' : '悬浮窗取消置顶') : '浏览器 Demo 中暂不支持窗口置顶')
+    setToast(didApply ? (nextValue ? '悬浮窗已置顶' : '悬浮窗取消置顶') : '浏览器预览中暂不支持窗口置顶')
   }
 
   const toggleCompact = async () => {
     const nextValue = !isCompact
     const didApply = await setOverlayCompact(nextValue)
     setIsCompact(nextValue)
-    setToast(didApply ? (nextValue ? '已切换紧凑窗口' : '已恢复标准窗口') : '浏览器 Demo 中暂不支持窗口缩放')
+    setToast(didApply ? (nextValue ? '已切换紧凑窗口' : '已恢复标准窗口') : '浏览器预览中暂不支持窗口缩放')
   }
 
   return {
@@ -302,6 +328,9 @@ export function useCompanionSession() {
     isChampionDataSyncing,
     isCompact,
     isDetected,
+    isDemoEnabled,
+    hasActiveSession: connectionStatus === 'match' || (isDemoEnabled && connectionStatus === 'demo'),
+    isClientConnected: connectionStatus === 'client' || connectionStatus === 'match',
     match,
     mayhemRecommendationMode,
     onMayhemModeChange: setMayhemRecommendationMode,

@@ -72,6 +72,13 @@ npm install
 ## Run Browser Demo
 
 ```bash
+VITE_ENABLE_DEMO=true npm run dev
+```
+
+PowerShell:
+
+```powershell
+$env:VITE_ENABLE_DEMO="true"
 npm run dev
 ```
 
@@ -81,7 +88,7 @@ Open:
 http://127.0.0.1:5173/
 ```
 
-The browser demo uses mock/demo data and static OP.GG cache fallback.
+Mock matches are disabled by default. The command above enables them explicitly for local UI development.
 
 ## Run Desktop App
 
@@ -237,4 +244,4 @@ npm run data:mayhem:check
 
 ## Notes
 
-This is an early prototype. It does not inject into the game renderer or use a DirectX overlay. The first version is a desktop floating window with local client integrations and demo fallbacks.
+This is an early prototype. It does not inject into the game renderer or use a DirectX overlay. Production desktop builds show waiting states until the local League client provides a real session; mock matches are limited to explicitly enabled development previews.

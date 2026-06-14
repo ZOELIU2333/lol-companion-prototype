@@ -12,6 +12,10 @@
     linear-gradient(135deg, #07111f 0%, #0b1020 48%, #121827 100%);
 }
 
+.game-shell--idle {
+  min-height: 100vh;
+}
+
 .game-stage {
   position: relative;
   order: 3;
@@ -984,6 +988,74 @@ a,
   background: rgba(15, 23, 42, 0.72);
   color: #cbd5e1;
   font-size: 0.86rem;
+}
+
+.connection-waiting {
+  order: 4;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  min-height: 23rem;
+  margin: 0.7rem 0.9rem 1rem;
+  padding: 2rem 1.4rem;
+  text-align: center;
+}
+
+.connection-waiting-dot {
+  width: 0.72rem;
+  height: 0.72rem;
+  margin-bottom: 1.1rem;
+  border-radius: 999px;
+  background: #64748b;
+  box-shadow: 0 0 0 0.42rem rgba(100, 116, 139, 0.12);
+}
+
+.connection-waiting-dot.online {
+  background: #22c55e;
+  box-shadow: 0 0 0 0.42rem rgba(34, 197, 94, 0.12);
+}
+
+.connection-waiting h2 {
+  margin: 0;
+  color: #e5edf7;
+  font-size: 1.12rem;
+}
+
+.connection-waiting p {
+  max-width: 20rem;
+  margin: 0.65rem 0 0;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+.session-intel-waiting {
+  order: 5;
+  margin: 0.7rem 0.9rem 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  text-align: center;
+}
+
+.session-intel-waiting h2 {
+  margin: 0;
+  color: #e5edf7;
+  font-size: 0.9rem;
+}
+
+.session-intel-waiting p {
+  margin: 0.45rem auto 0;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.player-detail-empty {
+  margin: 0;
+  padding: 0.85rem 0;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  line-height: 1.55;
 }
 
 .status-strip > span {

@@ -13,12 +13,13 @@ import type { RiotPlayerProfile } from '../services/riotApiAdapter'
 
 type GameShellProps = {
   activeMode: GameMode
+  allowDemoData: boolean
   champion: Champion
   match: Match
   children: ReactNode
 }
 
-type PlayerDataStatus = 'demo' | 'loading' | 'opgg' | 'riot'
+type PlayerDataStatus = 'demo' | 'loading' | 'opgg' | 'riot' | 'unavailable'
 
 const modeLabels: Record<GameMode, string> = {
   ranked: '匹配/排位',
@@ -112,6 +113,7 @@ function getPlayerDataStatusLabel(status: PlayerDataStatus) {
   if (status === 'loading') return '同步中'
   if (status === 'opgg') return 'OP.GG'
   if (status === 'riot') return 'Riot'
+  if (status === 'unavailable') return '暂无数据'
   return 'Demo'
 }
 
@@ -119,6 +121,7 @@ function getPlayerDataStatusTitle(status: PlayerDataStatus) {
   if (status === 'loading') return '正在读取玩家公开数据'
   if (status === 'opgg') return '来自 OP.GG MCP 的公开玩家数据'
   if (status === 'riot') return '来自 Riot API 的公开玩家数据'
+  if (status === 'unavailable') return '没有查询到可用的公开数据'
   return '当前显示 Demo 兜底数据'
 }
 
@@ -130,11 +133,11 @@ function PlayerDataSource({ status }: { status: PlayerDataStatus }) {
   )
 }
 
-export function GameShell({ activeMode, champion, match, children }: GameShellProps) {
+export function GameShell({ activeMode, allowDemoData, champion, match, children }: GameShellProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerIntel | null>(null)
   const [selectedHistoryMatch, setSelectedHistoryMatch] = useState<PlayerRecentMatch | null>(null)
   const [matchDetailById, setMatchDetailById] = useState<Record<string, PlayerMatchDetail>>({})
-  const [matchDetailStatusById, setMatchDetailStatusById] = useState<Record<string, 'demo' | 'loading' | 'opgg'>>({})
+  const [matchDetailStatusById, setMatchDetailStatusById] = useState<Record<string, 'demo' | 'loading' | 'opgg' | 'unavailable'>>({})
   const [realHistoryByPlayerId, setRealHistoryByPlayerId] = useState<Record<string, PlayerRecentMatch[]>>({})
   const [historyStatusByPlayerId, setHistoryStatusByPlayerId] = useState<Record<string, PlayerDataStatus>>({})
   const [profileByPlayerId, setProfileByPlayerId] = useState<Record<string, RiotPlayerProfile>>({})
@@ -149,7 +152,9 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
   const allyPlayers = hydratedPlayers.filter((player) => player.team === 'ally')
   const enemyPlayers = hydratedPlayers.filter((player) => player.team === 'enemy')
   const hasStageIntel = allyPlayers.length > 0 || enemyPlayers.length > 0
-  const parties = [...createDemoPartyGroups(hydratedPlayers, 'ally'), ...createDemoPartyGroups(hydratedPlayers, 'enemy')]
+  const parties = allowDemoData
+    ? [...createDemoPartyGroups(hydratedPlayers, 'ally'), ...createDemoPartyGroups(hydratedPlayers, 'enemy')]
+    : []
   const playerById = new Map(hydratedPlayers.map((player) => [player.id, player]))
   const playerPartyMap = new Map(
     parties.flatMap((party, index) =>
@@ -171,11 +176,15 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
     const account = getRiotAccountForPlayer(player)
     setHistoryStatusByPlayerId((current) => ({
       ...current,
-      [player.id]: (riotHost || opggHost) && account && !realHistoryByPlayerId[player.id] ? 'loading' : current[player.id] ?? 'demo',
+      [player.id]: (riotHost || opggHost) && account && !realHistoryByPlayerId[player.id]
+        ? 'loading'
+        : current[player.id] ?? (allowDemoData ? 'demo' : 'unavailable'),
     }))
     setProfileStatusByPlayerId((current) => ({
       ...current,
-      [player.id]: (riotHost || opggHost) && account && !profileByPlayerId[player.id] && !opggProfileByPlayerId[player.id] ? 'loading' : current[player.id] ?? 'demo',
+      [player.id]: (riotHost || opggHost) && account && !profileByPlayerId[player.id] && !opggProfileByPlayerId[player.id]
+        ? 'loading'
+        : current[player.id] ?? (allowDemoData ? 'demo' : 'unavailable'),
     }))
   }
   const renderTeam = (teamPlayers: typeof allyPlayers, team: 'ally' | 'enemy') => {
@@ -201,6 +210,11 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
         )}
         {teamPlayers.map((player) => {
           const party = playerPartyMap.get(player.id)
+          const riotProfile = profileByPlayerId[player.id]
+          const opggProfile = opggProfileByPlayerId[player.id]
+          const hasPublicProfile = Boolean(riotProfile || opggProfile)
+          const profileStatus = profileStatusByPlayerId[player.id]
+          const publicScore = riotProfile?.score ?? opggProfile?.championPoolTop3[0]?.opScore
           return (
             <button
               className={`stage-player ${party ? `party-${party.color}` : ''}`}
@@ -212,17 +226,38 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
                 <span className="stage-role" data-role={getRoleShortLabel(player.role)} aria-label={player.role} />
                 <div>
                   <strong>{player.name}</strong>
-                  <span>{player.rank} · 近{player.recentRankedGames}场 {player.recentWinRate}%</span>
+                  <span>
+                    {allowDemoData || hasPublicProfile
+                      ? `${player.rank} · 近${player.recentRankedGames}场 ${player.recentWinRate}%`
+                      : profileStatus === 'loading' ? '公开数据同步中' : '公开数据暂无'}
+                  </span>
                 </div>
                 {party && <b title={`${party.games}场车队胜率 ${party.winRate}%`}>{party.label}</b>}
-                <em>{player.score}</em>
+                <em>{allowDemoData ? player.score : publicScore ? Math.round(publicScore) : '--'}</em>
               </div>
-              <div className="stage-player-metrics">
-                <span><i>英雄</i> <strong>{player.championGames}场</strong> <strong>{player.championWinRate}%</strong></span>
-                <span><i>KDA</i> <strong>{player.kda}</strong></span>
-                <span><i>均死</i> <strong>{player.averageDeaths}</strong></span>
-                {party && <span><i>车队</i> <strong>{party.games}场</strong> <strong>{party.winRate}%</strong></span>}
-              </div>
+              {allowDemoData && (
+                <div className="stage-player-metrics">
+                  <span><i>英雄</i> <strong>{player.championGames}场</strong> <strong>{player.championWinRate}%</strong></span>
+                  <span><i>KDA</i> <strong>{player.kda}</strong></span>
+                  <span><i>均死</i> <strong>{player.averageDeaths}</strong></span>
+                  {party && <span><i>车队</i> <strong>{party.games}场</strong> <strong>{party.winRate}%</strong></span>}
+                </div>
+              )}
+              {!allowDemoData && riotProfile && (
+                <div className="stage-player-metrics">
+                  <span><i>排位</i> <strong>{riotProfile.rankedGames}场</strong> <strong>{riotProfile.recentWinRate}%</strong></span>
+                  <span><i>KDA</i> <strong>{riotProfile.averageKda}</strong></span>
+                  <span><i>均死</i> <strong>{riotProfile.averageDeaths}</strong></span>
+                </div>
+              )}
+              {!allowDemoData && !riotProfile && opggProfile && (
+                <div className="stage-player-metrics">
+                  <span><i>排位</i> <strong>{opggProfile.rankedGames}场</strong> <strong>{opggProfile.rankedWinRate}%</strong></span>
+                  {opggProfile.championPoolTop3[0] && (
+                    <span><i>常用</i> <strong>{opggProfile.championPoolTop3[0].championName}</strong></span>
+                  )}
+                </div>
+              )}
             </button>
           )
         })}
@@ -230,11 +265,19 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
     )
   }
   const selectedParty = selectedPlayer ? playerPartyMap.get(selectedPlayer.id) : null
-  const selectedHistory = selectedPlayer ? realHistoryByPlayerId[selectedPlayer.id] ?? createDemoRecentMatches(selectedPlayer) : []
-  const selectedHistoryStatus = selectedPlayer ? historyStatusByPlayerId[selectedPlayer.id] ?? 'demo' : 'demo'
+  const selectedHistory = selectedPlayer
+    ? realHistoryByPlayerId[selectedPlayer.id] ?? (allowDemoData ? createDemoRecentMatches(selectedPlayer) : [])
+    : []
+  const selectedHistoryStatus = selectedPlayer
+    ? historyStatusByPlayerId[selectedPlayer.id] ?? (allowDemoData ? 'demo' : 'unavailable')
+    : 'unavailable'
   const selectedProfile = selectedPlayer ? profileByPlayerId[selectedPlayer.id] : null
   const selectedOpggProfile = selectedPlayer ? opggProfileByPlayerId[selectedPlayer.id] : null
-  const selectedProfileStatus = selectedPlayer ? profileStatusByPlayerId[selectedPlayer.id] ?? 'demo' : 'demo'
+  const hasSelectedProfileData = allowDemoData || Boolean(selectedProfile || selectedOpggProfile)
+  const selectedPublicScore = selectedProfile?.score ?? selectedOpggProfile?.championPoolTop3[0]?.opScore
+  const selectedProfileStatus = selectedPlayer
+    ? profileStatusByPlayerId[selectedPlayer.id] ?? (allowDemoData ? 'demo' : 'unavailable')
+    : 'unavailable'
   const selectedMastery =
     selectedProfile?.masteryTop3.length
       ? selectedProfile.masteryTop3.map((entry) => ({
@@ -250,11 +293,13 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
             mastery: 0,
             winRate: entry.winRate,
           }))
-      : selectedPlayer ? createMasteryTop3(selectedPlayer) : []
+      : selectedPlayer && allowDemoData ? createMasteryTop3(selectedPlayer) : []
   const selectedHistoryDetail =
-    selectedPlayer && selectedHistoryMatch ? createHistoryDetail(selectedPlayer, selectedHistoryMatch) : null
+    selectedPlayer && selectedHistoryMatch && allowDemoData ? createHistoryDetail(selectedPlayer, selectedHistoryMatch) : null
   const selectedRealMatchDetail = selectedHistoryMatch ? matchDetailById[selectedHistoryMatch.id] : null
-  const selectedMatchDetailStatus = selectedHistoryMatch ? matchDetailStatusById[selectedHistoryMatch.id] ?? 'demo' : 'demo'
+  const selectedMatchDetailStatus = selectedHistoryMatch
+    ? matchDetailStatusById[selectedHistoryMatch.id] ?? (allowDemoData ? 'demo' : 'unavailable')
+    : 'unavailable'
 
   useEffect(() => {
     if (!riotHost) return undefined
@@ -294,14 +339,14 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
           setProfileByPlayerId((current) => ({ ...current, [player.id]: profile }))
           setProfileStatusByPlayerId((current) => ({ ...current, [player.id]: 'riot' }))
         } else {
-          setProfileStatusByPlayerId((current) => ({ ...current, [player.id]: 'demo' }))
+          setProfileStatusByPlayerId((current) => ({ ...current, [player.id]: allowDemoData ? 'demo' : 'unavailable' }))
         }
 
         if (history.length > 0) {
           setRealHistoryByPlayerId((current) => ({ ...current, [player.id]: history }))
           setHistoryStatusByPlayerId((current) => ({ ...current, [player.id]: 'riot' }))
         } else {
-          setHistoryStatusByPlayerId((current) => ({ ...current, [player.id]: 'demo' }))
+          setHistoryStatusByPlayerId((current) => ({ ...current, [player.id]: allowDemoData ? 'demo' : 'unavailable' }))
         }
       }),
     )
@@ -310,6 +355,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
       isStale = true
     }
   }, [
+    allowDemoData,
     historyStatusByPlayerId,
     match.players,
     opggProfileByPlayerId,
@@ -336,7 +382,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
       .then(({ history, source }) => {
       if (isStale) return
       if (history.length === 0) {
-        setHistoryStatusByPlayerId((current) => ({ ...current, [selectedPlayer.id]: 'demo' }))
+        setHistoryStatusByPlayerId((current) => ({ ...current, [selectedPlayer.id]: allowDemoData ? 'demo' : 'unavailable' }))
         return
       }
 
@@ -347,7 +393,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
     return () => {
       isStale = true
     }
-  }, [opggHost, realHistoryByPlayerId, riotHost, selectedPlayer])
+  }, [allowDemoData, opggHost, realHistoryByPlayerId, riotHost, selectedPlayer])
 
   useEffect(() => {
     if (!selectedPlayer) return undefined
@@ -367,7 +413,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
       .then(({ riotProfile, opggProfile }) => {
       if (isStale) return
       if (!riotProfile && !opggProfile) {
-        setProfileStatusByPlayerId((current) => ({ ...current, [selectedPlayer.id]: 'demo' }))
+        setProfileStatusByPlayerId((current) => ({ ...current, [selectedPlayer.id]: allowDemoData ? 'demo' : 'unavailable' }))
         return
       }
 
@@ -383,14 +429,14 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
     return () => {
       isStale = true
     }
-  }, [opggHost, opggProfileByPlayerId, profileByPlayerId, riotHost, selectedPlayer])
+  }, [allowDemoData, opggHost, opggProfileByPlayerId, profileByPlayerId, riotHost, selectedPlayer])
 
   const openHistoryMatch = (historyMatch: PlayerRecentMatch) => {
     setSelectedHistoryMatch(historyMatch)
     if (!matchDetailById[historyMatch.id]) {
       setMatchDetailStatusById((current) => ({
         ...current,
-        [historyMatch.id]: opggHost && historyMatch.createdAt ? 'loading' : 'demo',
+        [historyMatch.id]: opggHost && historyMatch.createdAt ? 'loading' : allowDemoData ? 'demo' : 'unavailable',
       }))
     }
   }
@@ -403,7 +449,10 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
     loadOpggMatchDetail(opggHost, selectedPlayer, selectedHistoryMatch).then((detail) => {
       if (isStale) return
       if (!detail) {
-        setMatchDetailStatusById((current) => ({ ...current, [selectedHistoryMatch.id]: 'demo' }))
+        setMatchDetailStatusById((current) => ({
+          ...current,
+          [selectedHistoryMatch.id]: allowDemoData ? 'demo' : 'unavailable',
+        }))
         return
       }
 
@@ -414,18 +463,20 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
     return () => {
       isStale = true
     }
-  }, [matchDetailById, opggHost, selectedHistoryMatch, selectedPlayer])
+  }, [allowDemoData, matchDetailById, opggHost, selectedHistoryMatch, selectedPlayer])
 
   return (
     <main className="game-shell" data-tauri-drag-region>
-      <section className="game-stage" aria-label="模拟游戏画面" data-tauri-drag-region>
-        <div className="top-hud">
-          <div>
-            <span>{modeLabels[activeMode]}</span>
-            <strong>{champion.name}</strong>
+      <section className="game-stage" aria-label="对局情报" data-tauri-drag-region>
+        {allowDemoData && (
+          <div className="top-hud">
+            <div>
+              <span>{modeLabels[activeMode]}</span>
+              <strong>{champion.name}</strong>
+            </div>
+            <div className="timer">{match.timer}</div>
           </div>
-          <div className="timer">{match.timer}</div>
-        </div>
+        )}
         <div className="lane-glow lane-one" />
         <div className="lane-glow lane-two" />
         {hasStageIntel && (
@@ -446,8 +497,13 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
                 <span>{selectedPlayer.team === 'ally' ? '我方' : '敌方'} · {selectedPlayer.role}</span>
                 <h3>{selectedPlayer.name}</h3>
                 <p>
-                  {selectedProfile?.rank ?? selectedPlayer.rank} · 近{selectedPlayer.recentRankedGames}场胜率{' '}
-                  {selectedProfile?.recentWinRate ?? selectedPlayer.recentWinRate}%
+                  {hasSelectedProfileData
+                    ? `${selectedProfile?.rank ?? selectedOpggProfile?.rank ?? selectedPlayer.rank} · 近${
+                        selectedProfile?.rankedGames ?? selectedOpggProfile?.rankedGames ?? selectedPlayer.recentRankedGames
+                      }场胜率 ${
+                        selectedProfile?.recentWinRate ?? selectedOpggProfile?.rankedWinRate ?? selectedPlayer.recentWinRate
+                      }%`
+                    : '正在查询公开玩家数据'}
                 </p>
               </div>
               <button type="button" onClick={() => {
@@ -456,33 +512,52 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
               }} aria-label="关闭玩家详情">关闭</button>
             </div>
 
-            <div className="player-detail-score">
-              <strong>{selectedProfile?.score ?? selectedPlayer.score}</strong>
-              <div>
-                <span>
-                  <em>KDA</em>
-                  <b>{selectedProfile?.averageKda ?? selectedPlayer.kda}</b>
-                </span>
-                <span>
-                  <em>英雄胜率</em>
-                  <b>{selectedPlayer.championWinRate}%</b>
-                </span>
-                <span>
-                  <em>熟练度</em>
-                  <b>{formatMastery(selectedPlayer.mastery)}</b>
-                </span>
-              </div>
-            </div>
+            {hasSelectedProfileData && (
+              <>
+                <div className="player-detail-score">
+                  <strong>
+                    {allowDemoData
+                      ? selectedProfile?.score ?? selectedPlayer.score
+                      : selectedPublicScore === undefined ? '--' : Math.round(selectedPublicScore)}
+                  </strong>
+                  <div>
+                    <span>
+                      <em>KDA</em>
+                      <b>{selectedProfile?.averageKda ?? selectedOpggProfile?.championPoolTop3[0]?.kda ?? '-'}</b>
+                    </span>
+                    <span>
+                      <em>排位胜率</em>
+                      <b>{selectedProfile?.recentWinRate ?? selectedOpggProfile?.rankedWinRate ?? selectedPlayer.recentWinRate}%</b>
+                    </span>
+                    <span>
+                      <em>排位场次</em>
+                      <b>{selectedProfile?.rankedGames ?? selectedOpggProfile?.rankedGames ?? selectedPlayer.recentRankedGames}</b>
+                    </span>
+                  </div>
+                </div>
 
-            <div className="player-detail-metrics">
-              <span>近{selectedPlayer.championGames}场英雄 <strong>{selectedPlayer.championWinRate}%</strong></span>
-              <span>场均死亡 <strong>{selectedProfile?.averageDeaths ?? selectedPlayer.averageDeaths}</strong></span>
-              <span>CS/分 <strong>{selectedProfile?.csPerMin ?? selectedPlayer.csPerMin}</strong></span>
-              <span>参团率 <strong>{selectedProfile?.killParticipation ?? selectedPlayer.killParticipation}%</strong></span>
-              <span>场均视野 <strong>{selectedProfile?.visionScore ?? selectedPlayer.visionScore}</strong></span>
-              <span>15分经济差 <strong>{selectedPlayer.goldDiffAt15 > 0 ? '+' : ''}{selectedPlayer.goldDiffAt15}</strong></span>
-              {selectedProfile && <span>伤害占比 <strong>{selectedProfile.damageShare}%</strong></span>}
-            </div>
+                <div className="player-detail-metrics">
+                  {selectedProfile && (
+                    <>
+                      <span>场均死亡 <strong>{selectedProfile.averageDeaths}</strong></span>
+                      <span>CS/分 <strong>{selectedProfile.csPerMin}</strong></span>
+                      <span>参团率 <strong>{selectedProfile.killParticipation}%</strong></span>
+                      <span>场均视野 <strong>{selectedProfile.visionScore}</strong></span>
+                      <span>伤害占比 <strong>{selectedProfile.damageShare}%</strong></span>
+                    </>
+                  )}
+                  {selectedOpggProfile?.championPoolTop3[0] && (
+                    <span>
+                      常用英雄 <strong>{selectedOpggProfile.championPoolTop3[0].championName}</strong>
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+
+            {!hasSelectedProfileData && (
+              <p className="player-detail-empty">暂未查询到可信的公开指标，不使用模拟数据补位。</p>
+            )}
 
             {selectedParty && (
               <div className={`player-detail-party ${selectedParty.color}`}>
@@ -510,6 +585,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
                     </div>
                   </div>
                 ))}
+                {selectedMastery.length === 0 && <p className="player-detail-empty">暂无可信的英雄熟练度数据。</p>}
               </div>
             </div>
 
@@ -538,10 +614,11 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
                     <b>{historyMatch.score}</b>
                   </button>
                 ))}
+                {selectedHistory.length === 0 && <p className="player-detail-empty">暂无可用的最近战绩。</p>}
               </div>
             </div>
 
-            {selectedHistoryMatch && selectedHistoryDetail && (
+            {selectedHistoryMatch && (selectedHistoryDetail || selectedRealMatchDetail) && (
               <div className="match-record-panel">
                 <div className="player-detail-title">
                   <strong>单局详情</strong>
@@ -551,7 +628,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
                   <span>{selectedHistoryMatch.result}</span>
                   <div>
                     <strong>{selectedHistoryMatch.champion}</strong>
-                    <p>{selectedHistoryDetail.kills}/{selectedHistoryDetail.deaths}/{selectedHistoryDetail.assists} · 评分 {selectedHistoryMatch.score}</p>
+                    <p>{selectedHistoryMatch.kda} · 评分 {selectedHistoryMatch.score}</p>
                   </div>
                 </div>
                 {selectedRealMatchDetail ? (
@@ -584,7 +661,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
                       ))}
                     </div>
                   </>
-                ) : (
+                ) : selectedHistoryDetail ? (
                   <>
                     <div className="match-record-grid">
                       <span>参团率 <strong>{selectedHistoryMatch.kp}%</strong></span>
@@ -601,7 +678,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
                     </div>
                     <p className="match-record-note">{selectedHistoryDetail.note}</p>
                   </>
-                )}
+                ) : null}
               </div>
             )}
           </div>

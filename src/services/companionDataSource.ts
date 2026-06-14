@@ -44,8 +44,14 @@ function findPlayerSlot(players: PlayerIntel[], lcuPlayer: LcuPlayerSnapshot, us
   return players.find((player) => !usedIds.has(player.id) && player.team === lcuPlayer.team)
 }
 
-export function applyLcuPlayersToMatch(match: Match, lcuPlayers: LcuPlayerSnapshot[] = []): Match {
-  if (lcuPlayers.length === 0) return match
+export function applyLcuPlayersToMatch(
+  match: Match,
+  lcuPlayers: LcuPlayerSnapshot[] = [],
+  preserveUnmatchedPlayers = true,
+): Match {
+  if (lcuPlayers.length === 0) {
+    return preserveUnmatchedPlayers ? match : { ...match, players: [] }
+  }
 
   const usedIds = new Set<string>()
   const lcuByMockPlayerId = new Map<string, LcuPlayerSnapshot>()
@@ -62,15 +68,15 @@ export function applyLcuPlayersToMatch(match: Match, lcuPlayers: LcuPlayerSnapsh
 
   return {
     ...match,
-    players: match.players.map((player) => {
+    players: match.players.flatMap((player) => {
       const lcuPlayer = lcuByMockPlayerId.get(player.id)
-      if (!lcuPlayer) return player
+      if (!lcuPlayer) return preserveUnmatchedPlayers ? [player] : []
 
-      return {
+      return [{
         ...player,
         name: lcuPlayer.summonerName ?? lcuPlayer.riotAccount?.gameName ?? player.name,
         riotAccount: createRiotAccountFromLcu(lcuPlayer) ?? player.riotAccount,
-      }
+      }]
     }),
   }
 }
@@ -95,15 +101,15 @@ export const mockCompanionDataSource: CompanionDataSource = {
   },
 }
 
-export function createCompanionDataSource(lcuAdapter: LcuAdapter, fallback: CompanionDataSource = mockCompanionDataSource): CompanionDataSource {
+export function createCompanionDataSource(lcuAdapter: LcuAdapter, fallback: CompanionDataSource | null = null): CompanionDataSource {
   return {
     async detectSession() {
       const session = await lcuAdapter.readSession()
-      if (!session) return fallback.detectSession()
+      if (!session) return fallback?.detectSession() ?? null
 
       const mode = session.mode ?? 'ranked'
       const match = findClosestMatch(mode)
-      if (!match) return fallback.detectSession()
+      if (!match) return fallback?.detectSession() ?? null
 
       return {
         matchId: match.id,
@@ -115,11 +121,11 @@ export function createCompanionDataSource(lcuAdapter: LcuAdapter, fallback: Comp
     },
 
     listMatches() {
-      return fallback.listMatches()
+      return visibleMatches()
     },
 
     getMatch(matchId) {
-      return fallback.getMatch(matchId)
+      return visibleMatches().find((match) => match.id === matchId) ?? null
     },
   }
 }
