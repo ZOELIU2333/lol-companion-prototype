@@ -101,6 +101,9 @@ struct LiveClientSnapshotPayload {
     level: Option<u16>,
     current_gold: Option<u32>,
     current_item_ids: Vec<u16>,
+    selected_augment_ids: Vec<u32>,
+    selected_augment_names: Vec<String>,
+    candidate_augment_ids: Vec<u32>,
     source: String,
 }
 
@@ -395,6 +398,13 @@ async fn read_live_client_snapshot() -> Option<LiveClientSnapshotPayload> {
             .and_then(|player| player.items.as_ref())
             .map(|items| items.iter().filter_map(|item| item.item_id).collect())
             .unwrap_or_default(),
+        // The Live Client Data API (/liveclientdata/allgamedata) does not expose ARAM Mayhem
+        // selected/candidate augment ids or names in any stable, documented field, so these
+        // stay empty; the frontend treats empty arrays as "waiting for candidate sync" and
+        // must never fabricate the three-choice augment offer.
+        selected_augment_ids: Vec::new(),
+        selected_augment_names: Vec::new(),
+        candidate_augment_ids: Vec::new(),
         source: "live-client-data".to_string(),
     })
 }

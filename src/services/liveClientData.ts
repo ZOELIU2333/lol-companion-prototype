@@ -9,6 +9,9 @@ export type LiveClientSnapshot = {
   level?: number | null
   currentGold?: number | null
   currentItemIds: number[]
+  selectedAugmentIds?: number[]
+  selectedAugmentNames?: string[]
+  candidateAugmentIds?: number[]
   source: 'live-client-data'
 }
 
@@ -27,6 +30,11 @@ function normalizeLiveClientSnapshot(payload: LiveClientSnapshot | null): LiveCl
     level: payload.level ?? null,
     currentGold: payload.currentGold ?? null,
     currentItemIds: Array.isArray(payload.currentItemIds) ? payload.currentItemIds.filter((id) => id > 0) : [],
+    selectedAugmentIds: Array.isArray(payload.selectedAugmentIds) ? payload.selectedAugmentIds.filter((id) => id > 0) : [],
+    selectedAugmentNames: Array.isArray(payload.selectedAugmentNames)
+      ? payload.selectedAugmentNames.filter((name) => typeof name === 'string' && name.length > 0)
+      : [],
+    candidateAugmentIds: Array.isArray(payload.candidateAugmentIds) ? payload.candidateAugmentIds.filter((id) => id > 0) : [],
     source: 'live-client-data',
   }
 }
@@ -63,6 +71,16 @@ export function applyLiveClientSnapshotToMatch(match: Match, snapshot: LiveClien
   const levelText = snapshot.level ? `等级 ${snapshot.level}` : '等级未知'
   const championText = snapshot.championName ? `${snapshot.championName} ` : ''
 
+  const liveSelectedAugmentNames = snapshot.selectedAugmentNames ?? []
+  const liveCandidateAugmentIds = snapshot.candidateAugmentIds ?? []
+  // Empty arrays mean Live Client Data did not expose Mayhem augment state, so we keep the
+  // demo scenario data and mark the projection non-authoritative; the UI then shows the
+  // "waiting for candidate sync" state instead of presenting demo candidates as live.
+  const isLiveDataAuthoritative = liveSelectedAugmentNames.length > 0 || liveCandidateAugmentIds.length > 0
+  const selectedAugments = liveSelectedAugmentNames.length > 0
+    ? liveSelectedAugmentNames
+    : match.liveState.selectedAugments
+
   return {
     ...match,
     timer: `${minute.toString().padStart(2, '0')}:${Math.floor(snapshot.gameTime % 60).toString().padStart(2, '0')}`,
@@ -71,6 +89,9 @@ export function applyLiveClientSnapshotToMatch(match: Match, snapshot: LiveClien
       minute,
       goldOnHand: currentGold,
       currentItems: itemLabels,
+      selectedAugments,
+      candidateAugmentIds: liveCandidateAugmentIds,
+      isLiveDataAuthoritative,
       currentSituation: `${championText}${levelText}，当前金币 ${currentGold}。`,
       nextObjective: inferNextObjective(minute, match.liveState.nextObjective),
       immediateAction:

@@ -48,9 +48,61 @@ describe('live client data bridge', () => {
       level: 9,
       currentGold: 1475,
       currentItemIds: [3004, 3078],
+      selectedAugmentIds: [],
+      selectedAugmentNames: [],
+      candidateAugmentIds: [],
       source: 'live-client-data',
     })
     expect(tauriMocks.invoke).toHaveBeenCalledWith('read_live_client_snapshot')
+  })
+
+  it('carries mayhem augment ids and names through the bridge', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockResolvedValue({
+      gameTime: 914,
+      currentItemIds: [3004],
+      selectedAugmentIds: [11, 12],
+      selectedAugmentNames: ['法术苏醒', '现象级邪恶'],
+      candidateAugmentIds: [21, 22, 23],
+      source: 'live-client-data',
+    })
+
+    const host = createTauriLiveClientDataHost()
+
+    expect((await host?.readSnapshot())?.selectedAugmentIds).toEqual([11, 12])
+    expect((await host?.readSnapshot())?.selectedAugmentNames).toEqual(['法术苏醒', '现象级邪恶'])
+    expect((await host?.readSnapshot())?.candidateAugmentIds).toEqual([21, 22, 23])
+  })
+
+  it('overrides demo augments only when the live snapshot is authoritative', () => {
+    const live = applyLiveClientSnapshotToMatch(mockMatches[0], {
+      gameTime: 600,
+      currentItemIds: [],
+      selectedAugmentIds: [11, 12],
+      selectedAugmentNames: ['法术苏醒', '现象级邪恶'],
+      candidateAugmentIds: [21, 22, 23],
+      source: 'live-client-data',
+    })
+
+    expect(live.liveState.selectedAugments).toEqual(['法术苏醒', '现象级邪恶'])
+    expect(live.liveState.candidateAugmentIds).toEqual([21, 22, 23])
+    expect(live.liveState.isLiveDataAuthoritative).toBe(true)
+  })
+
+  it('keeps demo augments when the live snapshot exposes no augment data', () => {
+    const demoAugments = mockMatches[0].liveState.selectedAugments
+    const live = applyLiveClientSnapshotToMatch(mockMatches[0], {
+      gameTime: 600,
+      currentItemIds: [3004],
+      selectedAugmentIds: [],
+      selectedAugmentNames: [],
+      candidateAugmentIds: [],
+      source: 'live-client-data',
+    })
+
+    expect(live.liveState.selectedAugments).toEqual(demoAugments)
+    expect(live.liveState.candidateAugmentIds).toEqual([])
+    expect(live.liveState.isLiveDataAuthoritative).toBe(false)
   })
 
   it('projects live client data into the match live state', () => {
