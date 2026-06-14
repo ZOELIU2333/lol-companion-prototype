@@ -183,6 +183,7 @@ npm run tauri:dev
 - OP.GG MCP for champion analysis, summoner profile, recent matches, and match details.
 - Riot API as an optional keyed fallback for account, match, ranked, and mastery data.
 - Data Dragon for item/champion/rune icons.
+- CommunityDragon `cherry-augments.json` for genuine Mayhem (海克斯大乱斗) augment identity; METAsrc + OP.GG Mayhem pages for strength/off-meta aggregates (each degrades independently when offline).
 
 Refresh local OP.GG cache after a live patch:
 
@@ -193,6 +194,15 @@ npm run data:arena:augments:import
 npm run data:arena:metabot:import
 npm run test
 ```
+
+Refresh Mayhem (海克斯大乱斗) data after a live patch:
+
+```bash
+npm run data:mayhem:refresh
+npm run data:mayhem:check
+```
+
+Mayhem is 5v5 win/loss for all ranks. Off-meta picks require >=500 same-patch structured samples; when an aggregate site is offline the snapshot records it honestly and recommendations fall back to the local rule label `本地规则兜底 · 非版本统计` rather than fabricated numbers. The daily `.github/workflows/mayhem-data-refresh.yml` workflow runs the same refresh + check.
 
 Update `src/services/dataDragon.ts` when Riot publishes a new Data Dragon version. The current default is `16.11.1`.
 
@@ -222,6 +232,7 @@ npm run build
 npm run data:arena:augments:check
 npm run data:arena:metabot:check
 npm run data:opgg:details:check
+npm run data:mayhem:check
 ```
 
 ## Notes

@@ -302,3 +302,19 @@ type MayhemRecommendationSnapshot = {
 - 本轮不承诺从无法合法或稳定访问的站点自动抓取。
 - 本轮不将社区热帖点赞数当作胜率或强度证据。
 - 本轮不实现游戏画面注入，继续使用桌面悬浮窗和本地客户端接口。
+
+## 13. 实现落地状态（2026/06/14）
+
+本设计已在分支 `claude/mayhem-26-12-data` 按实施计划 Task 1–10 完成，要点与现状如下：
+
+- 命名空间隔离：新数据域位于 `src/features/mayhem/` 与 `data/mayhem/`，与 `arenaAugments` / `ArenaRecommendation` 完全分离，旧数据未被改名冒充本版本数据。
+- 官方层：`scripts/mayhem/import-official.mjs` 从 CommunityDragon `cherry-augments.json` 取 170 个 `ARAM_` 前缀强化；`officialCoverage = 1`。
+- 统计层：METAsrc / OP.GG 各自独立降级。当前 26.12 实测两站均不可用（METAsrc HTTP 403；OP.GG 客户端渲染、无可用记录），快照如实记录 `status: 'unavailable'` 与原因，管线不中断。
+- 因无在线聚合源，`strength` 与 `offMeta` 当前为空（诚实留空，未编造），UI 走 `本地规则兜底 · 非版本统计` 与 `样本 —` / `置信 —` 占位；组合概率从不展示。
+- 黑科技门槛 `OFF_META_MIN_GAMES = 500` 已在聚合与 `validate-snapshot.mjs` 双重把守。
+- 快照权威实现为 `src/features/mayhem/snapshot.ts`，`scripts/mayhem/aggregate.mjs` 为 JS 镜像，由 `snapshot.test.ts` 的 parity 测试守护一致；`queue` 字段固定为 `'aram-mayhem'`。
+- 每日管线：`.github/workflows/mayhem-data-refresh.yml`（cron `20 19 * * *`）跑 `data:mayhem:refresh` + `data:mayhem:check`。检查区分硬失败（版本/口径/`queue`/`officialCoverage`/off-meta 样本门槛，退出非 0）与软告警（聚合站点离线，退出 0），即单站离线不阻断核心校验。
+
+### 13.1 已知限制：Live Client Data 不暴露强化
+
+Live Client Data API（`/liveclientdata/allgamedata`）当前不暴露稳定的海克斯大乱斗「已选强化 / 三选一候选」字段。因此 `src-tauri` 的 `LiveClientSnapshotPayload` 对应字段返回空数组，前端 `isLiveDataAuthoritative` 为 false 时显示「等待同步」，绝不臆造已选或候选强化。对局内不抓取多页网络数据，仅读取预生成并经校验的本地快照。一旦官方暴露稳定字段，可在不改数据契约的前提下接入。

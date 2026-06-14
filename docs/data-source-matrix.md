@@ -13,6 +13,8 @@ This matrix keeps product claims tied to data we can actually obtain.
 | Item/rune/champion names and icons | Data Dragon | High | Partially wired | Version-pinned static URLs | Cache later so the overlay stays usable offline. |
 | Arena augment metadata/icons | CommunityDragon `cdragon/arena/en_us.json` | High | External import wired | Text-only fallback | `npm run data:arena:augments:import` pulls current augment ids, names, rarity, descriptions, and icon paths. |
 | Arena augment Chinese tier/popularity | MetaBot.GG Chinese Arena augment tier list | Medium | External import wired | Hide tier if unavailable | `npm run data:arena:metabot:import` pulls Chinese names, S/A/B/C/D/F tier, pick rate, rank, patch, and icon URL. Treat as popularity/tier, not exact combo win rate. |
+| Mayhem (海克斯大乱斗) augment identity/icons | CommunityDragon `cherry-augments.json` (`ARAM_`-prefixed entries) | High | External import wired | Text-only fallback | `npm run data:mayhem:official:import` pulls the 170 genuine Mayhem augments (id, name, rarity, icon). Official layer; `officialCoverage` must be 1. |
+| Mayhem strength/off-meta recommendations | Multi-source aggregate: METAsrc + OP.GG Mayhem pages, validated against `current-patch` | Medium-low; honest zeros when sites offline | Aggregator wired; both stat sites currently offline (403 / SPA) | Local tag-rule scoring labeled `本地规则兜底 · 非版本统计` | `npm run data:mayhem:refresh` + `data:mayhem:check`. Off-meta entries require >=500 same-patch structured samples. Snapshot records each source's online/offline health; one offline site does not break the pipeline. |
 | Version strong builds/runes | OP.GG MCP `lol_get_champion_analysis`, cached locally and refreshed at runtime | Medium-high | Static seed + runtime MCP fetch wired | Built-in curated tables | UI label is "OP.GG 韩服钻石+" with cache freshness in the underlying meta. Riot does not directly provide public aggregate win-rate tables. |
 | Augment combination scores | Multi-source Arena data: OP.GG Arena pages, LeagueOfGraphs augment popularity, METAsrc Arena samples, and later our own Riot Match-V5 aggregate | Medium-low until self-aggregated | Static data layer wired | Explainable local scoring | Do not rely on OP.GG alone. Separate popularity, sample win rate, champion fit, selected-augment synergy, and local game state. |
 | Premade party detection | Derived from shared recent matches | Medium | Demo inference exists | Hide/mark inferred | This is an inference, not official party data. |
@@ -25,6 +27,20 @@ This matrix keeps product claims tied to data we can actually obtain.
 3. Use OP.GG MCP for player profile and match history when LCU provides Riot ID, then use Riot API only when an API key/platform route is configured.
 4. Use Data Dragon and CommunityDragon for icons/static metadata.
 5. Treat build/rune/augment meta as a separate recommendation-data layer that can start as curated static data and later be replaced by an aggregate backend.
+
+## Mayhem (海克斯大乱斗) Data Layer
+
+26.12 Mayhem is a 5v5 win/loss mode (no Arena top-4 / average-placement / round concepts). The data layer lives in `src/features/mayhem/` and `data/mayhem/`, fully isolated from the Arena augment data so the two never impersonate each other.
+
+- Scope: 海克斯大乱斗 all ranks, patch 26.12. Ranked/normal player intel stays Korean Diamond+.
+- Official layer: Riot + CommunityDragon. `npm run data:mayhem:official:import` pulls the 170 `ARAM_`-prefixed augments from `cherry-augments.json`. `officialCoverage` must equal 1.
+- Stat layer: METAsrc and OP.GG Mayhem pages. Each site degrades independently — when a site is unreachable (Cloudflare / login wall / captcha / client-rendered SPA), the importer records `status: 'unavailable'` with a reason and the pipeline continues. A single-site failure must never break the snapshot.
+- Candidate layer: aramgg.com, arammayhem.com. Community off-meta candidates must be validated by no fewer than 500 same-patch structured samples (`OFF_META_MIN_GAMES = 500`).
+- Off-meta gate: an entry qualifies only when `games >= 500 && pickRate <= 15 && winRate > baseline && evidenceType === 'aggregate'`.
+- Snapshot: `data/mayhem/<patch>/snapshot.json` (canonical builder `src/features/mayhem/snapshot.ts`; `scripts/mayhem/build-snapshot.mjs` mirrors it via `aggregate.mjs`, guarded by a parity test). The app reads the baked `src/data/mayhemSnapshot.ts`.
+- Honest-data rule: when no aggregate source is online, `strength` and `offMeta` are empty (not fabricated); the UI shows `本地规则兜底 · 非版本统计` and `样本 —` / `置信 —` placeholders rather than invented numbers. Combination probabilities are never shown.
+- Refresh: `npm run data:mayhem:refresh` (detect patch → import all → rebuild snapshot) and `npm run data:mayhem:check` (hard checks: patch match, `queue === 'aram-mayhem'`, `officialCoverage === 1`, every off-meta entry `games >= 500`; offline aggregate sources are soft warnings). Automated daily by `.github/workflows/mayhem-data-refresh.yml`.
+- Current 26.12 status: CommunityDragon official online (170 augments); METAsrc offline (HTTP 403); OP.GG offline (client-rendered, no usable records); community candidates online. Strength/off-meta therefore empty pending a reachable aggregate source — recorded honestly in the snapshot's source health.
 
 ## Recommendation Data Layer
 
