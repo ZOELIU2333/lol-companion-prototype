@@ -38,7 +38,16 @@ jobs:
         run: npm ci --registry=https://registry.npmjs.org
 
       - name: Test frontend and data adapters
-        run: npm run test -- --reporter=default --reporter=github-actions
+        shell: pwsh
+        run: |
+          npm run test -- --reporter=verbose 2>&1 | Tee-Object -FilePath vitest-windows.log
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content vitest-windows.log -Tail 120 | ForEach-Object {
+              $line = $_ -replace '%', '%25' -replace "`r", '%0D' -replace "`n", '%0A'
+              Write-Output "::error title=Windows Vitest::$line"
+            }
+            exit $LASTEXITCODE
+          }
 
       - name: Check imported arena augment metadata
         run: |
