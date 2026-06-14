@@ -93,7 +93,44 @@ const check = hasFlag('--check')
 const normalized = (value) =>
   `${JSON.stringify({ ...value, meta: { ...value.meta, collectedAt: 'ignored' } }, null, 2)}\n`
 
-if (check) {
+function validateCache(payload) {
+  if (payload?.meta?.patch !== patch) {
+    throw new Error(`${jsonOutput}: meta.patch is ${payload?.meta?.patch}, expected ${patch}`)
+  }
+  if (payload?.meta?.queue !== 'aram-mayhem') {
+    throw new Error(`${jsonOutput}: meta.queue is ${payload?.meta?.queue}, expected aram-mayhem`)
+  }
+  if (!Array.isArray(payload.augments) || payload.augments.length === 0) {
+    throw new Error(`${jsonOutput}: augments must be a non-empty array`)
+  }
+  const ids = new Set()
+  for (const augment of payload.augments) {
+    if (!Number.isFinite(augment?.id)) {
+      throw new Error(`${jsonOutput}: augment has invalid id (${augment?.id})`)
+    }
+    if (ids.has(augment.id)) {
+      throw new Error(`${jsonOutput}: duplicate augment id ${augment.id}`)
+    }
+    ids.add(augment.id)
+    if (typeof augment.name !== 'string' || !augment.name.trim()) {
+      throw new Error(`${jsonOutput}: augment ${augment.id} has empty name`)
+    }
+    if (typeof augment.iconUrl !== 'string' || !augment.iconUrl.trim()) {
+      throw new Error(`${jsonOutput}: augment ${augment.id} has empty iconUrl`)
+    }
+    if (typeof augment.rarity !== 'string' || !augment.rarity.trim()) {
+      throw new Error(`${jsonOutput}: augment ${augment.id} is missing rarity`)
+    }
+  }
+}
+
+if (check && fromCache) {
+  // Pure cache self-validation: re-validate the committed snapshot against the
+  // contract without any network fetch, so the check passes offline / in CI.
+  const current = JSON.parse(await readFile(jsonOutput, 'utf8'))
+  validateCache(current)
+  console.log(`Validated ${jsonOutput} from cache (${current.augments.length} augments)`)
+} else if (check) {
   // Re-derive the expected JSON straight from the live source and compare it
   // against the on-disk file (ignoring the volatile collectedAt timestamp), so
   // the check fails whenever the committed snapshot drifts from the source.
