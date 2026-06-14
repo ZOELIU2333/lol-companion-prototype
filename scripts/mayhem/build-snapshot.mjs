@@ -20,7 +20,17 @@ function quote(value) {
 }
 
 async function readJson(path) {
-  return JSON.parse(await readFile(path, 'utf8'))
+  let raw
+  try {
+    raw = await readFile(path, 'utf8')
+  } catch (err) {
+    throw new Error(`failed to read ${path}: ${err.message}`)
+  }
+  try {
+    return JSON.parse(raw)
+  } catch (err) {
+    throw new Error(`failed to parse ${path}: ${err.message}`)
+  }
 }
 
 function isUnavailable(payload) {
