@@ -38,7 +38,7 @@ jobs:
         run: npm ci --registry=https://registry.npmjs.org
 
       - name: Test frontend and data adapters
-        run: npm run test
+        run: npm run test -- --reporter=default --reporter=github-actions
 
       - name: Check imported arena augment metadata
         run: |
