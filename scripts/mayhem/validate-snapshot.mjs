@@ -2,16 +2,15 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { argValue, hasFlag, readJson } from './shared.mjs'
 
-// 快照质量门禁。区分两类问题：
-// - 硬失败（结构/版本/口径错误）：进程退出非 0，CI 必须红。
-// - 软告警（聚合站点离线）：单站点抓取失败属正常，只打印告警、退出 0，
-//   快照仍按 source 健康如实记录离线状态（实施计划 Task 9 Step 4 约定）。
+// 快照质量门禁。单站点离线可以告警，但发布快照必须至少有一个在线
+// 聚合来源和一条真实强度推荐，避免“CI 全绿、应用只有空数据”。
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDir, '..', '..')
 
 const current = hasFlag('--current')
 const explicitPatch = argValue('--patch', null)
+const allowEmptyAggregate = hasFlag('--allow-empty-aggregate')
 
 const currentPatch = await readJson(resolve(repoRoot, 'data/mayhem/current-patch.json'))
 const patch = explicitPatch ?? (current ? currentPatch.patch : '26.12')
@@ -35,8 +34,16 @@ hard(underSampled.length === 0, `${underSampled.length} off-meta entries below 5
 const hasOnlineAggregate = (snapshot.sources ?? []).some(
   (source) => source.kind === 'aggregate' && source.status === 'online',
 )
-if (!hasOnlineAggregate) {
+const strength = snapshot.recommendations?.strength ?? []
+if (allowEmptyAggregate && !hasOnlineAggregate) {
   warnings.push('no aggregate source is online; strength/off-meta recommendations rely on official metadata only')
+} else {
+  hard(hasOnlineAggregate, 'at least one aggregate source must be online')
+  hard(strength.length > 0, 'snapshot must contain at least one data-backed strength recommendation')
+  hard(
+    strength.every((entry) => entry.winRate !== null && entry.sourceCount > 0),
+    'every strength recommendation must have a real win rate and source count',
+  )
 }
 
 for (const source of snapshot.sources ?? []) {
@@ -46,7 +53,7 @@ for (const source of snapshot.sources ?? []) {
 }
 
 console.log(`Validated data/mayhem/${patch}/snapshot.json (patch ${snapshot.patch}, queue ${snapshot.queue}).`)
-console.log(`  strength: ${snapshot.recommendations?.strength?.length ?? 0}, off-meta: ${offMeta.length}, completeness: ${snapshot.completeness}`)
+console.log(`  strength: ${strength.length}, off-meta: ${offMeta.length}, completeness: ${snapshot.completeness}`)
 
 for (const warning of warnings) {
   console.warn(`  WARN: ${warning}`)

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mockMatches } from '../data/mockMatches'
+import { mayhemSnapshot } from '../data/mayhemSnapshot'
 import { createBuildRecommendation, createRecommendations, rankAugments } from './recommendations'
 
 const match = mockMatches[0]
@@ -50,6 +51,28 @@ describe('recommendation rules', () => {
 
     expect(ranked.length).toBeGreaterThan(0)
     expect(ranked.every((entry) => entry.dataSourceLabel === '本地规则兜底 · 非版本统计')).toBe(true)
+  })
+
+  it('uses real snapshot evidence when live candidate ids are available', () => {
+    const candidateAugmentIds = mayhemSnapshot.recommendations.strength
+      .slice(0, 3)
+      .map((entry) => entry.augmentId)
+    const liveMatch = {
+      ...match,
+      liveState: {
+        ...match.liveState,
+        selectedAugmentIds: [],
+        candidateAugmentIds,
+        isLiveDataAuthoritative: true,
+      },
+    }
+
+    const ranked = rankAugments(liveMatch, champion)
+
+    expect(ranked).toHaveLength(3)
+    expect(ranked.every((entry) => entry.dataSourceLabel.includes('版本聚合'))).toBe(true)
+    expect(ranked.every((entry) => entry.mayhemConfidence === 'low')).toBe(true)
+    expect(ranked.every((entry) => entry.mayhemGames === 0)).toBe(true)
   })
 
   it('creates an augment-aware item icon plan for live hex recommendations', () => {

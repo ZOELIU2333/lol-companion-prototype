@@ -225,20 +225,24 @@ function rankAugmentsByTagRules(match: Match, champion: Champion): AugmentRecomm
 }
 
 /**
- * 强化排序入口：优先查 26.12 快照里的当前候选；只有当快照缺失这些候选时，
- * 才回退到本地标签规则（dataSourceLabel = 本地规则兜底 · 非版本统计）。
+ * 强化排序入口：实时模式只接受 Live Client 提供的数字候选 id，并要求快照覆盖；
+ * Demo 模式的文案 id 无法可信映射时才回退到本地标签规则。
  *
- * 现阶段 mock 候选的字符串 id 与官方数字 id 没有可信映射，因此实际总是走兜底；
- * 一旦 Task 7 把真实数字 id 接进来，本入口会用快照分数对候选重排并标注版本来源。
+ * 真实候选没有统计覆盖时返回空列表，由 UI 显示等待状态，不把 Demo 推荐冒充实时数据。
  */
 export function rankAugments(
   match: Match,
   champion: Champion,
   mayhemMode: MayhemRecommendationMode = 'strength',
 ): AugmentRecommendation[] {
-  const resolvedIds = match.augmentCandidates.map((augment) =>
-    resolveMayhemAugmentId(augment.id, mayhemSnapshot),
-  )
+  const hasLiveCandidates =
+    match.liveState.isLiveDataAuthoritative &&
+    match.liveState.candidateAugmentIds.length > 0
+  const resolvedIds = hasLiveCandidates
+    ? match.liveState.candidateAugmentIds
+    : match.augmentCandidates.map((augment) =>
+        resolveMayhemAugmentId(augment.id, mayhemSnapshot),
+      )
   const allResolved = resolvedIds.every((id): id is number => id !== null)
   const modeEntries =
     mayhemMode === 'off-meta'
@@ -249,41 +253,54 @@ export function rankAugments(
     resolvedIds.every((id) => modeEntries.some((entry) => entry.augmentId === id))
 
   if (!coveredBySnapshot) {
-    return rankAugmentsByTagRules(match, champion)
+    return hasLiveCandidates ? [] : rankAugmentsByTagRules(match, champion)
   }
 
   const ranked = rankMayhemCandidates({
     mode: mayhemMode,
-    // Champion.id 现在是英雄名字符串，Number() 会得到 NaN。本分支当前不可达（见上方注释），
-    // Task 7 接入真实数字 id 时必须先做 英雄名→数字 映射并兜住 NaN，否则 championFit 全为 NaN。
-    championId: Number(champion.id),
-    selectedAugmentIds: [],
+    // The snapshot currently has no champion-specific evidence, so scoring deliberately
+    // ignores this value until a real champion-id keyed source is available.
+    championId: 0,
+    selectedAugmentIds: match.liveState.selectedAugmentIds,
     candidateAugmentIds: resolvedIds.filter((id): id is number => id !== null),
     snapshot: mayhemSnapshot,
   })
-  const orderByAugmentId = new Map(ranked.map((entry, index) => [entry.augmentId, index]))
-  const numericIdByCandidate = new Map(
-    match.augmentCandidates.map((augment, index) => [augment.id, resolvedIds[index]]),
-  )
   const evidenceByAugmentId = new Map(modeEntries.map((entry) => [entry.augmentId, entry]))
+  const metaByAugmentId = new Map(mayhemSnapshot.augments.map((entry) => [entry.id, entry]))
 
-  return rankAugmentsByTagRules(match, champion)
-    .map((recommendation) => {
-      const numericId = numericIdByCandidate.get(recommendation.id) ?? undefined
-      const evidence = numericId !== undefined ? evidenceByAugmentId.get(numericId) : undefined
-      return {
-        ...recommendation,
-        dataSourceLabel: `26.12 版本聚合 · ${mayhemSnapshot.patch}`,
-        mayhemGames: evidence?.games,
-        mayhemConfidence: evidence?.confidence,
-        observing: evidence?.observing,
-      }
-    })
-    .sort((a, b) => {
-      const aOrder = orderByAugmentId.get(numericIdByCandidate.get(a.id) ?? -1) ?? Number.MAX_SAFE_INTEGER
-      const bOrder = orderByAugmentId.get(numericIdByCandidate.get(b.id) ?? -1) ?? Number.MAX_SAFE_INTEGER
-      return aOrder - bOrder
-    })
+  return ranked.map((entry) => {
+    const meta = metaByAugmentId.get(entry.augmentId)
+    const evidence = evidenceByAugmentId.get(entry.augmentId)
+    const tier =
+      meta?.rarity === 'silver' || meta?.rarity === 'gold' || meta?.rarity === 'prismatic'
+        ? meta.rarity
+        : 'gold'
+    const score = Math.round(entry.score * 100)
+
+    return {
+      id: String(entry.augmentId),
+      name: meta?.name ?? `强化 ${entry.augmentId}`,
+      tier,
+      tags: [],
+      currentValue: score,
+      scalingValue: score,
+      note: meta?.description ?? '',
+      score,
+      probability: evidence?.winRate ?? score,
+      dataSourceLabel: `版本聚合 · ${mayhemSnapshot.patch}`,
+      scoreLabel: mayhemMode === 'strength' ? '强度' : '黑科技',
+      scoreReason: entry.reason,
+      comboTags: [],
+      synergy: '暂无英雄专属样本',
+      selectedSynergy: '当前数据源尚未提供已选海克斯组合样本。',
+      selectedSynergyScore: 0,
+      futurePotential: '等待组合样本后评估。',
+      futureCombos: [],
+      mayhemGames: entry.games,
+      mayhemConfidence: entry.confidence,
+      observing: entry.confidence === 'low' || evidence?.observing,
+    }
+  })
 }
 
 export const createRuneRecommendations = getChampionRunePages

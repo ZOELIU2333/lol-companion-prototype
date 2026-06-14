@@ -20,6 +20,9 @@ export function LiveDecisionPanel({ activeMode, match, recommendations }: LiveDe
         <div className="selected-augment-strip">
           <span>已选海克斯</span>
           <div className="selected-augment-list">
+            {recommendations.live.augmentContext.selected.length === 0 && (
+              <span className="status-muted">等待游戏同步</span>
+            )}
             {recommendations.live.augmentContext.selected.map((augment) => {
               const iconUrl = getAugmentIconUrl(augment)
 

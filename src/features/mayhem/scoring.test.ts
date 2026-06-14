@@ -120,7 +120,9 @@ describe('rankMayhemCandidates', () => {
       expect(entry.confidence).toBe('low')
       expect(entry.scoreBreakdown.normalizedWinRate).toBe(0)
     }
-    // championFit / rarity still produce a stable, non-arbitrary order
+    // Rarity still produces a stable order without fabricating champion-specific fit.
     expect(ranked.map((entry) => entry.augmentId)).toEqual([21, 22, 23])
+    expect(ranked.every((entry) => entry.scoreBreakdown.championFit === 0)).toBe(true)
+    expect(ranked.every((entry) => entry.scoreBreakdown.selectedSynergy === 0)).toBe(true)
   })
 })

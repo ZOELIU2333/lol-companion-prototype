@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { parseMetasrcChampionPage } from './import-metasrc.mjs'
 import { normalizeCommunityCandidate } from './import-community-candidates.mjs'
+import { parseAramMayhemAugments } from './import-arammayhem.mjs'
 
 test('parses patch, games, champion win rate and augment names', () => {
   const result = parseMetasrcChampionPage(`
@@ -54,4 +55,24 @@ test('community candidates never become aggregate evidence', () => {
 
   assert.equal(candidate.evidenceType, 'community-candidate')
   assert.equal(candidate.games, null)
+})
+
+test('parses live ARAM Mayhem win and pick rates without inventing sample size', () => {
+  const rows = parseAramMayhemAugments(`
+    <a href="/augments/transmute-prismatic" class="augment-rank-row"
+      data-name="transmute: prismatic transmute: prismatic"
+      data-rarity="gold" data-availability="live" data-live-rank="1">
+      <img alt="Transmute: Prismatic">
+      <div class="text-right text-base font-semibold">67.38%</div>
+      <div class="hidden text-right text-sm tabular-nums">69.86%</div>
+    </a>
+  `)
+
+  assert.deepEqual(rows, [{
+    sourcePath: '/augments/transmute-prismatic',
+    rarity: 'gold',
+    name: 'Transmute: Prismatic',
+    winRate: 67.38,
+    pickRate: 69.86,
+  }])
 })

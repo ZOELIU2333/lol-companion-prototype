@@ -79,6 +79,7 @@ const tsOutput = resolve(repoRoot, 'src', 'data', 'mayhemSnapshot.ts')
 const official = await readJson(resolve(dataDir, 'official-augments.json'))
 const metasrc = await readJson(resolve(dataDir, 'metasrc.json'))
 const opgg = await readJson(resolve(dataDir, 'opgg.json'))
+const arammayhem = await readJson(resolve(dataDir, 'arammayhem.json'))
 const community = await readJson(resolve(dataDir, 'community-candidates.json'))
 
 const augments = official.augments.map((augment) => ({
@@ -104,6 +105,7 @@ sources.push({
 for (const [sourceId, payload] of [
   ['metasrc', metasrc],
   ['opgg', opgg],
+  ['arammayhem', arammayhem],
 ]) {
   const collected = collectAggregateSource(sourceId, payload)
   sources.push(collected.health)

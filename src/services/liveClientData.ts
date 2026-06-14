@@ -72,14 +72,12 @@ export function applyLiveClientSnapshotToMatch(match: Match, snapshot: LiveClien
   const championText = snapshot.championName ? `${snapshot.championName} ` : ''
 
   const liveSelectedAugmentNames = snapshot.selectedAugmentNames ?? []
+  const liveSelectedAugmentIds = snapshot.selectedAugmentIds ?? []
   const liveCandidateAugmentIds = snapshot.candidateAugmentIds ?? []
-  // Empty arrays mean Live Client Data did not expose Mayhem augment state, so we keep the
-  // demo scenario data and mark the projection non-authoritative; the UI then shows the
-  // "waiting for candidate sync" state instead of presenting demo candidates as live.
-  const isLiveDataAuthoritative = liveSelectedAugmentNames.length > 0 || liveCandidateAugmentIds.length > 0
-  const selectedAugments = liveSelectedAugmentNames.length > 0
-    ? liveSelectedAugmentNames
-    : match.liveState.selectedAugments
+  const isLiveDataAuthoritative =
+    liveSelectedAugmentNames.length > 0 ||
+    liveSelectedAugmentIds.length > 0 ||
+    liveCandidateAugmentIds.length > 0
 
   return {
     ...match,
@@ -89,7 +87,8 @@ export function applyLiveClientSnapshotToMatch(match: Match, snapshot: LiveClien
       minute,
       goldOnHand: currentGold,
       currentItems: itemLabels,
-      selectedAugments,
+      selectedAugments: liveSelectedAugmentNames,
+      selectedAugmentIds: liveSelectedAugmentIds,
       candidateAugmentIds: liveCandidateAugmentIds,
       isLiveDataAuthoritative,
       currentSituation: `${championText}${levelText}，当前金币 ${currentGold}。`,

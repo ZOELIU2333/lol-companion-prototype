@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "queue": "aram-mayhem",
   "patch": "26.12",
-  "generatedAt": "2026-06-14T09:54:08.684Z",
-  "expiresAt": "2026-06-15T21:54:08.684Z",
-  "completeness": 0.5,
+  "generatedAt": "2026-06-14T16:47:15.702Z",
+  "expiresAt": "2026-06-16T04:47:15.702Z",
+  "completeness": 0.6666666666666666,
   "officialCoverage": 1,
   "sources": [
     {
@@ -26,6 +26,12 @@
       "status": "offline",
       "reason": "page reachable but no usable Mayhem augment records exposed (client-rendered or structure changed)",
       "sourceUrl": "https://op.gg/lol/modes/aram-mayhem"
+    },
+    {
+      "sourceId": "arammayhem",
+      "kind": "aggregate",
+      "status": "online",
+      "sourceUrl": "https://arammayhem.com/augments/"
     },
     {
       "sourceId": "community",
@@ -1396,7 +1402,2048 @@
     }
   ],
   "recommendations": {
-    "strength": [],
+    "strength": [
+      {
+        "augmentId": 1238,
+        "score": 67.38,
+        "winRate": 67.38,
+        "games": 0,
+        "pickRate": 69.86,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/transmute-prismatic"
+        ]
+      },
+      {
+        "augmentId": 2100,
+        "score": 64.41,
+        "winRate": 64.41,
+        "games": 0,
+        "pickRate": 70.14,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/pursuit-of-haste"
+        ]
+      },
+      {
+        "augmentId": 2095,
+        "score": 63.62,
+        "winRate": 63.62,
+        "games": 0,
+        "pickRate": 51.72,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/high-roller"
+        ]
+      },
+      {
+        "augmentId": 1353,
+        "score": 61.91,
+        "winRate": 61.91,
+        "games": 0,
+        "pickRate": 48.31,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/tank-engine"
+        ]
+      },
+      {
+        "augmentId": 2087,
+        "score": 61.41,
+        "winRate": 61.41,
+        "games": 0,
+        "pickRate": 61.08,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/archmage"
+        ]
+      },
+      {
+        "augmentId": 1134,
+        "score": 60.68,
+        "winRate": 60.68,
+        "games": 0,
+        "pickRate": 13.25,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/draw-your-sword"
+        ]
+      },
+      {
+        "augmentId": 1204,
+        "score": 59.88,
+        "winRate": 59.88,
+        "games": 0,
+        "pickRate": 18.35,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/stackosaurusrex"
+        ]
+      },
+      {
+        "augmentId": 1152,
+        "score": 59.77000000000001,
+        "winRate": 59.77000000000001,
+        "games": 0,
+        "pickRate": 30.429999999999996,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/quest-steel-your-heart"
+        ]
+      },
+      {
+        "augmentId": 1336,
+        "score": 59.75,
+        "winRate": 59.75,
+        "games": 0,
+        "pickRate": 41.56,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/upgrade-infinity-edge"
+        ]
+      },
+      {
+        "augmentId": 1390,
+        "score": 58.52000000000001,
+        "winRate": 58.52000000000001,
+        "games": 0,
+        "pickRate": 33.78,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/phenomenal-evil"
+        ]
+      },
+      {
+        "augmentId": 1181,
+        "score": 58.03,
+        "winRate": 58.03,
+        "games": 0,
+        "pickRate": 36.24,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/heavy-hitter"
+        ]
+      },
+      {
+        "augmentId": 1138,
+        "score": 57.87,
+        "winRate": 57.87,
+        "games": 0,
+        "pickRate": 48.49,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/goredrink"
+        ]
+      },
+      {
+        "augmentId": 1030,
+        "score": 57.83,
+        "winRate": 57.83,
+        "games": 0,
+        "pickRate": 38.91,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/eureka"
+        ]
+      },
+      {
+        "augmentId": 2006,
+        "score": 57.75,
+        "winRate": 57.75,
+        "games": 0,
+        "pickRate": 45.32,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/dropkick"
+        ]
+      },
+      {
+        "augmentId": 1045,
+        "score": 57.36,
+        "winRate": 57.36,
+        "games": 0,
+        "pickRate": 27.42,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/infernal-conduit"
+        ]
+      },
+      {
+        "augmentId": 1005,
+        "score": 57.12,
+        "winRate": 57.12,
+        "games": 0,
+        "pickRate": 3.21,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/wee-woo-wee-woo"
+        ]
+      },
+      {
+        "augmentId": 1007,
+        "score": 56.92,
+        "winRate": 56.92,
+        "games": 0,
+        "pickRate": 37.83,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/blunt-force"
+        ]
+      },
+      {
+        "augmentId": 2073,
+        "score": 56.83,
+        "winRate": 56.83,
+        "games": 0,
+        "pickRate": 38.19,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/siphon"
+        ]
+      },
+      {
+        "augmentId": 1195,
+        "score": 56.81,
+        "winRate": 56.81,
+        "games": 0,
+        "pickRate": 34.43,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/giant-slayer"
+        ]
+      },
+      {
+        "augmentId": 1403,
+        "score": 56.75,
+        "winRate": 56.75,
+        "games": 0,
+        "pickRate": 31,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/stats-on-stats"
+        ]
+      },
+      {
+        "augmentId": 1068,
+        "score": 56.69,
+        "winRate": 56.69,
+        "games": 0,
+        "pickRate": 37.18,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/recursion"
+        ]
+      },
+      {
+        "augmentId": 1029,
+        "score": 56.6,
+        "winRate": 56.6,
+        "games": 0,
+        "pickRate": 41.81,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/ethereal-weapon"
+        ]
+      },
+      {
+        "augmentId": 1041,
+        "score": 56.56,
+        "winRate": 56.56,
+        "games": 0,
+        "pickRate": 29.86,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/goliath"
+        ]
+      },
+      {
+        "augmentId": 1095,
+        "score": 56.26,
+        "winRate": 56.26,
+        "games": 0,
+        "pickRate": 2.12,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/windspeakers-blessing"
+        ]
+      },
+      {
+        "augmentId": 1133,
+        "score": 56.22,
+        "winRate": 56.22,
+        "games": 0,
+        "pickRate": 38.29,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/magic-missile"
+        ]
+      },
+      {
+        "augmentId": 1071,
+        "score": 56.1,
+        "winRate": 56.1,
+        "games": 0,
+        "pickRate": 36.62,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/scopier-weapons"
+        ]
+      },
+      {
+        "augmentId": 1004,
+        "score": 55.99,
+        "winRate": 55.99,
+        "games": 0,
+        "pickRate": 18.25,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/back-to-basics"
+        ]
+      },
+      {
+        "augmentId": 1225,
+        "score": 55.83,
+        "winRate": 55.83,
+        "games": 0,
+        "pickRate": 25.65,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/dual-wield"
+        ]
+      },
+      {
+        "augmentId": 1053,
+        "score": 55.64,
+        "winRate": 55.64,
+        "games": 0,
+        "pickRate": 14.86,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/mad-scientist"
+        ]
+      },
+      {
+        "augmentId": 1038,
+        "score": 55.37,
+        "winRate": 55.37,
+        "games": 0,
+        "pickRate": 14.17,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/from-beginning-to-end"
+        ]
+      },
+      {
+        "augmentId": 1243,
+        "score": 55.27,
+        "winRate": 55.27,
+        "games": 0,
+        "pickRate": 37.6,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/transmute-chaos"
+        ]
+      },
+      {
+        "augmentId": 1058,
+        "score": 55.1,
+        "winRate": 55.1,
+        "games": 0,
+        "pickRate": 24.54,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/mystic-punch"
+        ]
+      },
+      {
+        "augmentId": 1060,
+        "score": 55.08,
+        "winRate": 55.08,
+        "games": 0,
+        "pickRate": 27.53,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/ocean-soul"
+        ]
+      },
+      {
+        "augmentId": 1013,
+        "score": 55.02,
+        "winRate": 55.02,
+        "games": 0,
+        "pickRate": 27.37,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/celestial-body"
+        ]
+      },
+      {
+        "augmentId": 1022,
+        "score": 54.87,
+        "winRate": 54.87,
+        "games": 0,
+        "pickRate": 36.01,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/deft"
+        ]
+      },
+      {
+        "augmentId": 1319,
+        "score": 54.75,
+        "winRate": 54.75,
+        "games": 0,
+        "pickRate": 16.84,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/upgrade-immolate"
+        ]
+      },
+      {
+        "augmentId": 1156,
+        "score": 54.72,
+        "winRate": 54.72,
+        "games": 0,
+        "pickRate": 15.3,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/quest-wooglets-witchcap"
+        ]
+      },
+      {
+        "augmentId": 1073,
+        "score": 54.69,
+        "winRate": 54.69,
+        "games": 0,
+        "pickRate": 22.1,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/shadow-runner"
+        ]
+      },
+      {
+        "augmentId": 1105,
+        "score": 54.31,
+        "winRate": 54.31,
+        "games": 0,
+        "pickRate": 17.56,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/homeguard"
+        ]
+      },
+      {
+        "augmentId": 1136,
+        "score": 54.25,
+        "winRate": 54.25,
+        "games": 0,
+        "pickRate": 31.36,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/slap-around"
+        ]
+      },
+      {
+        "augmentId": 1205,
+        "score": 54.2,
+        "winRate": 54.2,
+        "games": 0,
+        "pickRate": 29.55,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/adapt"
+        ]
+      },
+      {
+        "augmentId": 1305,
+        "score": 54.17,
+        "winRate": 54.17,
+        "games": 0,
+        "pickRate": 24.43,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/leg-day"
+        ]
+      },
+      {
+        "augmentId": 1056,
+        "score": 54.12,
+        "winRate": 54.12,
+        "games": 0,
+        "pickRate": 23,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/mind-to-matter"
+        ]
+      },
+      {
+        "augmentId": 1103,
+        "score": 54.06,
+        "winRate": 54.06,
+        "games": 0,
+        "pickRate": 31.629999999999995,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/bread-and-butter"
+        ]
+      },
+      {
+        "augmentId": 1206,
+        "score": 54.05,
+        "winRate": 54.05,
+        "games": 0,
+        "pickRate": 20.4,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/escapade"
+        ]
+      },
+      {
+        "augmentId": 1097,
+        "score": 53.85,
+        "winRate": 53.85,
+        "games": 0,
+        "pickRate": 31.060000000000002,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/witchful-thinking"
+        ]
+      },
+      {
+        "augmentId": 1214,
+        "score": 53.78,
+        "winRate": 53.78,
+        "games": 0,
+        "pickRate": 16.85,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/spin-to-win"
+        ]
+      },
+      {
+        "augmentId": 1320,
+        "score": 53.77,
+        "winRate": 53.77,
+        "games": 0,
+        "pickRate": 35.74,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/upgrade-collector"
+        ]
+      },
+      {
+        "augmentId": 1063,
+        "score": 53.35,
+        "winRate": 53.35,
+        "games": 0,
+        "pickRate": 11.61,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/outlaws-grit"
+        ]
+      },
+      {
+        "augmentId": 1151,
+        "score": 53.29,
+        "winRate": 53.29,
+        "games": 0,
+        "pickRate": 28.22,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/bread-and-cheese"
+        ]
+      },
+      {
+        "augmentId": 12317,
+        "score": 53.28,
+        "winRate": 53.28,
+        "games": 0,
+        "pickRate": 28.02,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/pandorasbox"
+        ]
+      },
+      {
+        "augmentId": 1044,
+        "score": 53.21,
+        "winRate": 53.21,
+        "games": 0,
+        "pickRate": 25.22,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/ice-cold"
+        ]
+      },
+      {
+        "augmentId": 2098,
+        "score": 53.04,
+        "winRate": 53.04,
+        "games": 0,
+        "pickRate": 24.23,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/en-passant"
+        ]
+      },
+      {
+        "augmentId": 1028,
+        "score": 53.03,
+        "winRate": 53.03,
+        "games": 0,
+        "pickRate": 14.74,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/erosion"
+        ]
+      },
+      {
+        "augmentId": 1154,
+        "score": 52.98,
+        "winRate": 52.98,
+        "games": 0,
+        "pickRate": 12.31,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/quest-urfs-champion"
+        ]
+      },
+      {
+        "augmentId": 1062,
+        "score": 52.93,
+        "winRate": 52.93,
+        "games": 0,
+        "pickRate": 10.08,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/omni-soul"
+        ]
+      },
+      {
+        "augmentId": 1129,
+        "score": 52.78,
+        "winRate": 52.78,
+        "games": 0,
+        "pickRate": 16.69,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/marksmage"
+        ]
+      },
+      {
+        "augmentId": 1322,
+        "score": 52.77,
+        "winRate": 52.77,
+        "games": 0,
+        "pickRate": 22.25,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/get-excited"
+        ]
+      },
+      {
+        "augmentId": 1402,
+        "score": 52.76,
+        "winRate": 52.76,
+        "games": 0,
+        "pickRate": 13.38,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/stats-on-stats-on-stats"
+        ]
+      },
+      {
+        "augmentId": 1026,
+        "score": 52.75,
+        "winRate": 52.75,
+        "games": 0,
+        "pickRate": 9.81,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/dont-blink"
+        ]
+      },
+      {
+        "augmentId": 2089,
+        "score": 52.75,
+        "winRate": 52.75,
+        "games": 0,
+        "pickRate": 29.5,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/yowch-my-coins"
+        ]
+      },
+      {
+        "augmentId": 1098,
+        "score": 52.72,
+        "winRate": 52.72,
+        "games": 0,
+        "pickRate": 15.72,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/with-haste"
+        ]
+      },
+      {
+        "augmentId": 1180,
+        "score": 52.66,
+        "winRate": 52.66,
+        "games": 0,
+        "pickRate": 9.6,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/big-brain"
+        ]
+      },
+      {
+        "augmentId": 1113,
+        "score": 52.55,
+        "winRate": 52.55,
+        "games": 0,
+        "pickRate": 26.09,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/skilled-sniper"
+        ]
+      },
+      {
+        "augmentId": 2103,
+        "score": 52.53,
+        "winRate": 52.53,
+        "games": 0,
+        "pickRate": 27.25,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/from-downtown"
+        ]
+      },
+      {
+        "augmentId": 1996,
+        "score": 52.52,
+        "winRate": 52.52,
+        "games": 0,
+        "pickRate": 9.5,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/upgrade-sheen"
+        ]
+      },
+      {
+        "augmentId": 1020,
+        "score": 52.49,
+        "winRate": 52.49,
+        "games": 0,
+        "pickRate": 14.51,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/dawnbringers-resolve"
+        ]
+      },
+      {
+        "augmentId": 1404,
+        "score": 52.27,
+        "winRate": 52.27,
+        "games": 0,
+        "pickRate": 18.84,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/stats"
+        ]
+      },
+      {
+        "augmentId": 1318,
+        "score": 52.24,
+        "winRate": 52.24,
+        "games": 0,
+        "pickRate": 17.56,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/upgrade-zhonyas"
+        ]
+      },
+      {
+        "augmentId": 1150,
+        "score": 52.23,
+        "winRate": 52.23,
+        "games": 0,
+        "pickRate": 25.66,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/bread-and-jam"
+        ]
+      },
+      {
+        "augmentId": 1308,
+        "score": 52.12,
+        "winRate": 52.12,
+        "games": 0,
+        "pickRate": 10.8,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/firefox"
+        ]
+      },
+      {
+        "augmentId": 1081,
+        "score": 51.99,
+        "winRate": 51.99,
+        "games": 0,
+        "pickRate": 15.530000000000001,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/tap-dancer"
+        ]
+      },
+      {
+        "augmentId": 1311,
+        "score": 51.75,
+        "winRate": 51.75,
+        "games": 0,
+        "pickRate": 15.26,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/overflow"
+        ]
+      },
+      {
+        "augmentId": 2018,
+        "score": 51.75,
+        "winRate": 51.75,
+        "games": 0,
+        "pickRate": 27.51,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/purist-caster"
+        ]
+      },
+      {
+        "augmentId": 1002,
+        "score": 51.63,
+        "winRate": 51.63,
+        "games": 0,
+        "pickRate": 15.08,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/apex-inventor"
+        ]
+      },
+      {
+        "augmentId": 1170,
+        "score": 51.52,
+        "winRate": 51.52,
+        "games": 0,
+        "pickRate": 25.61,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/scoped-weapons"
+        ]
+      },
+      {
+        "augmentId": 1220,
+        "score": 51.49,
+        "winRate": 51.49,
+        "games": 0,
+        "pickRate": 16.81,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/fan-the-hammer"
+        ]
+      },
+      {
+        "augmentId": 1115,
+        "score": 51.43,
+        "winRate": 51.43,
+        "games": 0,
+        "pickRate": 18.76,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/scopiest-weapons"
+        ]
+      },
+      {
+        "augmentId": 1046,
+        "score": 51.37,
+        "winRate": 51.37,
+        "games": 0,
+        "pickRate": 21.25,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/infernal-soul"
+        ]
+      },
+      {
+        "augmentId": 1051,
+        "score": 51.36,
+        "winRate": 51.36,
+        "games": 0,
+        "pickRate": 13.67,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/light-em-up"
+        ]
+      },
+      {
+        "augmentId": 1025,
+        "score": 51.17,
+        "winRate": 51.17,
+        "games": 0,
+        "pickRate": 26.51,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/dive-bomber"
+        ]
+      },
+      {
+        "augmentId": 1084,
+        "score": 51.15,
+        "winRate": 51.15,
+        "games": 0,
+        "pickRate": 23.7,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/thread-the-needle"
+        ]
+      },
+      {
+        "augmentId": 1323,
+        "score": 51.03,
+        "winRate": 51.03,
+        "games": 0,
+        "pickRate": 10.32,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/cruelty"
+        ]
+      },
+      {
+        "augmentId": 1087,
+        "score": 50.96,
+        "winRate": 50.96,
+        "games": 0,
+        "pickRate": 19.33,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/typhoon"
+        ]
+      },
+      {
+        "augmentId": 1104,
+        "score": 50.93,
+        "winRate": 50.93,
+        "games": 0,
+        "pickRate": 4.1,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/minionmancer"
+        ]
+      },
+      {
+        "augmentId": 1018,
+        "score": 50.72,
+        "winRate": 50.72,
+        "games": 0,
+        "pickRate": 10.4,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/courage-of-the-colossus"
+        ]
+      },
+      {
+        "augmentId": 1054,
+        "score": 50.69,
+        "winRate": 50.69,
+        "games": 0,
+        "pickRate": 7.02,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/master-of-duality"
+        ]
+      },
+      {
+        "augmentId": 1076,
+        "score": 50.55,
+        "winRate": 50.55,
+        "games": 0,
+        "pickRate": 4.59,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/sonic-boom"
+        ]
+      },
+      {
+        "augmentId": 1019,
+        "score": 50.53,
+        "winRate": 50.53,
+        "games": 0,
+        "pickRate": 17.63,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/dashing"
+        ]
+      },
+      {
+        "augmentId": 1037,
+        "score": 50.44,
+        "winRate": 50.44,
+        "games": 0,
+        "pickRate": 5.94,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/first-aid-kit"
+        ]
+      },
+      {
+        "augmentId": 1079,
+        "score": 50.2,
+        "winRate": 50.2,
+        "games": 0,
+        "pickRate": 9.57,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/symphony-of-war"
+        ]
+      },
+      {
+        "augmentId": 1036,
+        "score": 50.08,
+        "winRate": 50.08,
+        "games": 0,
+        "pickRate": 11.94,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/firebrand"
+        ]
+      },
+      {
+        "augmentId": 1211,
+        "score": 50,
+        "winRate": 50,
+        "games": 0,
+        "pickRate": 19.39,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/its-killing-time"
+        ]
+      },
+      {
+        "augmentId": 2088,
+        "score": 49.59,
+        "winRate": 49.59,
+        "games": 0,
+        "pickRate": 26.02,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/snowday"
+        ]
+      },
+      {
+        "augmentId": 1194,
+        "score": 49.56,
+        "winRate": 49.56,
+        "games": 0,
+        "pickRate": 13.73,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/fey-magic"
+        ]
+      },
+      {
+        "augmentId": 1061,
+        "score": 49.49,
+        "winRate": 49.49,
+        "games": 0,
+        "pickRate": 6.09,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/ok-boomerang"
+        ]
+      },
+      {
+        "augmentId": 1345,
+        "score": 49.41,
+        "winRate": 49.41,
+        "games": 0,
+        "pickRate": 12.69,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/spiritual-purification"
+        ]
+      },
+      {
+        "augmentId": 2004,
+        "score": 49.4,
+        "winRate": 49.4,
+        "games": 0,
+        "pickRate": 3.9099999999999997,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/empowered-by-the-faithful"
+        ]
+      },
+      {
+        "augmentId": 1015,
+        "score": 49.24,
+        "winRate": 49.24,
+        "games": 0,
+        "pickRate": 1.33,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/circle-of-death"
+        ]
+      },
+      {
+        "augmentId": 1057,
+        "score": 49.2,
+        "winRate": 49.2,
+        "games": 0,
+        "pickRate": 6.04,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/mountainsoul"
+        ]
+      },
+      {
+        "augmentId": 1141,
+        "score": 49.2,
+        "winRate": 49.2,
+        "games": 0,
+        "pickRate": 3.52,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/all-for-you"
+        ]
+      },
+      {
+        "augmentId": 1088,
+        "score": 49.02,
+        "winRate": 49.02,
+        "games": 0,
+        "pickRate": 15.67,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/ultimate-revolution"
+        ]
+      },
+      {
+        "augmentId": 1324,
+        "score": 49.02,
+        "winRate": 49.02,
+        "games": 0,
+        "pickRate": 2.17,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/protein-shake"
+        ]
+      },
+      {
+        "augmentId": 1112,
+        "score": 48.99,
+        "winRate": 48.99,
+        "games": 0,
+        "pickRate": 18.35,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/ultimate-unstoppable"
+        ]
+      },
+      {
+        "augmentId": 1413,
+        "score": 48.96,
+        "winRate": 48.96,
+        "games": 0,
+        "pickRate": 6.49,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/stuck-in-here-with-me"
+        ]
+      },
+      {
+        "augmentId": 1072,
+        "score": 48.93,
+        "winRate": 48.93,
+        "games": 0,
+        "pickRate": 7.49,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/searing-dawn"
+        ]
+      },
+      {
+        "augmentId": 1006,
+        "score": 48.87,
+        "winRate": 48.87,
+        "games": 0,
+        "pickRate": 9.04,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/blade-waltz"
+        ]
+      },
+      {
+        "augmentId": 2107,
+        "score": 48.85,
+        "winRate": 48.85,
+        "games": 0,
+        "pickRate": 2.44,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/hellbent"
+        ]
+      },
+      {
+        "augmentId": 1187,
+        "score": 48.79,
+        "winRate": 48.79,
+        "games": 0,
+        "pickRate": 0.3,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/flashbang"
+        ]
+      },
+      {
+        "augmentId": 2005,
+        "score": 48.78,
+        "winRate": 48.78,
+        "games": 0,
+        "pickRate": 8.44,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/triggered-inferno"
+        ]
+      },
+      {
+        "augmentId": 1301,
+        "score": 48.5,
+        "winRate": 48.5,
+        "games": 0,
+        "pickRate": 11.88,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/divine-intervention"
+        ]
+      },
+      {
+        "augmentId": 1149,
+        "score": 48.44,
+        "winRate": 48.44,
+        "games": 0,
+        "pickRate": 6.56,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/impassable"
+        ]
+      },
+      {
+        "augmentId": 2065,
+        "score": 48.44,
+        "winRate": 48.44,
+        "games": 0,
+        "pickRate": 8.35,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/terror"
+        ]
+      },
+      {
+        "augmentId": 2016,
+        "score": 48.22,
+        "winRate": 48.22,
+        "games": 0,
+        "pickRate": 10.49,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/juiced"
+        ]
+      },
+      {
+        "augmentId": 1011,
+        "score": 48,
+        "winRate": 48,
+        "games": 0,
+        "pickRate": 9.37,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/cant-touch-this"
+        ]
+      },
+      {
+        "augmentId": 2099,
+        "score": 47.92,
+        "winRate": 47.92,
+        "games": 0,
+        "pickRate": 15.199999999999998,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/rite-of-ascension"
+        ]
+      },
+      {
+        "augmentId": 1074,
+        "score": 47.83,
+        "winRate": 47.83,
+        "games": 0,
+        "pickRate": 11.36,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/shrink-ray"
+        ]
+      },
+      {
+        "augmentId": 1001,
+        "score": 47.45,
+        "winRate": 47.45,
+        "games": 0,
+        "pickRate": 18.25,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/titans-resolve"
+        ]
+      },
+      {
+        "augmentId": 2055,
+        "score": 45.92,
+        "winRate": 45.92,
+        "games": 0,
+        "pickRate": 20.15,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/multishot"
+        ]
+      },
+      {
+        "augmentId": 2064,
+        "score": 44.24,
+        "winRate": 44.24,
+        "games": 0,
+        "pickRate": 11.06,
+        "sourceCount": 1,
+        "confidence": "low",
+        "observing": false,
+        "evidenceType": "aggregate",
+        "sources": [
+          "arammayhem-stats"
+        ],
+        "sourceUrls": [
+          "https://arammayhem.com/augments/quickstep"
+        ]
+      }
+    ],
     "offMeta": []
   }
 }

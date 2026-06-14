@@ -40,6 +40,11 @@ export function AugmentRecommendation({ augments, mode, onModeChange }: AugmentR
         </div>
       </div>
       <div className="augment-list">
+        {augments.length === 0 && (
+          <div className="augment-empty-state">
+            当前游戏接口尚未提供本轮三个候选海克斯，等待同步后再给出数据推荐。
+          </div>
+        )}
         {augments.map((augment, index) => {
           const iconUrl = getAugmentIconUrl(augment.name)
           const sample = typeof augment.mayhemGames === 'number' ? `${augment.mayhemGames} 局` : '样本 —'

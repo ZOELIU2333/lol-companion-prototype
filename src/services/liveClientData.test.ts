@@ -85,12 +85,12 @@ describe('live client data bridge', () => {
     })
 
     expect(live.liveState.selectedAugments).toEqual(['法术苏醒', '现象级邪恶'])
+    expect(live.liveState.selectedAugmentIds).toEqual([11, 12])
     expect(live.liveState.candidateAugmentIds).toEqual([21, 22, 23])
     expect(live.liveState.isLiveDataAuthoritative).toBe(true)
   })
 
-  it('keeps demo augments when the live snapshot exposes no augment data', () => {
-    const demoAugments = mockMatches[0].liveState.selectedAugments
+  it('clears demo augments when a real live snapshot exposes no augment data', () => {
     const live = applyLiveClientSnapshotToMatch(mockMatches[0], {
       gameTime: 600,
       currentItemIds: [3004],
@@ -100,7 +100,8 @@ describe('live client data bridge', () => {
       source: 'live-client-data',
     })
 
-    expect(live.liveState.selectedAugments).toEqual(demoAugments)
+    expect(live.liveState.selectedAugments).toEqual([])
+    expect(live.liveState.selectedAugmentIds).toEqual([])
     expect(live.liveState.candidateAugmentIds).toEqual([])
     expect(live.liveState.isLiveDataAuthoritative).toBe(false)
   })

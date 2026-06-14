@@ -209,6 +209,7 @@ export type LiveState = {
   goldOnHand: number
   currentItems: string[]
   selectedAugments: string[]
+  selectedAugmentIds: number[]
   candidateAugmentIds: number[]
   isLiveDataAuthoritative: boolean
   currentSituation: string

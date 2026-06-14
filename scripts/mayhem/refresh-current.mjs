@@ -35,6 +35,7 @@ console.log(`Refreshing Mayhem data for patch ${patch}`)
 await run(['scripts/mayhem/import-official.mjs', '--patch', patch])
 await run(['scripts/mayhem/import-metasrc.mjs', '--patch', patch], { tolerateFailure: true })
 await run(['scripts/mayhem/import-opgg.mjs', '--patch', patch], { tolerateFailure: true })
+await run(['scripts/mayhem/import-arammayhem.mjs', '--patch', patch], { tolerateFailure: true })
 await run(['scripts/mayhem/import-community-candidates.mjs', '--patch', patch], { tolerateFailure: true })
 await run(['scripts/mayhem/build-snapshot.mjs', '--patch', patch])
 

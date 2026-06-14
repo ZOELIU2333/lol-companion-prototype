@@ -27,7 +27,6 @@ const OFF_META_WEIGHTS = {
 // Deterministic rarity ordering. Strength prizes prismatic ceilings; off-meta prizes the
 // lower-rarity / lower-pick-rate picks that the meta under-explores, so the two modes
 // genuinely weight rarity in opposite directions.
-const RARITY_STRENGTH: Record<string, number> = { prismatic: 1, gold: 0.6, silver: 0.3 }
 const RARITY_OFF_META: Record<string, number> = { silver: 1, gold: 0.6, prismatic: 0.3 }
 
 function clamp01(value: number): number {
@@ -47,13 +46,6 @@ function rarityScore(meta: MayhemAugmentMeta | undefined, table: Record<string, 
   return table[meta.rarity] ?? 0
 }
 
-// A stable, content-free fit signal: champion identity shifts the rarity baseline a hair so
-// the same augment does not score identically for every champion, without inventing stats.
-function championFit(championId: number, rarity: number): number {
-  const nudge = (championId % 7) / 100
-  return clamp01(rarity * 0.85 + nudge)
-}
-
 function deriveConfidence(games: number, sourceCount: number, observing: boolean): MayhemConfidence {
   if (observing) return 'low'
   if (sourceCount >= 2 && games >= 1000) return 'high'
@@ -64,10 +56,10 @@ function deriveConfidence(games: number, sourceCount: number, observing: boolean
 function findRecommendation(
   snapshot: MayhemSnapshot,
   augmentId: number,
-): { rec: MayhemRecommendation | undefined; inStrength: boolean; inOffMeta: boolean } {
+): { rec: MayhemRecommendation | undefined; inOffMeta: boolean } {
   const strength = snapshot.recommendations.strength.find((entry) => entry.augmentId === augmentId)
   const offMeta = snapshot.recommendations.offMeta.find((entry) => entry.augmentId === augmentId)
-  return { rec: strength ?? offMeta, inStrength: Boolean(strength), inOffMeta: Boolean(offMeta) }
+  return { rec: strength ?? offMeta, inOffMeta: Boolean(offMeta) }
 }
 
 function scoreStrength(breakdown: MayhemScoreBreakdown): number {
@@ -111,33 +103,29 @@ function buildReason(args: {
  * 对当前出现的三个候选海克斯做强度 / 黑科技双模型打分。
  *
  * 仅对入参 candidateAugmentIds 评分；缺失版本统计时如实输出 games=0 / sourceCount=0 /
- * confidence=low，绝不伪造胜率或样本，转而由稀有度与英雄契合度驱动确定性排序。
+ * confidence=low，绝不伪造胜率、英雄契合度或组合协同。
  */
 export function rankMayhemCandidates(input: RankMayhemInput): MayhemCandidateScore[] {
   const augmentsById = new Map(input.snapshot.augments.map((meta) => [meta.id, meta]))
 
   const scored = input.candidateAugmentIds.map((augmentId): MayhemCandidateScore => {
     const meta = augmentsById.get(augmentId)
-    const { rec, inStrength, inOffMeta } = findRecommendation(input.snapshot, augmentId)
+    const { rec, inOffMeta } = findRecommendation(input.snapshot, augmentId)
 
     const games = rec?.games ?? 0
     const sourceCount = rec?.sourceCount ?? 0
     const winRate = rec?.winRate ?? null
     const itemIds: number[] = []
 
-    const strengthRarity = rarityScore(meta, RARITY_STRENGTH)
     const offMetaRarity = rarityScore(meta, RARITY_OFF_META)
 
     const normalizedWinRate = winRate === null ? 0 : clamp01(winRate / 100)
     const stability = sampleStability(games)
     const crossSourceStability = clamp01(sourceCount / 3)
 
-    // selectedSynergy: with no aggregate combo data, lean on whether this candidate already
-    // ranks as a strength pick and how many augments are already selected (deeper builds
-    // reward picks that compound). Honest proxy, deterministic, no fabricated win rates.
-    const synergyBase = inStrength ? 0.6 : inOffMeta ? 0.3 : 0
-    const selectedDepth = clamp01(input.selectedAugmentIds.length / 4) * 0.4
-    const selectedSynergy = clamp01(synergyBase + selectedDepth + strengthRarity * 0.1)
+    // Current aggregate records are augment-level only. Until sources expose
+    // champion-specific and selected-combination samples, these components stay zero.
+    const selectedSynergy = 0
 
     // comboLift: off-meta upside proxy — membership in the off-meta list and a healthy
     // win-rate-over-baseline signal lift it, weighted by low-rarity novelty.
@@ -147,10 +135,7 @@ export function rankMayhemCandidates(input: RankMayhemInput): MayhemCandidateSco
     const breakdown: MayhemScoreBreakdown = {
       normalizedWinRate,
       sampleStability: stability,
-      championFit:
-        input.mode === 'strength'
-          ? championFit(input.championId, strengthRarity)
-          : championFit(input.championId, offMetaRarity),
+      championFit: 0,
       selectedSynergy,
       comboLift,
       rarityValue: offMetaRarity,
