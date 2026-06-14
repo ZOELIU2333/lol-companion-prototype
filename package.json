@@ -20,6 +20,9 @@
     "data:arena:augments:check": "node scripts/import-cdragon-arena-augments.mjs --from-cache --check",
     "data:arena:metabot:import": "node scripts/import-metabot-arena-augments.mjs",
     "data:arena:metabot:check": "node scripts/import-metabot-arena-augments.mjs --from-cache --check",
+    "data:mayhem:patch:detect": "node scripts/mayhem/detect-live-patch.mjs",
+    "data:mayhem:official:import": "node scripts/mayhem/import-official.mjs --patch 26.12",
+    "data:mayhem:official:check": "node scripts/mayhem/import-official.mjs --patch 26.12 --from-cache --check",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"

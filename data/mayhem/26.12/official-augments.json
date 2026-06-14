@@ -1,0 +1,1373 @@
+{
+  "meta": {
+    "patch": "26.12",
+    "queue": "aram-mayhem",
+    "sourceIds": [
+      "communitydragon"
+    ],
+    "sourceUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/cherry-augments.json",
+    "collectedAt": "2026-06-14T08:52:50.676Z"
+  },
+  "augments": [
+    {
+      "id": 1001,
+      "apiName": "ImTheJuggernaut",
+      "name": "Titan's Resolve",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/iamthejuggernaut_small.png"
+    },
+    {
+      "id": 1002,
+      "apiName": "ApexInventor",
+      "name": "Apex Inventor",
+      "rarity": "gold",
+      "description": "Gain Item Haste (equivalent to % Item CDR). Item Haste reduces the cooldown %i:cooldown% of all Item Abilities.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/apexinventor_small.png"
+    },
+    {
+      "id": 1004,
+      "apiName": "BacktoBasics",
+      "name": "Back To Basics",
+      "rarity": "prismatic",
+      "description": "Gain increased Ability Damage, Healing, Shielding, and Ability Haste, but you cannot use your Ultimate Ability.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/backtobasics_small.png"
+    },
+    {
+      "id": 1005,
+      "apiName": "WeeWooWeeWoo",
+      "name": "Wee Woo Wee Woo",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/weewooweewoo_small.png"
+    },
+    {
+      "id": 1006,
+      "apiName": "BladeWaltz",
+      "name": "Blade Waltz",
+      "rarity": "prismatic",
+      "description": "Gain the Blade Waltz Summoner Spell. Blade Waltz makes you untargetable while you dash at and damage enemies times.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/bladewaltz_small.png"
+    },
+    {
+      "id": 1007,
+      "apiName": "BluntForce",
+      "name": "Blunt Force",
+      "rarity": "silver",
+      "description": "Gain %i:scaleAD% % Attack Damage.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/bluntforce_small.png"
+    },
+    {
+      "id": 1009,
+      "apiName": "BuffBuddies",
+      "name": "Buff Buddies",
+      "rarity": "silver",
+      "description": "You gain Crest of Cinders and Crest of Insight. Granting yourself Ability Haste and resource regeneration and causing your Attacks to Burn and Slow enemy champions.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/buffbuddies_small.png"
+    },
+    {
+      "id": 1011,
+      "apiName": "CantTouchThis",
+      "name": "Can't Touch This",
+      "rarity": "prismatic",
+      "description": "Casting your Ultimate makes you Invulnerable for a short duration.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/canttouchthis_small.png"
+    },
+    {
+      "id": 1013,
+      "apiName": "CelestialBody",
+      "name": "Celestial Body",
+      "rarity": "gold",
+      "description": "Gain Health, but you deal % less damage.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/celestialbody_small.png"
+    },
+    {
+      "id": 1015,
+      "apiName": "CircleofDeath",
+      "name": "Circle of Death",
+      "rarity": "prismatic",
+      "description": "Healing and Health Regen you do deals a portion of the value as magic damage to the nearest enemy champion.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/circleofdeath_small.png"
+    },
+    {
+      "id": 1018,
+      "apiName": "CourageoftheColossus",
+      "name": "Courage of the Colossus",
+      "rarity": "prismatic",
+      "description": "Gain Shield after Immobilizing or Grounding an enemy champion.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/courageofthecolossus_small.png"
+    },
+    {
+      "id": 1019,
+      "apiName": "Dashing",
+      "name": "Dashing",
+      "rarity": "prismatic",
+      "description": "Your dash, leap, blink, or teleport Abilities gain Ability Haste.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/dashing_small.png"
+    },
+    {
+      "id": 1020,
+      "apiName": "DawnbringersResolve",
+      "name": "Dawnbringer's Resolve",
+      "rarity": "gold",
+      "description": "Upon dropping below % Health, heal for over seconds.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/dawnbringersresolve_small.png"
+    },
+    {
+      "id": 1022,
+      "apiName": "Deft",
+      "name": "Deft",
+      "rarity": "silver",
+      "description": "Gain %i:scaleAS% % Attack Speed.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/deft_small.png"
+    },
+    {
+      "id": 1023,
+      "apiName": "DemonsDance",
+      "name": "Demon's Dance",
+      "rarity": "gold",
+      "description": "Gain the Fleet Footwork and Grasp of the Undying Keystone Runes.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/demonsdance_small.png"
+    },
+    {
+      "id": 1025,
+      "apiName": "DiveBomber",
+      "name": "Dive Bomber",
+      "rarity": "silver",
+      "description": "Your team's first death each round explodes, dealing massive damage true damage.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/divebomber_small.png"
+    },
+    {
+      "id": 1026,
+      "apiName": "DontBlink",
+      "name": "Don't Blink",
+      "rarity": "silver",
+      "description": "Gain % bonus damage per 10 Move Speed you have more than the target.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/dontblink_small.png"
+    },
+    {
+      "id": 1027,
+      "apiName": "Earthwake",
+      "name": "Earthwake",
+      "rarity": "prismatic",
+      "description": "Your dash, blink, or teleport Abilities leave behind a trail that detonates after 1 second.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/earthwake_small.png"
+    },
+    {
+      "id": 1028,
+      "apiName": "Erosion",
+      "name": "Erosion",
+      "rarity": "silver",
+      "description": "Damaging enemies adds a stacking Armor and Magic Resist shred for s.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/erosion_small.png"
+    },
+    {
+      "id": 1029,
+      "apiName": "EtherealWeapon",
+      "name": "Ethereal Weapon",
+      "rarity": "gold",
+      "description": "Your Abilities apply {{ Item_Keyword_OnHit }} effects.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/etherealweapon_small.png"
+    },
+    {
+      "id": 1030,
+      "apiName": "Eureka",
+      "name": "Eureka",
+      "rarity": "prismatic",
+      "description": "Gain Ability Haste equal to % Ability Power.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/eureka_small.png"
+    },
+    {
+      "id": 1032,
+      "apiName": "Executioner",
+      "name": "Executioner",
+      "rarity": "gold",
+      "description": "Deal % more damage to enemies below % health. Reset your basic abilities on takedown.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/spiritualpurification_small.png"
+    },
+    {
+      "id": 1035,
+      "apiName": "FeeltheBurn",
+      "name": "Feel the Burn",
+      "rarity": "prismatic",
+      "description": "Gain the Feel the Burn Summoner Spell. Feel the Burn casts Ignite and Exhaust on all nearby enemy champions.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/feeltheburn_small.png"
+    },
+    {
+      "id": 1036,
+      "apiName": "Firebrand",
+      "name": "Firebrand",
+      "rarity": "gold",
+      "description": "Your Attacks apply an infinitely stacking Burn {{ Item_Keyword_OnHit }}, dealing damage over time.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/firebrand_small.png"
+    },
+    {
+      "id": 1037,
+      "apiName": "FirstAidKit",
+      "name": "First-Aid Kit",
+      "rarity": "silver",
+      "description": "Gain % Heal and Shield Power.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/firstaidkit_small.png"
+    },
+    {
+      "id": 1038,
+      "apiName": "FromBeginningToEnd",
+      "name": "From Beginning To End",
+      "rarity": "gold",
+      "description": "Gain the First Strike and Dark Harvest Keystone Runes.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/frombeginningtoend_small.png"
+    },
+    {
+      "id": 1039,
+      "apiName": "FrostWraith",
+      "name": "Frost Wraith",
+      "rarity": "silver",
+      "description": "Autocast Root nearby enemies for seconds every seconds.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/frostwraith_small.png"
+    },
+    {
+      "id": 1041,
+      "apiName": "Goliath",
+      "name": "Goliath",
+      "rarity": "prismatic",
+      "description": "Become large, gaining % Health and % Adaptive Force.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/goliath_small.png"
+    },
+    {
+      "id": 1042,
+      "apiName": "GuiltyPleasure",
+      "name": "Guilty Pleasure",
+      "rarity": "silver",
+      "description": "Immobilizing or Grounding enemy champions heals you.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/guiltypleasure_small.png"
+    },
+    {
+      "id": 1044,
+      "apiName": "IceCold",
+      "name": "Ice Cold",
+      "rarity": "silver",
+      "description": "Your Slowing effects reduce Move Speed by an extra .",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/icecold_small.png"
+    },
+    {
+      "id": 1045,
+      "apiName": "InfernalConduit",
+      "name": "Infernal Conduit",
+      "rarity": "prismatic",
+      "description": "Your Abilities apply an infinitely stacking Burn, dealing magic damage over time. Your Burn effects reduce your basic Ability Cooldowns.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/infernalconduit_small.png"
+    },
+    {
+      "id": 1046,
+      "apiName": "InfernalSoul",
+      "name": "Infernal Soul",
+      "rarity": "silver",
+      "description": "You gain the Infernal Dragon Soul, dealing bonus damage when you hit enemies with Abilities or Attacks.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/infernalsoul_small.png"
+    },
+    {
+      "id": 1047,
+      "apiName": "ItsCritical",
+      "name": "It's Critical",
+      "rarity": "gold",
+      "description": "Gain %i:scaleCrit% % Crit chance.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/itscritical_small.png"
+    },
+    {
+      "id": 1048,
+      "apiName": "JeweledGauntlet",
+      "name": "Jeweled Gauntlet",
+      "rarity": "prismatic",
+      "description": "Your Abilities can Critically Strike. Gain %i:scaleCrit% % Crit Chance.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/jeweledgauntlet_small.png"
+    },
+    {
+      "id": 1050,
+      "apiName": "KeystoneConjurer",
+      "name": "Keystone Conjurer",
+      "rarity": "gold",
+      "description": "Gain the Summon Aery and Arcane Comet Keystone Runes.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/keystoneconjurer_small.png"
+    },
+    {
+      "id": 1051,
+      "apiName": "LightemUp",
+      "name": "Light 'Em Up!",
+      "rarity": "silver",
+      "description": "Every 4th Attack deals additional magic damage {{ Item_Keyword_OnHit }}.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/lightemup_small.png"
+    },
+    {
+      "id": 1052,
+      "apiName": "LightningStrikes",
+      "name": "Lightning Strikes",
+      "rarity": "gold",
+      "description": "Gain % total Attack Speed. At Attacks per second, deal additional magic damage {{ Item_Keyword_OnHit }}.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/lightningstrikes_small.png"
+    },
+    {
+      "id": 1053,
+      "apiName": "MadScientist",
+      "name": "Mad Scientist",
+      "rarity": "prismatic",
+      "description": "Each Round you'll either grow large (Adaptive Force and Health) or tiny (Ability Haste and Move Speed).",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/madscientist_small.png"
+    },
+    {
+      "id": 1054,
+      "apiName": "MasterofDuality",
+      "name": "Master of Duality",
+      "rarity": "prismatic",
+      "description": "Your Attacks grant you Ability Power {{ Item_Keyword_OnHit }} and your Abilities grant you Attack Damage, until the end of the round.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/masterofduality_small.png"
+    },
+    {
+      "id": 1056,
+      "apiName": "MindtoMatter",
+      "name": "Mind to Matter",
+      "rarity": "silver",
+      "description": "Increase max Health by half of your Mana.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/mindtomatter_small.png"
+    },
+    {
+      "id": 1057,
+      "apiName": "MountainSoul",
+      "name": "Mountain Soul",
+      "rarity": "silver",
+      "description": "You gain the Mountain Soul, gaining a Shield after being out of combat for a short time.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/mountainsoul_small.png"
+    },
+    {
+      "id": 1058,
+      "apiName": "MysticPunch",
+      "name": "Mystic Punch",
+      "rarity": "prismatic",
+      "description": "{{ Item_Keyword_OnHit }} reduce the cooldown of your abilities by seconds %i:scaleCooldown%.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/mysticpunch_small.png"
+    },
+    {
+      "id": 1060,
+      "apiName": "OceanSoul",
+      "name": "Ocean Soul",
+      "rarity": "silver",
+      "description": "Gain the Ocean Soul, granting high Health and Mana regen after damaging enemies.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/oceansoul_small.png"
+    },
+    {
+      "id": 1061,
+      "apiName": "OkBoomerang",
+      "name": "Ok Boomerang",
+      "rarity": "gold",
+      "description": "Autocast throw a boomerang at a nearby enemy every s.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/okboomerang_small.png"
+    },
+    {
+      "id": 1062,
+      "apiName": "OmniSoul",
+      "name": "Omni Soul",
+      "rarity": "prismatic",
+      "description": "Gain random Dragon Souls.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/omnisoul_small.png"
+    },
+    {
+      "id": 1063,
+      "apiName": "OutlawsGrit",
+      "name": "Outlaw's Grit",
+      "rarity": "gold",
+      "description": "After using a Dash, Blink, or Teleport Ability you gain Armor and Magic Resist.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/outlawsgrit_small.png"
+    },
+    {
+      "id": 1064,
+      "apiName": "Perseverance",
+      "name": "Perseverance",
+      "rarity": "gold",
+      "description": "Gain hugely increased Health Regen, further increased at low Health.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/perseverance_small.png"
+    },
+    {
+      "id": 1066,
+      "apiName": "QuantumComputing",
+      "name": "Quantum Computing",
+      "rarity": "prismatic",
+      "description": "Periodically Autocast a massive slash around you, dealing physical damage. Enemies hit by the outer edge are Slowed, take additional damage, and heal you.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/quantumcomputing_small.png"
+    },
+    {
+      "id": 1067,
+      "apiName": "RabbleRousing",
+      "name": "Rejuvenation",
+      "rarity": "gold",
+      "description": "Using an Ability restores Health.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/rabblerousing_small.png"
+    },
+    {
+      "id": 1068,
+      "apiName": "Recursion",
+      "name": "Recursion",
+      "rarity": "gold",
+      "description": "Gain Ability Haste.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/recursion_small.png"
+    },
+    {
+      "id": 1069,
+      "apiName": "Repulsor",
+      "name": "Repulsor",
+      "rarity": "silver",
+      "description": "On dropping below % or % Health, nearby enemies are Knocked Back.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/repulsor_small.png"
+    },
+    {
+      "id": 1070,
+      "apiName": "RestlessRestoration",
+      "name": "Restless Restoration",
+      "rarity": "gold",
+      "description": "You constantly heal while moving.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/restlessrestoration_small.png"
+    },
+    {
+      "id": 1071,
+      "apiName": "ScopierWeapons",
+      "name": "Scopier Weapons",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/scopierweapons_small.png"
+    },
+    {
+      "id": 1072,
+      "apiName": "SearingDawn",
+      "name": "Searing Dawn",
+      "rarity": "gold",
+      "description": "Your Abilities mark enemies, causing them to take additional magic damage from your ally's next Attack or Ability.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/searingdawn_small.png"
+    },
+    {
+      "id": 1073,
+      "apiName": "ShadowRunner",
+      "name": "Shadow Runner",
+      "rarity": "silver",
+      "description": "After using a dash, leap, blink, or teleport Ability or exiting Stealth, gain @spell.Augment_ShadowRunner:MSAmount@ Move Speed for @spell.Augment_ShadowRunner:BuffDuration@ seconds.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/shadowrunner_small.png"
+    },
+    {
+      "id": 1074,
+      "apiName": "ShrinkRay",
+      "name": "Shrink Ray",
+      "rarity": "gold",
+      "description": "Your Attacks reduce the target's damage and size by % {{ Item_Keyword_OnHit }}.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/shrinkray_small.png"
+    },
+    {
+      "id": 1075,
+      "apiName": "SlowCooker",
+      "name": "Slow Cooker",
+      "rarity": "prismatic",
+      "description": "Every second, apply an infinitely stacking Burn to nearby enemy champions, scaling with your max Health.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/slowcooker_small.png"
+    },
+    {
+      "id": 1076,
+      "apiName": "SonicBoom",
+      "name": "Sonic Boom",
+      "rarity": "silver",
+      "description": "Buffing, Healing, or Shielding your ally deals damage and Slows enemies surrounding them.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/sonicboom_small.png"
+    },
+    {
+      "id": 1077,
+      "apiName": "SoulSiphon",
+      "name": "Soul Siphon",
+      "rarity": "gold",
+      "description": "Heal for % of damage done by Critical Strikes. Gain %i:scaleCrit% % Crit chance.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/soulsiphon_small.png"
+    },
+    {
+      "id": 1079,
+      "apiName": "SymphonyofWar",
+      "name": "Symphony of War",
+      "rarity": "prismatic",
+      "description": "Gain the Lethal Tempo and Conqueror Keystone Runes.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/symphonyofwar_small.png"
+    },
+    {
+      "id": 1080,
+      "apiName": "TankItOrLeaveIt",
+      "name": "Tank It Or Leave It",
+      "rarity": "silver",
+      "description": "You can Critically Defend using your Crit Chance (max % chance), giving you a chance to reduce damage. Gain %i:scaleCrit% % Crit Chance.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/tankitorleaveit_small.png"
+    },
+    {
+      "id": 1081,
+      "apiName": "TapDancer",
+      "name": "Tap Dancer",
+      "rarity": "prismatic",
+      "description": "Your Attacks grant you Move Speed {{ Item_Keyword_OnHit }}. Gain Attack Speed equal to % of your Move Speed.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/tapdancer_small.png"
+    },
+    {
+      "id": 1082,
+      "apiName": "TheBrutalizer",
+      "name": "The Brutalizer",
+      "rarity": "silver",
+      "description": "Gain Attack Damage, Ability Haste, and Lethality.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/thebrutalizer_small.png"
+    },
+    {
+      "id": 1084,
+      "apiName": "ThreadtheNeedle",
+      "name": "Thread the Needle",
+      "rarity": "gold",
+      "description": "Gain % %i:scaleAPen% Armor Penetration and %i:scaleMPen% Magic Penetration.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/threadtheneedle_small.png"
+    },
+    {
+      "id": 1085,
+      "apiName": "Tormentor",
+      "name": "Tormentor",
+      "rarity": "silver",
+      "description": "Immobilizing or Grounding enemy champions applies a Burn that deals damage over time, stacking infinitely.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/tormentor_small.png"
+    },
+    {
+      "id": 1086,
+      "apiName": "TrueshotProdigy",
+      "name": "Trueshot Prodigy",
+      "rarity": "prismatic",
+      "description": "When you damage a champion from far away, fire a Trueshot Barrage at them.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/trueshotprodigy_small.png"
+    },
+    {
+      "id": 1087,
+      "apiName": "Typhoon",
+      "name": "Typhoon",
+      "rarity": "silver",
+      "description": "Your Attacks fire a bolt at an additional target dealing reduced damage and applying {{ Item_Keyword_OnHit }} effects.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/typhoon_small.png"
+    },
+    {
+      "id": 1088,
+      "apiName": "UltimateRevolution",
+      "name": "Ultimate Revolution",
+      "rarity": "prismatic",
+      "description": "Once per round, refresh your Ultimate after casting it.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/ultimaterevolution_small.png"
+    },
+    {
+      "id": 1092,
+      "apiName": "Vulnerability",
+      "name": "Vulnerability",
+      "rarity": "gold",
+      "description": "Your Item and damage over time effects can Critically Strike. Gain %i:scaleCrit% % Crit chance.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/vulnerability_small.png"
+    },
+    {
+      "id": 1095,
+      "apiName": "WindspeakersBlessing",
+      "name": "Windspeaker's Blessing",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/windspeakersblessing_small.png"
+    },
+    {
+      "id": 1097,
+      "apiName": "WitchfulThinking",
+      "name": "Witchful Thinking",
+      "rarity": "silver",
+      "description": "Gain %i:scaleAP% Ability Power.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/witchfulthinking_small.png"
+    },
+    {
+      "id": 1098,
+      "apiName": "WithHaste",
+      "name": "With Haste",
+      "rarity": "gold",
+      "description": "Gain Move Speed equal to % of your Ability Haste.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/withhaste_small.png"
+    },
+    {
+      "id": 1103,
+      "apiName": "BreadAndButter",
+      "name": "Bread And Butter",
+      "rarity": "gold",
+      "description": "Your gains Ability Haste.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/genericabilityaugmenticon_gold.png"
+    },
+    {
+      "id": 1104,
+      "apiName": "Minionmancer",
+      "name": "Minionmancer",
+      "rarity": "gold",
+      "description": "Your summons gain % increased size, health, and damage.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/minionmancer_small.png"
+    },
+    {
+      "id": 1105,
+      "apiName": "Homeguard",
+      "name": "Homeguard",
+      "rarity": "silver",
+      "description": "Gain @spell.Augment_Homeguard:MovementSpeed*100@% Move Speed, disabled for @spell.Augment_Homeguard:DisableCooldown@ seconds after taking damage.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/homeguard_small.png"
+    },
+    {
+      "id": 1107,
+      "apiName": "TwiceThrice",
+      "name": "Twice Thrice",
+      "rarity": "gold",
+      "description": "Every attacks, your {{ Item_Keyword_OnHit }} effects trigger a second time.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/twicethrice_small.png"
+    },
+    {
+      "id": 1108,
+      "apiName": "SelfDestruct",
+      "name": "Self Destruct",
+      "rarity": "silver",
+      "description": "Every seconds Autocast, attach a bomb to yourself, it explodes, dealing massive true damage and Knocking Up nearby enemies.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/maps/particles/kiwi/selfdestruct_small.mayhem_new_augments.png"
+    },
+    {
+      "id": 1112,
+      "apiName": "UltimateUnstoppable",
+      "name": "Ultimate Unstoppable",
+      "rarity": "silver",
+      "description": "After using your Ultimate, you become immune to crowd control for seconds. ( second Cooldown).",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/ultimateunstoppable_small.png"
+    },
+    {
+      "id": 1113,
+      "apiName": "SkilledSniper",
+      "name": "Skilled Sniper",
+      "rarity": "gold",
+      "description": "Hitting an enemy with a non-Ultimate Ability at far range drastically reduces its Cooldown.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/skilledsniper_small.png"
+    },
+    {
+      "id": 1115,
+      "apiName": "ScopiestWeapons",
+      "name": "Scopiest Weapons",
+      "rarity": "prismatic",
+      "description": "Gain Attack Range.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/scopiestweapons_small.png"
+    },
+    {
+      "id": 1116,
+      "apiName": "Flashy",
+      "name": "Flashy",
+      "rarity": "gold",
+      "description": "Your Flash has Ammo and a second Cooldown.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/flashy_small.png"
+    },
+    {
+      "id": 1118,
+      "apiName": "CriticalHealing",
+      "name": "Critical Healing",
+      "rarity": "gold",
+      "description": "Your Heals and Shields can Critically Strike for an addtional . Gain %i:scaleCrit% % Crit Chance.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/criticalhealing_small.png"
+    },
+    {
+      "id": 1129,
+      "apiName": "Marksmage",
+      "name": "Marksmage",
+      "rarity": "gold",
+      "description": "Your Attacks deal additional physical damage equal to % Ability Power.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/marksmage_small.png"
+    },
+    {
+      "id": 1133,
+      "apiName": "MagicMissile",
+      "name": "Magic Missile",
+      "rarity": "gold",
+      "description": "Dealing damage with an Ability fires magic missiles, each dealing percent max Health true damage.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/maps/particles/kiwi/magicmissile_small.png"
+    },
+    {
+      "id": 1134,
+      "apiName": "DrawYourSword",
+      "name": "Draw Your Sword",
+      "rarity": "prismatic",
+      "description": "You are now melee. Gain Attack Damage, Health, Attack Speed, Lifesteal, and Move Speed based on how much Attack Range you lost.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/drawyoursword_small.png"
+    },
+    {
+      "id": 1136,
+      "apiName": "SlapAround",
+      "name": "Slap Around",
+      "rarity": "silver",
+      "description": "Each time you Immobilize or Ground an enemy, gain %i:miniAdaptiveForce% Adaptive Force for the round.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/slaparound_small.png"
+    },
+    {
+      "id": 1138,
+      "apiName": "Goredrink",
+      "name": "Goredrink",
+      "rarity": "silver",
+      "description": "Gain % Omnivamp.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/goredrink_small.png"
+    },
+    {
+      "id": 1141,
+      "apiName": "AllForYou",
+      "name": "All For You",
+      "rarity": "gold",
+      "description": "Your Heals and Shields are stronger when used on an ally.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/allforyou_small.png"
+    },
+    {
+      "id": 1149,
+      "apiName": "Impassable",
+      "name": "Impassable",
+      "rarity": "gold",
+      "description": "Gain the Aftershock and Glacial Augment Keystone Runes.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/impassable_small.png"
+    },
+    {
+      "id": 1150,
+      "apiName": "BreadAndJam",
+      "name": "Bread And Jam",
+      "rarity": "gold",
+      "description": "Your gains Ability Haste.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/genericabilityaugmenticon_gold.png"
+    },
+    {
+      "id": 1151,
+      "apiName": "BreadAndCheese",
+      "name": "Bread and Cheese",
+      "rarity": "gold",
+      "description": "Your gains Ability Haste.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/genericabilityaugmenticon_gold.png"
+    },
+    {
+      "id": 1152,
+      "apiName": "Quest_SteelYourHeart",
+      "name": "Steel Your Heart",
+      "rarity": "gold",
+      "description": "Requirement: Possess Heartsteel with + stacks. Reward: Multiply your Heartsteel stacks by . Increase your Health Regeneration by % of your Heartsteel stacks.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/quest_steelyourheart_small.png"
+    },
+    {
+      "id": 1154,
+      "apiName": "Quest_UrfsChampion",
+      "name": "Urf's Champion",
+      "rarity": "prismatic",
+      "description": "Requirement: Score takedowns. Reward: Golden Spatula",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/quest_urfschampion_small.png"
+    },
+    {
+      "id": 1156,
+      "apiName": "Quest_WoogletsWitchcap",
+      "name": "Wooglet's Witchcap",
+      "rarity": "prismatic",
+      "description": "Immediate: Gain Needlessly Large Rod. Requirement: Possess Rabadon's Deathcap and Zhonya's Hourglass. Reward: Gain Wooglet's Witchcap.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/quest_woogletswitchcap_small.png"
+    },
+    {
+      "id": 1170,
+      "apiName": "ScopedWeapons",
+      "name": "Scoped Weapons",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/scopedweapons_small.png"
+    },
+    {
+      "id": 1180,
+      "apiName": "BigBrain",
+      "name": "Big Brain",
+      "rarity": "gold",
+      "description": "At the start of each round, gain Shield for every %i:scaleAP% Ability Power.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/bigbrain_small.png"
+    },
+    {
+      "id": 1181,
+      "apiName": "HeavyHitter",
+      "name": "Heavy Hitter",
+      "rarity": "silver",
+      "description": "Your Attacks deal additional physical damage equal to % of your max Health.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/heavyhitter_small.png"
+    },
+    {
+      "id": 1187,
+      "apiName": "Flashbang",
+      "name": "Flashbang",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/flashbang_small.png"
+    },
+    {
+      "id": 1194,
+      "apiName": "FeyMagic",
+      "name": "Fey Magic",
+      "rarity": "prismatic",
+      "description": "Damaging with your Ultimate Polymorphs enemies for a few seconds.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/feymagic_small.png"
+    },
+    {
+      "id": 1195,
+      "apiName": "GiantSlayer",
+      "name": "Giant Slayer",
+      "rarity": "prismatic",
+      "description": "Become tiny, gain Move Speed, and bonus damage to champions based on how much larger they are than you.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/giantslayer_small.png"
+    },
+    {
+      "id": 1198,
+      "apiName": "HolyFire",
+      "name": "Holy Fire",
+      "rarity": "gold",
+      "description": "Healing or Shielding applies an infinitely stacking Burn to a nearby enemy, dealing percent max Health magic damage over a few seconds.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/holyfire_small.png"
+    },
+    {
+      "id": 1204,
+      "apiName": "StackosaurusRex",
+      "name": "Stackosaurus Rex",
+      "rarity": "silver",
+      "description": "When you gain permanent Stacks of an Ability, Augment, or Item gain % more!",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/stackosaurusrex_small.png"
+    },
+    {
+      "id": 1205,
+      "apiName": "ADAPt",
+      "name": "ADAPt",
+      "rarity": "silver",
+      "description": "Convert Bonus Attack Damage to Ability Power. Gain % Ability Power.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/adapt_small.png"
+    },
+    {
+      "id": 1206,
+      "apiName": "escAPADe",
+      "name": "escAPADe",
+      "rarity": "silver",
+      "description": "Convert Ability Power to Bonus Attack Damage. Gain % Attack Damage.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/escapade_small.png"
+    },
+    {
+      "id": 1208,
+      "apiName": "OrbitalLaser_Active",
+      "name": "Orbital Laser",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/orbitallaser_small.png"
+    },
+    {
+      "id": 1211,
+      "apiName": "ItsKillingTime",
+      "name": "It's Killing Time",
+      "rarity": "gold",
+      "description": "After casting your Ultimate, mark all enemy champions for death. While marked, store damage dealt to them, and detonate the damage when the mark ends.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/itskillingtime_small.png"
+    },
+    {
+      "id": 1214,
+      "apiName": "SpinToWin",
+      "name": "Spin To Win",
+      "rarity": "silver",
+      "description": "Your spin Abilities gain Ability Haste and deal % more damage!",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/spintowin_small.png"
+    },
+    {
+      "id": 1220,
+      "apiName": "FanTheHammer",
+      "name": "Fan The Hammer",
+      "rarity": "prismatic",
+      "description": "When you Attack, fire bolts that each deal physical damage and applies your {{ Item_Keyword_OnHit }}.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/fanthehammer_small.png"
+    },
+    {
+      "id": 1225,
+      "apiName": "DualWield",
+      "name": "Dual Wield",
+      "rarity": "prismatic",
+      "description": "When you Attack, fire a bolt that deals % damage and applies your {{ Item_Keyword_OnHit }} effects at % effectiveness. Gain % total Attack Speed.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/dualwield_small.png"
+    },
+    {
+      "id": 1237,
+      "apiName": "TransmuteGold",
+      "name": "Transmute: Gold",
+      "rarity": "silver",
+      "description": "Gain a random %i:Augment% Gold Augment.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/transmutegold_small.png"
+    },
+    {
+      "id": 1238,
+      "apiName": "TransmutePrismatic",
+      "name": "Transmute: Prismatic",
+      "rarity": "gold",
+      "description": "Gain a random %i:Augment% Prismatic Augment.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/transmuteprismatic_small.png"
+    },
+    {
+      "id": 1243,
+      "apiName": "TransmuteChaos",
+      "name": "Transmute: Chaos",
+      "rarity": "prismatic",
+      "description": "Gain random %i:Augment%Augments.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/transmutechaos_small.png"
+    },
+    {
+      "id": 1250,
+      "apiName": "SlowAndSteady",
+      "name": "Slow And Steady",
+      "rarity": "gold",
+      "description": "Your Attack Speed can not go above . All Bonus Attack Speed is converted to Attack Damage.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/slowandsteady_small.png"
+    },
+    {
+      "id": 1301,
+      "apiName": "DivineIntervention",
+      "name": "Divine Intervention",
+      "rarity": "gold",
+      "description": "Shortly after combat starts, call a protective star. Upon its landing, you and nearby allies become Invulnerable for a few seconds. Then Autocast this every seconds.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/slowactingpainkillers_small.png"
+    },
+    {
+      "id": 1305,
+      "apiName": "LegDay",
+      "name": "Leg Day",
+      "rarity": "silver",
+      "description": "Gain Movement Speed and % Slow Resist.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/legday_small.png"
+    },
+    {
+      "id": 1308,
+      "apiName": "Firefox",
+      "name": "FireFox",
+      "rarity": "silver",
+      "description": "Autocast Gain Movement Speed and conjure three flames that orbit you, targetting the closest visible enemy in range and dealing magic damage.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/firfox_small.png"
+    },
+    {
+      "id": 1310,
+      "apiName": "ClownCollege",
+      "name": "Clown College",
+      "rarity": "prismatic",
+      "description": "Gain Deceive Summoner Spell. Deceive: You teleport and become Invisible. Your next Attack while Invisible deals an additional physical damage. When you die, spawn an exploding box that deals a large amount of magic damage and Fear nearby enemies.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/clowncollege_small.png"
+    },
+    {
+      "id": 1311,
+      "apiName": "Overflow",
+      "name": "Overflow",
+      "rarity": "gold",
+      "description": "Your Mana costs are doubled. Your Ability Heals, Shields, and damage are increased based on your max Mana.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/overflow_small.png"
+    },
+    {
+      "id": 1313,
+      "apiName": "Recall",
+      "name": "Cheating",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/cheating_small.png"
+    },
+    {
+      "id": 1317,
+      "apiName": "Upgrade_Cutlass",
+      "name": "Upgrade Cutlass",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/upgradecutlass_small.png"
+    },
+    {
+      "id": 1318,
+      "apiName": "Upgrade_ZH",
+      "name": "Upgrade Zhonya's",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/upgradezh_small.png"
+    },
+    {
+      "id": 1319,
+      "apiName": "Upgrade_Immolate",
+      "name": "Upgrade Immolate",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/upgradeimmolate_small.png"
+    },
+    {
+      "id": 1320,
+      "apiName": "Upgrade_Collector",
+      "name": "Upgrade Collector",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/upgradecollector_small.png"
+    },
+    {
+      "id": 1322,
+      "apiName": "GetExcited",
+      "name": "Get Excited!",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/getexcited_small.png"
+    },
+    {
+      "id": 1323,
+      "apiName": "Cruelty",
+      "name": "Cruelty",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/cruelty_small.png"
+    },
+    {
+      "id": 1324,
+      "apiName": "ProteinShake",
+      "name": "Protein Shake",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/proteinshake_small.png"
+    },
+    {
+      "id": 1336,
+      "apiName": "Upgrade_IE",
+      "name": "Upgrade Infinity Edge",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/upgradeie_small.png"
+    },
+    {
+      "id": 1338,
+      "apiName": "Upgrade_Hubris",
+      "name": "Upgrade Hubris",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/upgradehubris_small.png"
+    },
+    {
+      "id": 1345,
+      "apiName": "SpiritualPurification",
+      "name": "Spiritual Purification",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/spiritualpurification_small.png"
+    },
+    {
+      "id": 1353,
+      "apiName": "TankEngine",
+      "name": "Tank Engine",
+      "rarity": "gold",
+      "description": "Gain increased size and percent bonus Health per takedown.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/tank_engine_small.png"
+    },
+    {
+      "id": 1361,
+      "apiName": "Quest_VoidImmolation",
+      "name": "Icathia's Fall",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/quest_voidimmolation_small.png"
+    },
+    {
+      "id": 1390,
+      "apiName": "PhenomenalEvil",
+      "name": "Phenomenal Evil",
+      "rarity": "gold",
+      "description": "Permanently gain Ability Power when you hit an enemy with an Ability. If taken after round , gain Ability Power.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/aram_phenomenalevil_small.png"
+    },
+    {
+      "id": 1397,
+      "apiName": "Cerberus",
+      "name": "Cerberus",
+      "rarity": "prismatic",
+      "description": "Gain the Hail of Blades and Press the Attack Keystone Runes.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/cerberus_small.png"
+    },
+    {
+      "id": 1402,
+      "apiName": "StatsOnStatsOnStats",
+      "name": "Stats on Stats on Stats!",
+      "rarity": "prismatic",
+      "description": "Gain %i:StatAnvil% Stat Anvils!",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/statsonstatsonstats_small.png"
+    },
+    {
+      "id": 1403,
+      "apiName": "StatsOnStats",
+      "name": "Stats on Stats!",
+      "rarity": "gold",
+      "description": "Gain %i:StatAnvil% Stat Anvils!",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/statsonstats_small.png"
+    },
+    {
+      "id": 1404,
+      "apiName": "Stats",
+      "name": "Stats!",
+      "rarity": "silver",
+      "description": "Gain %i:StatAnvil% Stat Anvils!",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/stats_small.png"
+    },
+    {
+      "id": 1405,
+      "apiName": "SpeedDemon",
+      "name": "Speed Demon",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/speeddemon_small.png"
+    },
+    {
+      "id": 1409,
+      "apiName": "Poro_Blast",
+      "name": "Poro Blaster",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/poroblast_small.png"
+    },
+    {
+      "id": 1413,
+      "apiName": "StuckInHereWithMe",
+      "name": "Stuck In Here With Me",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/stuckinherewithme_small.png"
+    },
+    {
+      "id": 1418,
+      "apiName": "CrackOpenThatEgg",
+      "name": "Crack Open That Egg",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/crackopenthategg_small.png"
+    },
+    {
+      "id": 1424,
+      "apiName": "MissingPingAugment",
+      "name": "???",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/missingping_small.png"
+    },
+    {
+      "id": 1996,
+      "apiName": "Upgrade_Sheen",
+      "name": "Upgrade Sheen",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/upgradesheen_small.png"
+    },
+    {
+      "id": 2001,
+      "apiName": "WatchOutGrapefruit",
+      "name": "Heads Up Cupcake!",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/watchoutgrapefruit_small.png"
+    },
+    {
+      "id": 2002,
+      "apiName": "VoidRift",
+      "name": "Void Rift",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/voidrift_small.png"
+    },
+    {
+      "id": 2003,
+      "apiName": "PoroKing",
+      "name": "Bounce of the Poro King",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/poroking_small.png"
+    },
+    {
+      "id": 2004,
+      "apiName": "EmpoweredByTheFaithful",
+      "name": "Empowered By The Faithful",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/empoweredbythefaithful_small.png"
+    },
+    {
+      "id": 2005,
+      "apiName": "InfernoTriggered",
+      "name": "Triggered Inferno",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/madscientist_small.png"
+    },
+    {
+      "id": 2006,
+      "apiName": "Dropkick",
+      "name": "Dropkick",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/dropkick_small.png"
+    },
+    {
+      "id": 2007,
+      "apiName": "LittleDevil",
+      "name": "Devil on Your Shoulder",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/littledevil_small.png"
+    },
+    {
+      "id": 2008,
+      "apiName": "WeightedPopoffs",
+      "name": "Weighted Popoffs",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/weightedpopoffs_small.png"
+    },
+    {
+      "id": 2009,
+      "apiName": "Zealot",
+      "name": "Zealot",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/zealot_small.png"
+    },
+    {
+      "id": 2010,
+      "apiName": "DoubleTap",
+      "name": "Double Tap",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/doubletap_small.png"
+    },
+    {
+      "id": 2016,
+      "apiName": "Juiced",
+      "name": "Juiced",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/juiced_small.png"
+    },
+    {
+      "id": 2018,
+      "apiName": "Purist_Caster",
+      "name": "Purist - Caster",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/puristcaster_small.png"
+    },
+    {
+      "id": 2031,
+      "apiName": "DropBear",
+      "name": "DropBear",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/drop_bear_small.png"
+    },
+    {
+      "id": 2055,
+      "apiName": "Multishot",
+      "name": "Multishot",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/genericabilityaugmenticon_prismatic.png"
+    },
+    {
+      "id": 2064,
+      "apiName": "Quickstep",
+      "name": "Quickstep",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/genericabilityaugmenticon_prismatic.png"
+    },
+    {
+      "id": 2065,
+      "apiName": "Terror",
+      "name": "Terror",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/desecrator_large.png"
+    },
+    {
+      "id": 2073,
+      "apiName": "SustainingStrike",
+      "name": "Siphon",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/genericabilityaugmenticon_silver.png"
+    },
+    {
+      "id": 2087,
+      "apiName": "Archmage",
+      "name": "Archmage",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/archmage_small.png"
+    },
+    {
+      "id": 2088,
+      "apiName": "Snowday",
+      "name": "Snowday",
+      "rarity": "silver",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/snowday_small.png"
+    },
+    {
+      "id": 2089,
+      "apiName": "YowchMyCoins",
+      "name": "Yowch, My Coins!",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/youchmycoins_small.png"
+    },
+    {
+      "id": 2095,
+      "apiName": "HighRoller",
+      "name": "High Roller",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/highroller_small.png"
+    },
+    {
+      "id": 2098,
+      "apiName": "EndlessHunt",
+      "name": "En Passant",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/dashing_small.png"
+    },
+    {
+      "id": 2099,
+      "apiName": "DivineDomain",
+      "name": "Rite of Ascension",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/glasscannon_small.png"
+    },
+    {
+      "id": 2100,
+      "apiName": "SpecializedRecursion",
+      "name": "Pursuit of Haste",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/genericabilityaugmenticon_gold.png"
+    },
+    {
+      "id": 2103,
+      "apiName": "BangBang",
+      "name": "From Downtown",
+      "rarity": "gold",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/questbangbang_small.png"
+    },
+    {
+      "id": 2104,
+      "apiName": "SpiritBomb",
+      "name": "Spirit Bomb",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/spiritbomb_small.png"
+    },
+    {
+      "id": 2107,
+      "apiName": "Hellbent",
+      "name": "Hellbent",
+      "rarity": "prismatic",
+      "description": "",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/kiwi/augments/icons/hellbent_small.png"
+    },
+    {
+      "id": 12317,
+      "apiName": "PandorasBox",
+      "name": "Pandora's Box",
+      "rarity": "prismatic",
+      "description": "Transmute all of your augments into random Prismatic%i:Augment% Augments.",
+      "iconUrl": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/ux/cherry/augments/icons/pandoras_box_small.png"
+    }
+  ]
+}

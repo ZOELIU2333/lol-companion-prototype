@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import official from '../../../data/mayhem/26.12/official-augments.json'
 import { buildValidatedMayhemSnapshot } from './snapshot'
 
 describe('Mayhem snapshot validation', () => {
@@ -27,5 +28,13 @@ describe('Mayhem snapshot validation', () => {
     })
 
     expect(result.offMetaRecords.map((record) => record.candidateAugmentId)).toEqual([102])
+  })
+
+  it('contains only patch 26.12 Mayhem augments with unique ids', () => {
+    expect(official.meta.patch).toBe('26.12')
+    expect(official.meta.queue).toBe('aram-mayhem')
+    expect(official.augments.length).toBeGreaterThan(0)
+    expect(new Set(official.augments.map((augment) => augment.id)).size).toBe(official.augments.length)
+    expect(official.augments.every((augment) => augment.name && augment.iconUrl)).toBe(true)
   })
 })
