@@ -27,7 +27,7 @@ export function AugmentRecommendation({ augments, mode, onModeChange }: AugmentR
           <h3>本轮待选海克斯</h3>
           <span className="augment-source-note">
             {dataSourceLabel} · {mayhemSnapshot.patch}
-            {snapshotIsStale && <span className="status-warn">数据版本 {mayhemSnapshot.patch} · 已过期</span>}
+            {snapshotIsStale && <span className="status-warn">已过期</span>}
           </span>
         </div>
         <div className="mayhem-mode-switch" role="group" aria-label="海克斯推荐模式">
