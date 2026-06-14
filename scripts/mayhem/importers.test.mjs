@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { parseMetasrcChampionPage } from './import-metasrc.mjs'
+import { normalizeCommunityCandidate } from './import-community-candidates.mjs'
 
 test('parses patch, games, champion win rate and augment names', () => {
   const result = parseMetasrcChampionPage(`
@@ -41,4 +42,16 @@ test('parses a multi-augment "include A, B and C" phrase', () => {
     { championId: 1, sourceUrl: 'fixture' },
   )
   assert.deepEqual(result.augmentNames, ['Spellwake', 'First Strike', 'Gather Storm'])
+})
+
+test('community candidates never become aggregate evidence', () => {
+  const candidate = normalizeCommunityCandidate({
+    sourceId: 'arammayhem',
+    championName: 'Brand',
+    augmentName: 'Infernal Conduit',
+    title: '热门组合',
+  })
+
+  assert.equal(candidate.evidenceType, 'community-candidate')
+  assert.equal(candidate.games, null)
 })
