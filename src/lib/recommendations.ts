@@ -249,6 +249,8 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
 
   const ranked = rankMayhemCandidates({
     mode: 'strength',
+    // Champion.id 现在是英雄名字符串，Number() 会得到 NaN。本分支当前不可达（见上方注释），
+    // Task 7 接入真实数字 id 时必须先做 英雄名→数字 映射并兜住 NaN，否则 championFit 全为 NaN。
     championId: Number(champion.id),
     selectedAugmentIds: [],
     candidateAugmentIds: resolvedIds.filter((id): id is number => id !== null),

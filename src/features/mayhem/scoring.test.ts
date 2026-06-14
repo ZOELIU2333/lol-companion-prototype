@@ -88,6 +88,9 @@ describe('rankMayhemCandidates', () => {
     const strength = rankMayhemCandidates({ ...input, mode: 'strength' })
     const offMeta = rankMayhemCandidates({ ...input, mode: 'off-meta' })
     expect(strength.map((entry) => entry.augmentId)).not.toEqual(offMeta.map((entry) => entry.augmentId))
+    // Strength prizes the prismatic, high-win-rate pick; off-meta prizes the low-pick-rate sleeper.
+    expect(strength[0].augmentId).toBe(21)
+    expect(offMeta[0].augmentId).toBe(23)
   })
 
   it('returns the full evidence shape on every entry', () => {
