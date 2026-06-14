@@ -1,4 +1,5 @@
 import { itemCatalog } from '../data/mockMatches'
+import { mayhemSnapshot } from '../data/mayhemSnapshot'
 import {
   augmentItemChains,
   augmentTagBridges,
@@ -6,6 +7,8 @@ import {
   getChampionRunePages,
   getSelectedAugmentProfile,
 } from '../data/recommendationData'
+import type { MayhemSnapshot } from '../features/mayhem/snapshot'
+import { rankMayhemCandidates } from '../features/mayhem/scoring'
 import type {
   AugmentRecommendation,
   BuildRecommendation,
@@ -119,11 +122,23 @@ export function createBuildRecommendation(match: Match, champion: Champion): Bui
   }
 }
 
-export function rankAugments(match: Match, champion: Champion): AugmentRecommendation[] {
+/**
+ * 把候选强化的字符串 id 桥接到 26.12 Mayhem 数字 id。
+ *
+ * 当前 mock 候选用的是文案化字符串 id（如 'jewelled'），与官方数字 id 没有可信映射，
+ * 因此只在 id 本身就是快照里存在的数字时才返回；否则返回 null，由上层走兜底。
+ */
+function resolveMayhemAugmentId(candidateId: string, snapshot: MayhemSnapshot): number | null {
+  const numeric = Number(candidateId)
+  if (!Number.isInteger(numeric)) return null
+  return snapshot.augments.some((augment) => augment.id === numeric) ? numeric : null
+}
+
+function rankAugmentsByTagRules(match: Match, champion: Champion): AugmentRecommendation[] {
   const selectedProfiles = match.liveState.selectedAugments.map(getSelectedAugmentProfile)
   const selectedTags = Array.from(new Set(selectedProfiles.flatMap((profile) => profile.tags)))
   const selectedPlans = Array.from(new Set(selectedProfiles.map((profile) => profile.plan)))
-  const augmentDataSourceLabel = '本地规则推理 · 待接入版本聚合数据'
+  const augmentDataSourceLabel = '本地规则兜底 · 非版本统计'
 
   return match.augmentCandidates
     .map((augment) => {
@@ -206,6 +221,54 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
       }
     })
     .sort((a, b) => b.score - a.score)
+}
+
+/**
+ * 强化排序入口：优先查 26.12 快照里的当前候选；只有当快照缺失这些候选时，
+ * 才回退到本地标签规则（dataSourceLabel = 本地规则兜底 · 非版本统计）。
+ *
+ * 现阶段 mock 候选的字符串 id 与官方数字 id 没有可信映射，因此实际总是走兜底；
+ * 一旦 Task 7 把真实数字 id 接进来，本入口会用快照分数对候选重排并标注版本来源。
+ */
+export function rankAugments(match: Match, champion: Champion): AugmentRecommendation[] {
+  const resolvedIds = match.augmentCandidates.map((augment) =>
+    resolveMayhemAugmentId(augment.id, mayhemSnapshot),
+  )
+  const allResolved = resolvedIds.every((id): id is number => id !== null)
+  const coveredBySnapshot =
+    allResolved &&
+    resolvedIds.every(
+      (id) =>
+        mayhemSnapshot.recommendations.strength.some((entry) => entry.augmentId === id) ||
+        mayhemSnapshot.recommendations.offMeta.some((entry) => entry.augmentId === id),
+    )
+
+  if (!coveredBySnapshot) {
+    return rankAugmentsByTagRules(match, champion)
+  }
+
+  const ranked = rankMayhemCandidates({
+    mode: 'strength',
+    championId: Number(champion.id),
+    selectedAugmentIds: [],
+    candidateAugmentIds: resolvedIds.filter((id): id is number => id !== null),
+    snapshot: mayhemSnapshot,
+  })
+  const orderByAugmentId = new Map(ranked.map((entry, index) => [entry.augmentId, index]))
+  const numericIdByCandidate = new Map(
+    match.augmentCandidates.map((augment, index) => [augment.id, resolvedIds[index]]),
+  )
+
+  return rankAugmentsByTagRules(match, champion)
+    .map((recommendation) => ({
+      ...recommendation,
+      dataSourceLabel: `26.12 版本聚合 · ${mayhemSnapshot.patch}`,
+    }))
+    .sort((a, b) => {
+      const aOrder = orderByAugmentId.get(numericIdByCandidate.get(a.id) ?? -1) ?? Number.MAX_SAFE_INTEGER
+      const bOrder = orderByAugmentId.get(numericIdByCandidate.get(b.id) ?? -1) ?? Number.MAX_SAFE_INTEGER
+      return aOrder - bOrder
+    })
 }
 
 export const createRuneRecommendations = getChampionRunePages

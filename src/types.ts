@@ -1,3 +1,5 @@
+import type { MayhemConfidence } from './features/mayhem/types'
+
 export type GameMode = 'ranked' | 'augment' | 'arena'
 export type InfoPhase = 'pregame' | 'live'
 export type TeamSide = 'ally' | 'enemy'
@@ -316,6 +318,27 @@ export type AugmentRecommendation = Augment & {
     probability: number
     reason: string
   }[]
+}
+
+export type MayhemScoreBreakdown = {
+  normalizedWinRate: number
+  sampleStability: number
+  championFit: number
+  selectedSynergy: number
+  comboLift: number
+  rarityValue: number
+  crossSourceStability: number
+}
+
+export type MayhemCandidateScore = {
+  augmentId: number
+  score: number
+  scoreBreakdown: MayhemScoreBreakdown
+  games: number
+  sourceCount: number
+  confidence: MayhemConfidence
+  reason: string
+  itemIds: number[]
 }
 
 export type ArenaRecommendation = {

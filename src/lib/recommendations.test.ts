@@ -43,6 +43,15 @@ describe('recommendation rules', () => {
     expect(ranked[0].selectedSynergy).toContain('已选')
   })
 
+  it('labels the snapshot-miss fallback as 本地规则兜底 · 非版本统计', () => {
+    // The current mock candidates carry text ids with no numeric Mayhem mapping, so the
+    // snapshot lookup misses and the honest fallback label is surfaced on every entry.
+    const ranked = rankAugments(match, champion)
+
+    expect(ranked.length).toBeGreaterThan(0)
+    expect(ranked.every((entry) => entry.dataSourceLabel === '本地规则兜底 · 非版本统计')).toBe(true)
+  })
+
   it('creates an augment-aware item icon plan for live hex recommendations', () => {
     const augmentMatch = mockMatches.find((candidate) => candidate.mode === 'augment')!
     const recommendations = createRecommendations(augmentMatch, 'augment')
