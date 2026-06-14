@@ -35,7 +35,10 @@ jobs:
         run: npm install -g npm@10
 
       - name: Install frontend dependencies
-        run: npm ci --registry=https://registry.npmjs.org
+        shell: pwsh
+        run: |
+          npm ci --registry=https://registry.npmjs.org
+          npm install --no-save --ignore-scripts @rollup/rollup-win32-x64-msvc@4.60.4
 
       - name: Test frontend and data adapters
         shell: pwsh
