@@ -113,6 +113,22 @@ describe('companion data source', () => {
     })
   })
 
+  it('keeps the LCU source when only the League client process is ready', async () => {
+    const dataSource = createCompanionDataSource(
+      createLcuStub({
+        phase: 'ClientRunning',
+        mode: null,
+      }),
+    )
+
+    await expect(dataSource.detectSession()).resolves.toMatchObject({
+      matchId: 'rift-ezreal-001',
+      mode: 'ranked',
+      phase: 'ClientRunning',
+      source: 'lcu',
+    })
+  })
+
   it('falls back to the demo source when LCU is unavailable', async () => {
     const fallback: CompanionDataSource = {
       async detectSession() {

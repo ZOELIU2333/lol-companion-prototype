@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from './tauriHost'
+import { setOverlayAlwaysOnTop, setOverlayCompact, startOverlayDragging, tauriLcuAdapter } from './tauriHost'
 import { createTauriRiotApiHost } from './tauriRiotHost'
 
 const tauriMocks = vi.hoisted(() => ({
+  getCurrentWindow: vi.fn(),
   invoke: vi.fn(),
   isTauri: vi.fn(),
+  startDragging: vi.fn(),
 }))
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -12,10 +14,19 @@ vi.mock('@tauri-apps/api/core', () => ({
   isTauri: tauriMocks.isTauri,
 }))
 
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: tauriMocks.getCurrentWindow,
+}))
+
 describe('tauri host bridge', () => {
   beforeEach(() => {
+    tauriMocks.getCurrentWindow.mockReset()
     tauriMocks.invoke.mockReset()
     tauriMocks.isTauri.mockReset()
+    tauriMocks.startDragging.mockReset()
+    tauriMocks.getCurrentWindow.mockReturnValue({
+      startDragging: tauriMocks.startDragging,
+    })
   })
 
   it('returns null outside the Tauri shell', async () => {
@@ -81,6 +92,21 @@ describe('tauri host bridge', () => {
     await expect(tauriLcuAdapter.readSession()).resolves.toBeNull()
   })
 
+  it('keeps a running League client connected while LCU is still unavailable', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockResolvedValue({
+      phase: 'ClientRunning',
+      mode: null,
+      source: 'lcu',
+    })
+
+    await expect(tauriLcuAdapter.readSession()).resolves.toEqual({
+      phase: 'ClientRunning',
+      mode: null,
+      players: [],
+    })
+  })
+
   it('proxies overlay window commands when running in Tauri', async () => {
     tauriMocks.isTauri.mockReturnValue(true)
     tauriMocks.invoke.mockResolvedValue(null)
@@ -89,6 +115,14 @@ describe('tauri host bridge', () => {
     await expect(setOverlayCompact(true)).resolves.toBe(true)
     expect(tauriMocks.invoke).toHaveBeenCalledWith('set_overlay_always_on_top', { enabled: true })
     expect(tauriMocks.invoke).toHaveBeenCalledWith('set_overlay_compact', { enabled: true })
+  })
+
+  it('starts native window dragging when running in Tauri', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.startDragging.mockResolvedValue(undefined)
+
+    await expect(startOverlayDragging()).resolves.toBe(true)
+    expect(tauriMocks.startDragging).toHaveBeenCalledOnce()
   })
 
   it('proxies Riot API reads through the Tauri backend', async () => {

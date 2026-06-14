@@ -35,6 +35,10 @@ function getLcuDiagnostic(connectionStatus: ConnectionStatus, phase: LcuGamePhas
   }
 
   if (connectionStatus === 'client') {
+    if (phase === 'ClientRunning') {
+      return { id: 'lcu', label: 'League Client', status: 'online', detail: '已检测到 League Client 进程，正在等待 LCU 接口就绪' }
+    }
+
     return { id: 'lcu', label: 'League Client', status: 'online', detail: `LCU phase: ${phase ?? 'Unknown'}，等待选人或对局` }
   }
 

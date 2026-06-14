@@ -1,4 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import type { GameMode } from '../types'
 import type { LcuAdapter, LcuGamePhase, LcuPlayerSnapshot, LcuSessionSnapshot } from './lcuAdapter'
 import type { OpggMcpHost } from './opggMcpAdapter'
@@ -12,6 +13,7 @@ type TauriLcuSessionPayload = {
 }
 
 const knownLcuPhases: readonly LcuGamePhase[] = [
+  'ClientRunning',
   'None',
   'Lobby',
   'Matchmaking',
@@ -80,6 +82,17 @@ export async function setOverlayCompact(enabled: boolean) {
 
   try {
     await invoke('set_overlay_compact', { enabled })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function startOverlayDragging() {
+  if (!isTauri()) return false
+
+  try {
+    await getCurrentWindow().startDragging()
     return true
   } catch {
     return false

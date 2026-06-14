@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
-use std::{env, fs, path::PathBuf, time::Duration};
+use std::{
+    collections::HashSet,
+    env, fs,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 #[derive(Debug, Clone)]
 struct LcuLockfile {
@@ -16,6 +21,11 @@ struct LcuSessionPayload {
     local_summoner_name: Option<String>,
     players: Vec<LcuPlayerPayload>,
     source: String,
+}
+
+struct LeagueClientDiscovery {
+    lockfile: Option<LcuLockfile>,
+    process_running: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -165,12 +175,63 @@ fn parse_lockfile(raw: &str) -> Option<LcuLockfile> {
     })
 }
 
-fn candidate_lockfile_paths() -> Vec<PathBuf> {
+fn lockfile_path_from_executable(executable: &Path) -> Option<PathBuf> {
+    let file_name = executable.file_name()?.to_string_lossy();
+    if !file_name.eq_ignore_ascii_case("LeagueClient.exe")
+        && !file_name.eq_ignore_ascii_case("LeagueClientUx.exe")
+    {
+        return None;
+    }
+
+    executable.parent().map(|parent| parent.join("lockfile"))
+}
+
+#[cfg(target_os = "windows")]
+fn running_league_client_paths() -> (bool, Vec<PathBuf>) {
+    use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
+
+    let mut system = System::new();
+    system.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::nothing().with_exe(sysinfo::UpdateKind::OnlyIfNotSet),
+    );
+
+    let mut process_running = false;
+    let mut executable_paths = Vec::new();
+
+    for process in system.processes().values() {
+        let process_name = process.name().to_string_lossy();
+        if process_name.eq_ignore_ascii_case("LeagueClient.exe")
+            || process_name.eq_ignore_ascii_case("LeagueClientUx.exe")
+        {
+            process_running = true;
+            if let Some(executable) = process.exe() {
+                executable_paths.push(executable.to_path_buf());
+            }
+        }
+    }
+
+    (process_running, executable_paths)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn running_league_client_paths() -> (bool, Vec<PathBuf>) {
+    (false, Vec::new())
+}
+
+fn candidate_lockfile_paths(executable_paths: &[PathBuf]) -> Vec<PathBuf> {
     let mut paths = Vec::new();
 
     if let Ok(path) = env::var("LEAGUE_CLIENT_LOCKFILE") {
         paths.push(PathBuf::from(path));
     }
+
+    paths.extend(
+        executable_paths
+            .iter()
+            .filter_map(|path| lockfile_path_from_executable(path)),
+    );
 
     paths.push(PathBuf::from(r"C:\Riot Games\League of Legends\lockfile"));
 
@@ -184,14 +245,41 @@ fn candidate_lockfile_paths() -> Vec<PathBuf> {
         paths.push(PathBuf::from(system_drive).join(r"Riot Games\League of Legends\lockfile"));
     }
 
+    #[cfg(target_os = "windows")]
+    for drive in b'C'..=b'Z' {
+        let drive_root = format!("{}:\\", drive as char);
+        paths.push(PathBuf::from(&drive_root).join(r"Riot Games\League of Legends\lockfile"));
+        paths.push(
+            PathBuf::from(&drive_root).join(r"Program Files\Riot Games\League of Legends\lockfile"),
+        );
+    }
+
+    let mut seen = HashSet::new();
+    paths.retain(|path| seen.insert(path.clone()));
     paths
 }
 
-fn read_lockfile() -> Option<LcuLockfile> {
-    candidate_lockfile_paths()
+fn discover_league_client() -> LeagueClientDiscovery {
+    let (process_running, executable_paths) = running_league_client_paths();
+    let lockfile = candidate_lockfile_paths(&executable_paths)
         .into_iter()
         .find_map(|path| fs::read_to_string(path).ok())
-        .and_then(|raw| parse_lockfile(&raw))
+        .and_then(|raw| parse_lockfile(&raw));
+
+    LeagueClientDiscovery {
+        lockfile,
+        process_running,
+    }
+}
+
+fn client_running_payload() -> LcuSessionPayload {
+    LcuSessionPayload {
+        phase: "ClientRunning".to_string(),
+        mode: None,
+        local_summoner_name: None,
+        players: Vec::new(),
+        source: "lcu".to_string(),
+    }
 }
 
 fn map_queue_to_mode(queue: Option<&GameflowQueue>) -> Option<String> {
@@ -301,7 +389,10 @@ fn is_allowed_opgg_mcp_tool(tool_name: &str) -> bool {
 }
 
 #[tauri::command]
-async fn opgg_mcp_call(tool_name: String, arguments: serde_json::Value) -> Option<serde_json::Value> {
+async fn opgg_mcp_call(
+    tool_name: String,
+    arguments: serde_json::Value,
+) -> Option<serde_json::Value> {
     if !is_allowed_opgg_mcp_tool(&tool_name) {
         return None;
     }
@@ -492,15 +583,30 @@ async fn read_champ_select_players(
 
 #[tauri::command]
 async fn read_lcu_session() -> Option<LcuSessionPayload> {
-    let lockfile = read_lockfile()?;
-    let client = reqwest::Client::builder()
+    let discovery = discover_league_client();
+    let lockfile = match discovery.lockfile {
+        Some(lockfile) => lockfile,
+        None if discovery.process_running => return Some(client_running_payload()),
+        None => return None,
+    };
+    let client = match reqwest::Client::builder()
         .timeout(Duration::from_millis(1400))
         .danger_accept_invalid_certs(true)
         .build()
-        .ok()?;
+    {
+        Ok(client) => client,
+        Err(_) if discovery.process_running => return Some(client_running_payload()),
+        Err(_) => return None,
+    };
 
     let phase =
-        request_lcu_json::<String>(&client, &lockfile, "/lol-gameflow/v1/gameflow-phase").await?;
+        match request_lcu_json::<String>(&client, &lockfile, "/lol-gameflow/v1/gameflow-phase")
+            .await
+        {
+            Some(phase) => phase,
+            None if discovery.process_running => return Some(client_running_payload()),
+            None => return None,
+        };
     let gameflow_session =
         request_lcu_json::<GameflowSession>(&client, &lockfile, "/lol-gameflow/v1/session").await;
     let current_summoner = request_lcu_json::<CurrentSummoner>(
@@ -562,4 +668,54 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("failed to run LOL Companion desktop shell");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{candidate_lockfile_paths, lockfile_path_from_executable, parse_lockfile};
+    use std::path::{Path, PathBuf};
+
+    #[test]
+    fn parses_valid_lcu_lockfile() {
+        let lockfile = parse_lockfile("LeagueClient:1234:54321:secret:https").unwrap();
+
+        assert_eq!(lockfile.port, 54321);
+        assert_eq!(lockfile.password, "secret");
+        assert_eq!(lockfile.protocol, "https");
+    }
+
+    #[test]
+    fn derives_lockfile_from_league_client_executable() {
+        let path =
+            lockfile_path_from_executable(Path::new("/games/League of Legends/LeagueClientUx.exe"));
+
+        assert_eq!(
+            path,
+            Some(PathBuf::from("/games/League of Legends/lockfile"))
+        );
+    }
+
+    #[test]
+    fn ignores_unrelated_process_executables() {
+        assert_eq!(
+            lockfile_path_from_executable(Path::new("/games/OtherClient.exe")),
+            None
+        );
+    }
+
+    #[test]
+    fn prioritizes_process_derived_lockfile_candidates() {
+        let executable = PathBuf::from("/custom/LeagueClient.exe");
+        let paths = candidate_lockfile_paths(&[executable]);
+        let process_path = PathBuf::from("/custom/lockfile");
+        let standard_path = PathBuf::from(r"C:\Riot Games\League of Legends\lockfile");
+
+        let process_index = paths.iter().position(|path| path == &process_path).unwrap();
+        let standard_index = paths
+            .iter()
+            .position(|path| path == &standard_path)
+            .unwrap();
+
+        assert!(process_index < standard_index);
+    }
 }

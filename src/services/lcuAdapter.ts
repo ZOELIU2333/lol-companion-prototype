@@ -1,6 +1,7 @@
 import type { GameMode, PlayerRiotAccount, TeamSide } from '../types'
 
 export type LcuGamePhase =
+  | 'ClientRunning'
   | 'None'
   | 'Lobby'
   | 'Matchmaking'
