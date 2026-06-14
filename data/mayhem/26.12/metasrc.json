@@ -1,0 +1,6 @@
+{
+  "status": "unavailable",
+  "reason": "fetch failed: https://www.metasrc.com/lol/mayhem returned HTTP 403",
+  "sourceUrl": "https://www.metasrc.com/lol/mayhem",
+  "checkedAt": "2026-06-14T09:01:33.837Z"
+}
