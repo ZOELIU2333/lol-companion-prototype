@@ -1,40 +1,55 @@
 import { useEffect, useMemo, useState } from 'react'
 import { buildChatBrief } from '../lib/chatBrief'
-import { createRecommendations } from '../lib/recommendations'
-import { applyLcuPlayersToMatch, createCompanionDataSource, mockCompanionDataSource } from '../services/companionDataSource'
+import { createCompanionDataSource } from '../services/companionDataSource'
+import { emptyRecommendations } from '../services/emptyRecommendations'
 import { applyLiveClientSnapshotToMatch, createTauriLiveClientDataHost, type LiveClientSnapshot } from '../services/liveClientData'
+import { createLcuMatch } from '../services/lcuMatch'
 import { loadOpggChampionDetail } from '../services/opggChampionData'
 import { mockPluginActions } from '../services/pluginActions'
 import { createTauriOpggMcpHost, isRunningInTauri, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from '../services/tauriHost'
 import type { ConnectionDiagnostic, DiagnosticStatus, GameMode, InfoPhase, PlayerFilter } from '../types'
-import type { LcuGamePhase, LcuPlayerSnapshot } from '../services/lcuAdapter'
+import type { LcuGamePhase } from '../services/lcuAdapter'
 import type { MayhemRecommendationMode } from '../features/mayhem/types'
-import { isDevelopmentDemoEnabled } from '../services/runtimeMode'
 
-const isDemoEnabled = isDevelopmentDemoEnabled(import.meta.env.VITE_ENABLE_DEMO)
-const companionDataSource = createCompanionDataSource(tauriLcuAdapter, isDemoEnabled ? mockCompanionDataSource : null)
+const companionDataSource = createCompanionDataSource(tauriLcuAdapter)
 const pluginActions = mockPluginActions
 const connectedPhases = new Set(['ChampSelect', 'GameStart', 'InProgress', 'WaitingForStats', 'EndOfGame'])
+const idleMatch = createLcuMatch({ matchId: null, mode: null, source: 'lcu' })
 
-type ConnectionStatus = 'detecting' | 'disconnected' | 'demo' | 'client' | 'match'
+type ConnectionStatus = 'detecting' | 'disconnected' | 'client' | 'syncing' | 'match'
 
 const connectionLabels: Record<ConnectionStatus, string> = {
   detecting: '检测客户端中',
   disconnected: '等待 League Client',
-  demo: 'Demo 模式 · 未连接客户端',
   client: '已连接客户端',
+  syncing: '正在识别当前对局',
   match: '已检测到对局',
 }
 
 function getShellDiagnostic(isDesktopShell: boolean): ConnectionDiagnostic {
   return isDesktopShell
     ? { id: 'shell', label: 'Desktop Shell', status: 'online', detail: '正在 Tauri 桌面壳内运行' }
-    : { id: 'shell', label: 'Desktop Shell', status: 'demo', detail: '当前是浏览器 Demo，无法访问本机 LOL 进程' }
+    : { id: 'shell', label: 'Desktop Shell', status: 'offline', detail: '当前不在桌面壳内，无法访问本机 LOL 进程' }
 }
 
-function getLcuDiagnostic(connectionStatus: ConnectionStatus, phase: LcuGamePhase | null): ConnectionDiagnostic {
+function getLcuDiagnostic(
+  connectionStatus: ConnectionStatus,
+  phase: LcuGamePhase | null,
+  queueId: number | null,
+  playerSource: 'champ-select' | 'gameflow' | null,
+): ConnectionDiagnostic {
   if (connectionStatus === 'match') {
-    return { id: 'lcu', label: 'League Client', status: 'online', detail: `LCU phase: ${phase ?? 'Unknown'}，已检测到当前对局` }
+    const source = playerSource ? `，玩家来源: ${playerSource}` : ''
+    return { id: 'lcu', label: 'League Client', status: 'online', detail: `LCU phase: ${phase ?? 'Unknown'}，队列 ${queueId ?? 'Unknown'}${source}` }
+  }
+
+  if (connectionStatus === 'syncing') {
+    return {
+      id: 'lcu',
+      label: 'League Client',
+      status: 'checking',
+      detail: `LCU phase: ${phase ?? 'Unknown'}，队列 ${queueId ?? 'Unknown'} 尚未映射，已停止使用默认模式`,
+    }
   }
 
   if (connectionStatus === 'client') {
@@ -49,10 +64,6 @@ function getLcuDiagnostic(connectionStatus: ConnectionStatus, phase: LcuGamePhas
     return { id: 'lcu', label: 'League Client', status: 'checking', detail: '正在查找 LCU lockfile' }
   }
 
-  if (connectionStatus === 'demo') {
-    return { id: 'lcu', label: 'League Client', status: 'demo', detail: '开发 Demo 已显式开启' }
-  }
-
   return { id: 'lcu', label: 'League Client', status: 'offline', detail: '未发现 League Client，应用会继续自动检测' }
 }
 
@@ -62,7 +73,7 @@ function getLiveClientDiagnostic(hostReady: boolean, snapshot: LiveClientSnapsho
   }
 
   if (!hostReady) {
-    return { id: 'live-client', label: 'Live Client', status: 'demo', detail: '浏览器 Demo 无法访问本机游戏进程' }
+    return { id: 'live-client', label: 'Live Client', status: 'offline', detail: '当前环境无法访问本机游戏进程' }
   }
 
   return { id: 'live-client', label: 'Live Client', status: 'offline', detail: '未进入游戏，或 2999 实时接口不可用' }
@@ -71,14 +82,12 @@ function getLiveClientDiagnostic(hostReady: boolean, snapshot: LiveClientSnapsho
 function getOpggDiagnostic(status: DiagnosticStatus): ConnectionDiagnostic {
   if (status === 'online') return { id: 'opgg', label: 'OP.GG MCP', status, detail: '最后一次请求成功，版本数据接口可用' }
   if (status === 'checking') return { id: 'opgg', label: 'OP.GG MCP', status, detail: '正在同步英雄版本数据' }
-  if (status === 'demo') return { id: 'opgg', label: 'OP.GG MCP', status, detail: '浏览器 Demo 使用静态缓存，桌面壳内会走 MCP' }
   return { id: 'opgg', label: 'OP.GG MCP', status, detail: '最后一次请求失败，继续使用本地缓存' }
 }
 
 export function useCompanionSession() {
   const [activeMode, setActiveMode] = useState<GameMode>('ranked')
   const [mayhemRecommendationMode, setMayhemRecommendationMode] = useState<MayhemRecommendationMode>('strength')
-  const [matchIndex, setMatchIndex] = useState(0)
   const [activePhase, setActivePhase] = useState<InfoPhase>('pregame')
   const [isDetected, setIsDetected] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('detecting')
@@ -86,9 +95,10 @@ export function useCompanionSession() {
   const [isCompact, setIsCompact] = useState(false)
   const [playerFilter, setPlayerFilter] = useState<PlayerFilter>('ally')
   const [lcuPhase, setLcuPhase] = useState<LcuGamePhase | null>(null)
-  const [lcuPlayers, setLcuPlayers] = useState<LcuPlayerSnapshot[]>([])
+  const [lcuQueueId, setLcuQueueId] = useState<number | null>(null)
+  const [lcuPlayerSource, setLcuPlayerSource] = useState<'champ-select' | 'gameflow' | null>(null)
+  const [lcuMatch, setLcuMatch] = useState<ReturnType<typeof createLcuMatch> | null>(null)
   const [liveSnapshot, setLiveSnapshot] = useState<LiveClientSnapshot | null>(null)
-  const [recommendationDataVersion, setRecommendationDataVersion] = useState(0)
   const [diagnosticRefreshKey, setDiagnosticRefreshKey] = useState(0)
   const [isChampionDataSyncing, setIsChampionDataSyncing] = useState(false)
   const [opggMcpStatus, setOpggMcpStatus] = useState<DiagnosticStatus>('checking')
@@ -97,34 +107,24 @@ export function useCompanionSession() {
   const liveClientDataHost = useMemo(() => createTauriLiveClientDataHost(), [])
   const opggMcpHost = useMemo(() => createTauriOpggMcpHost(), [])
 
-  const matches = useMemo(() => companionDataSource.listMatches(), [])
-  const availableMatches = matches
-  const baseMatch = availableMatches[matchIndex] ?? availableMatches[0]
+  const availableMatches = useMemo(() => companionDataSource.listMatches(), [])
+  const baseMatch = lcuMatch ?? idleMatch
   const match = useMemo(
-    () => applyLiveClientSnapshotToMatch(
-      applyLcuPlayersToMatch(baseMatch, lcuPlayers, isDemoEnabled),
-      liveSnapshot,
-    ),
-    [baseMatch, lcuPlayers, liveSnapshot],
+    () => applyLiveClientSnapshotToMatch(baseMatch, liveSnapshot),
+    [baseMatch, liveSnapshot],
   )
   const champion = match.champions.find((candidate) => candidate.id === match.currentChampionId) ?? match.champions[0]
   const effectivePhase: InfoPhase = activeMode === 'augment' ? 'live' : 'pregame'
-  const recommendations = useMemo(
-    () => {
-      void recommendationDataVersion
-      return createRecommendations(match, activeMode, mayhemRecommendationMode)
-    },
-    [activeMode, match, mayhemRecommendationMode, recommendationDataVersion],
-  )
+  const recommendations = emptyRecommendations
   const brief = useMemo(() => buildChatBrief(match, match.players), [match])
   const diagnostics = useMemo(
     () => [
       getShellDiagnostic(isDesktopShell),
-      getLcuDiagnostic(connectionStatus, lcuPhase),
+      getLcuDiagnostic(connectionStatus, lcuPhase, lcuQueueId, lcuPlayerSource),
       getLiveClientDiagnostic(Boolean(liveClientDataHost), liveSnapshot),
       getOpggDiagnostic(opggMcpStatus),
     ],
-    [connectionStatus, isDesktopShell, lcuPhase, liveClientDataHost, liveSnapshot, opggMcpStatus],
+    [connectionStatus, isDesktopShell, lcuPhase, lcuPlayerSource, lcuQueueId, liveClientDataHost, liveSnapshot, opggMcpStatus],
   )
 
   useEffect(() => {
@@ -136,30 +136,34 @@ export function useCompanionSession() {
       if (!session) {
         setConnectionStatus('disconnected')
         setLcuPhase(null)
-        setLcuPlayers([])
+        setLcuQueueId(null)
+        setLcuPlayerSource(null)
+        setLcuMatch(null)
         setLiveSnapshot(null)
         setIsDetected(false)
         return
       }
 
       if (session.source === 'lcu') {
-        const detectedIndex = availableMatches.findIndex((candidate) => candidate.id === session.matchId)
-        if (detectedIndex >= 0) {
-          setMatchIndex(detectedIndex)
+        if (session.mode) {
+          setActiveMode(session.mode)
+          setActivePhase(session.mode === 'augment' ? 'live' : 'pregame')
         }
-
-        setActiveMode(session.mode)
-        setActivePhase(session.mode === 'augment' ? 'live' : 'pregame')
-        setConnectionStatus(session.phase && connectedPhases.has(session.phase) ? 'match' : 'client')
+        const isActivePhase = Boolean(session.phase && connectedPhases.has(session.phase))
+        setConnectionStatus(isActivePhase ? (session.mode ? 'match' : 'syncing') : 'client')
         setLcuPhase(session.phase ?? null)
-        setLcuPlayers(session.players ?? [])
-        setIsDetected(true)
+        setLcuQueueId(session.queueId ?? null)
+        setLcuPlayerSource(session.playerSource ?? null)
+        setLcuMatch(session.mode ? createLcuMatch(session) : null)
+        setIsDetected(isActivePhase && Boolean(session.mode))
         return
       }
 
-      setConnectionStatus('demo')
+      setConnectionStatus('disconnected')
       setLcuPhase(null)
-      setLcuPlayers([])
+      setLcuQueueId(null)
+      setLcuPlayerSource(null)
+      setLcuMatch(null)
       setIsDetected(false)
     })
 
@@ -170,7 +174,7 @@ export function useCompanionSession() {
       isStale = true
       window.clearInterval(interval)
     }
-  }, [availableMatches, diagnosticRefreshKey])
+  }, [diagnosticRefreshKey])
 
   useEffect(() => {
     if (!liveClientDataHost) {
@@ -199,11 +203,11 @@ export function useCompanionSession() {
   }, [toast])
 
   useEffect(() => {
-    const hasVisibleSession = connectionStatus === 'match' || (isDemoEnabled && connectionStatus === 'demo')
-    if (!hasVisibleSession || !opggMcpHost || activeMode !== 'ranked') {
+    const hasVisibleSession = connectionStatus === 'match'
+    if (!hasVisibleSession || !opggMcpHost || activeMode !== 'ranked' || !champion?.name) {
       const timer = window.setTimeout(() => {
         setIsChampionDataSyncing(false)
-        setOpggMcpStatus(opggMcpHost ? 'online' : isDemoEnabled ? 'demo' : 'offline')
+        setOpggMcpStatus(opggMcpHost ? 'online' : 'offline')
       }, 0)
       return () => window.clearTimeout(timer)
     }
@@ -220,7 +224,6 @@ export function useCompanionSession() {
         if (isStale) return
         setOpggMcpStatus(detail ? 'online' : 'offline')
         if (!detail) return
-        setRecommendationDataVersion((version) => version + 1)
       })
       .finally(() => {
         if (!isStale) setIsChampionDataSyncing(false)
@@ -231,46 +234,14 @@ export function useCompanionSession() {
     }
   }, [activeMode, champion, connectionStatus, diagnosticRefreshKey, opggMcpHost])
 
-  const resetForMatch = (nextMode: GameMode) => {
-    setIsDetected(false)
-    setActiveMode(nextMode === 'arena' ? 'ranked' : nextMode)
-    setPlayerFilter('ally')
-    setActivePhase(nextMode === 'augment' ? 'live' : 'pregame')
-    setLcuPlayers([])
-    setLiveSnapshot(null)
-  }
-
   const refreshMatch = () => {
-    if (!isDemoEnabled) {
-      setDiagnosticRefreshKey((value) => value + 1)
-      setToast('已重新检测客户端')
-      return
-    }
-
-    if (availableMatches.length === 0 || !match) return
-
-    const currentVisibleIndex = availableMatches.findIndex((candidate) => candidate.id === match.id)
-    const nextMatch = availableMatches[(currentVisibleIndex + 1) % availableMatches.length]
-    const nextIndex = availableMatches.findIndex((candidate) => candidate.id === nextMatch.id)
-
-    setMatchIndex(nextIndex)
-    resetForMatch(nextMatch.mode)
-    setToast('已刷新一组 Demo 对局')
+    setDiagnosticRefreshKey((value) => value + 1)
+    setToast('已重新检测客户端')
   }
 
   const refreshDiagnostics = () => {
     setDiagnosticRefreshKey((value) => value + 1)
     setToast('已刷新连接诊断')
-  }
-
-  const selectScenario = (matchId: string) => {
-    const nextIndex = availableMatches.findIndex((candidate) => candidate.id === matchId)
-    if (nextIndex < 0) return
-
-    const nextMatch = availableMatches[nextIndex]
-    setMatchIndex(nextIndex)
-    resetForMatch(nextMatch.mode)
-    setToast('已切换 Demo 场景')
   }
 
   const copyBrief = async () => {
@@ -328,9 +299,9 @@ export function useCompanionSession() {
     isChampionDataSyncing,
     isCompact,
     isDetected,
-    isDemoEnabled,
-    hasActiveSession: connectionStatus === 'match' || (isDemoEnabled && connectionStatus === 'demo'),
-    isClientConnected: connectionStatus === 'client' || connectionStatus === 'match',
+    isDemoEnabled: false,
+    hasActiveSession: connectionStatus === 'match',
+    isClientConnected: connectionStatus === 'client' || connectionStatus === 'syncing' || connectionStatus === 'match',
     match,
     mayhemRecommendationMode,
     onMayhemModeChange: setMayhemRecommendationMode,
@@ -338,7 +309,7 @@ export function useCompanionSession() {
     recommendations,
     refreshDiagnostics,
     refreshMatch,
-    selectScenario,
+    selectScenario: () => undefined,
     setActivePhase,
     setPlayerFilter,
     simulateSend,

@@ -37,10 +37,8 @@ function App() {
       isChampionDataSyncing={session.isChampionDataSyncing}
       isClientConnected={session.isClientConnected}
       isCompact={session.isCompact}
-      isDemoEnabled={session.isDemoEnabled}
       isDetected={session.isDetected}
       match={session.match}
-      matches={session.availableMatches}
       mayhemRecommendationMode={session.mayhemRecommendationMode}
       recommendations={session.recommendations}
       onApplyLoadout={session.applyLoadout}
@@ -49,7 +47,6 @@ function App() {
       onMayhemModeChange={session.onMayhemModeChange}
       onRefreshDiagnostics={session.refreshDiagnostics}
       onRefresh={session.refreshMatch}
-      onScenarioChange={session.selectScenario}
       onSimulateSend={session.simulateSend}
       onToggleAlwaysOnTop={session.toggleAlwaysOnTop}
       onToggleCompact={session.toggleCompact}
@@ -60,9 +57,6 @@ function App() {
     <>
       {session.hasActiveSession ? (
         <GameShell
-          activeMode={session.activeMode}
-          allowDemoData={session.isDemoEnabled}
-          champion={session.champion}
           match={session.match}
         >
           {overlayPanel}

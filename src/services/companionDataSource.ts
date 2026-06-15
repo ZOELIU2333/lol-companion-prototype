@@ -1,12 +1,14 @@
-import { mockMatches } from '../data/mockMatches'
 import type { GameMode, Match, PlayerIntel, PlayerRiotAccount } from '../types'
 import type { LcuAdapter, LcuGamePhase, LcuPlayerSnapshot } from './lcuAdapter'
 
 export type DetectedGameSession = {
-  matchId: string
-  mode: Exclude<GameMode, 'arena'>
+  matchId: string | null
+  mode: Exclude<GameMode, 'arena'> | null
   phase?: LcuGamePhase
+  queueId?: number
+  localSummonerName?: string
   players?: LcuPlayerSnapshot[]
+  playerSource?: 'champ-select' | 'gameflow'
   source: 'mock' | 'lcu'
 }
 
@@ -14,12 +16,6 @@ export type CompanionDataSource = {
   detectSession: () => Promise<DetectedGameSession | null>
   listMatches: () => Match[]
   getMatch: (matchId: string) => Match | null
-}
-
-const visibleMatches = () => mockMatches.filter((match) => match.mode !== 'arena')
-
-function findClosestMatch(mode: Exclude<GameMode, 'arena'>) {
-  return visibleMatches().find((match) => match.mode === mode) ?? visibleMatches()[0]
 }
 
 function createRiotAccountFromLcu(player: LcuPlayerSnapshot): PlayerRiotAccount | undefined {
@@ -81,51 +77,32 @@ export function applyLcuPlayersToMatch(
   }
 }
 
-export const mockCompanionDataSource: CompanionDataSource = {
-  async detectSession() {
-    const match = findClosestMatch('ranked')
-
-    return {
-      matchId: match.id,
-      mode: match.mode === 'arena' ? 'ranked' : match.mode,
-      source: 'mock',
-    }
-  },
-
-  listMatches() {
-    return visibleMatches()
-  },
-
-  getMatch(matchId) {
-    return visibleMatches().find((match) => match.id === matchId) ?? null
-  },
-}
-
 export function createCompanionDataSource(lcuAdapter: LcuAdapter, fallback: CompanionDataSource | null = null): CompanionDataSource {
   return {
     async detectSession() {
       const session = await lcuAdapter.readSession()
       if (!session) return fallback?.detectSession() ?? null
 
-      const mode = session.mode ?? 'ranked'
-      const match = findClosestMatch(mode)
-      if (!match) return fallback?.detectSession() ?? null
+      const mode = session.mode
 
       return {
-        matchId: match.id,
+        matchId: mode ? `lcu-${session.queueId ?? mode}` : null,
         mode,
         phase: session.phase,
+        queueId: session.queueId,
+        localSummonerName: session.localSummonerName,
         players: session.players ?? [],
+        playerSource: session.playerSource,
         source: 'lcu',
       }
     },
 
     listMatches() {
-      return visibleMatches()
+      return fallback?.listMatches() ?? []
     },
 
     getMatch(matchId) {
-      return visibleMatches().find((match) => match.id === matchId) ?? null
+      return fallback?.getMatch(matchId) ?? null
     },
   }
 }

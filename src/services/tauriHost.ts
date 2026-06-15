@@ -7,8 +7,10 @@ import type { OpggMcpHost } from './opggMcpAdapter'
 type TauriLcuSessionPayload = {
   phase: string
   mode: Exclude<GameMode, 'arena'> | null
+  queueId?: number
   localSummonerName?: string
   players?: LcuPlayerSnapshot[]
+  playerSource?: 'champ-select' | 'gameflow'
   source: 'lcu'
 }
 
@@ -35,8 +37,10 @@ function normalizeLcuPayload(payload: TauriLcuSessionPayload | null): LcuSession
   return {
     phase: payload.phase,
     mode: payload.mode,
+    queueId: payload.queueId,
     localSummonerName: payload.localSummonerName,
     players: payload.players ?? [],
+    playerSource: payload.playerSource,
   }
 }
 

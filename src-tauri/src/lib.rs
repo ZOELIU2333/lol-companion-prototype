@@ -18,8 +18,10 @@ struct LcuLockfile {
 struct LcuSessionPayload {
     phase: String,
     mode: Option<String>,
+    queue_id: Option<u32>,
     local_summoner_name: Option<String>,
     players: Vec<LcuPlayerPayload>,
+    player_source: Option<String>,
     source: String,
 }
 
@@ -57,13 +59,31 @@ struct GameflowSession {
 #[derive(Debug, Deserialize)]
 struct GameflowGameData {
     queue: Option<GameflowQueue>,
+    #[serde(rename = "teamOne")]
+    team_one: Option<Vec<GameflowParticipant>>,
+    #[serde(rename = "teamTwo")]
+    team_two: Option<Vec<GameflowParticipant>>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct GameflowQueue {
+    id: Option<u32>,
     description: Option<String>,
     game_mode: Option<String>,
+    name: Option<String>,
+    short_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GameflowParticipant {
+    champion_id: Option<u16>,
+    puuid: Option<String>,
+    selected_position: Option<String>,
+    summoner_id: Option<u64>,
+    summoner_internal_name: Option<String>,
+    summoner_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -71,6 +91,8 @@ struct GameflowQueue {
 struct CurrentSummoner {
     display_name: Option<String>,
     game_name: Option<String>,
+    puuid: Option<String>,
+    summoner_id: Option<u64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -276,15 +298,38 @@ fn client_running_payload() -> LcuSessionPayload {
     LcuSessionPayload {
         phase: "ClientRunning".to_string(),
         mode: None,
+        queue_id: None,
         local_summoner_name: None,
         players: Vec::new(),
+        player_source: None,
         source: "lcu".to_string(),
     }
 }
 
 fn map_queue_to_mode(queue: Option<&GameflowQueue>) -> Option<String> {
+    if let Some(queue_id) = queue.and_then(|queue| queue.id) {
+        if matches!(queue_id, 2400 | 2401 | 2403 | 2405 | 3240 | 3270) {
+            return Some("augment".to_string());
+        }
+
+        if matches!(queue_id, 400 | 420 | 430 | 440 | 490) {
+            return Some("ranked".to_string());
+        }
+    }
+
     let raw = queue
-        .and_then(|queue| queue.description.as_deref().or(queue.game_mode.as_deref()))
+        .map(|queue| {
+            [
+                queue.name.as_deref(),
+                queue.short_name.as_deref(),
+                queue.description.as_deref(),
+                queue.game_mode.as_deref(),
+            ]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
+            .join(" ")
+        })
         .unwrap_or_default()
         .to_lowercase();
 
@@ -301,6 +346,64 @@ fn map_queue_to_mode(queue: Option<&GameflowQueue>) -> Option<String> {
     }
 
     None
+}
+
+async fn build_player_payload(
+    client: &reqwest::Client,
+    lockfile: &LcuLockfile,
+    team: String,
+    index: usize,
+    role: Option<&str>,
+    champion_id: Option<u16>,
+    summoner_id: Option<u64>,
+    summoner_name: Option<String>,
+    puuid: Option<String>,
+) -> LcuPlayerPayload {
+    let identity = match summoner_id {
+        Some(summoner_id) => {
+            let path = format!("/lol-summoner/v1/summoners/{}", summoner_id);
+            request_lcu_json::<SummonerIdentity>(client, lockfile, &path).await
+        }
+        None => None,
+    };
+    let game_name = identity
+        .as_ref()
+        .and_then(|identity| identity.game_name.clone())
+        .or_else(|| summoner_name.clone());
+    let resolved_name = identity
+        .as_ref()
+        .and_then(|identity| {
+            identity
+                .display_name
+                .clone()
+                .or_else(|| identity.game_name.clone())
+                .or_else(|| identity.internal_name.clone())
+        })
+        .or(summoner_name);
+
+    LcuPlayerPayload {
+        id: format!(
+            "{}-{}",
+            team,
+            summoner_id
+                .map(|value| value.to_string())
+                .or_else(|| puuid.clone())
+                .unwrap_or_else(|| index.to_string())
+        ),
+        team,
+        role: map_position_to_role(role),
+        champion_id: champion_id.filter(|champion_id| *champion_id > 0),
+        summoner_id,
+        summoner_name: resolved_name,
+        riot_account: LcuRiotAccountPayload {
+            game_name,
+            puuid: identity
+                .as_ref()
+                .and_then(|identity| identity.puuid.clone())
+                .or(puuid),
+            tag_line: identity.and_then(|identity| identity.tag_line),
+        },
+    }
 }
 
 fn map_position_to_role(position: Option<&str>) -> Option<String> {
@@ -530,52 +633,88 @@ async fn read_champ_select_players(
     let mut players = Vec::new();
 
     for (index, (team, player)) in participants.enumerate() {
-        let identity = match player.summoner_id {
-            Some(summoner_id) => {
-                let path = format!("/lol-summoner/v1/summoners/{}", summoner_id);
-                request_lcu_json::<SummonerIdentity>(client, lockfile, &path).await
-            }
-            None => None,
-        };
-        let game_name = identity
-            .as_ref()
-            .and_then(|identity| identity.game_name.clone())
-            .or_else(|| player.summoner_name.clone());
-        let summoner_name = identity
-            .as_ref()
-            .and_then(|identity| {
-                identity
-                    .display_name
-                    .clone()
-                    .or_else(|| identity.game_name.clone())
-                    .or_else(|| identity.internal_name.clone())
-            })
-            .or_else(|| player.summoner_name.clone());
-
-        players.push(LcuPlayerPayload {
-            id: format!(
-                "{}-{}",
+        let fallback_index = player.cell_id.map(usize::from).unwrap_or(index);
+        players.push(
+            build_player_payload(
+                client,
+                lockfile,
                 team,
-                player
-                    .cell_id
-                    .map(|value| value.to_string())
-                    .or_else(|| player.summoner_id.map(|value| value.to_string()))
-                    .unwrap_or_else(|| index.to_string())
-            ),
-            team,
-            role: map_position_to_role(player.assigned_position.as_deref()),
-            champion_id: player.champion_id.filter(|champion_id| *champion_id > 0),
-            summoner_id: player.summoner_id,
-            summoner_name,
-            riot_account: LcuRiotAccountPayload {
-                game_name,
-                puuid: identity
-                    .as_ref()
-                    .and_then(|identity| identity.puuid.clone())
-                    .or_else(|| player.puuid.clone()),
-                tag_line: identity.and_then(|identity| identity.tag_line),
-            },
+                fallback_index,
+                player.assigned_position.as_deref(),
+                player.champion_id,
+                player.summoner_id,
+                player.summoner_name,
+                player.puuid,
+            )
+            .await,
+        );
+    }
+
+    players
+}
+
+async fn read_gameflow_players(
+    client: &reqwest::Client,
+    lockfile: &LcuLockfile,
+    game_data: Option<&GameflowGameData>,
+    current_summoner: Option<&CurrentSummoner>,
+) -> Vec<LcuPlayerPayload> {
+    let Some(game_data) = game_data else {
+        return Vec::new();
+    };
+    let team_one = game_data.team_one.clone().unwrap_or_default();
+    let team_two = game_data.team_two.clone().unwrap_or_default();
+    let is_local_player = |player: &GameflowParticipant| {
+        current_summoner.is_some_and(|summoner| {
+            (summoner.summoner_id.is_some() && summoner.summoner_id == player.summoner_id)
+                || (summoner.puuid.is_some() && summoner.puuid == player.puuid)
+                || summoner
+                    .display_name
+                    .as_deref()
+                    .is_some_and(|name| player.summoner_name.as_deref() == Some(name))
+                || summoner
+                    .game_name
+                    .as_deref()
+                    .is_some_and(|name| player.summoner_name.as_deref() == Some(name))
+        })
+    };
+    let local_is_team_two = team_two.iter().any(is_local_player);
+    let (ally_team, enemy_team) = if local_is_team_two {
+        (team_two, team_one)
+    } else {
+        (team_one, team_two)
+    };
+    let participants = ally_team
+        .into_iter()
+        .map(|player| ("ally".to_string(), player))
+        .chain(
+            enemy_team
+                .into_iter()
+                .map(|player| ("enemy".to_string(), player)),
+        )
+        .filter(|(_, player)| {
+            player.summoner_id.is_some()
+                || player.summoner_name.is_some()
+                || player.summoner_internal_name.is_some()
+                || player.puuid.is_some()
         });
+
+    let mut players = Vec::new();
+    for (index, (team, player)) in participants.enumerate() {
+        players.push(
+            build_player_payload(
+                client,
+                lockfile,
+                team,
+                index,
+                player.selected_position.as_deref(),
+                player.champion_id,
+                player.summoner_id,
+                player.summoner_name.or(player.summoner_internal_name),
+                player.puuid,
+            )
+            .await,
+        );
     }
 
     players
@@ -616,22 +755,35 @@ async fn read_lcu_session() -> Option<LcuSessionPayload> {
     )
     .await;
 
-    let queue = gameflow_session
+    let game_data = gameflow_session
         .as_ref()
-        .and_then(|session| session.game_data.as_ref())
-        .and_then(|game_data| game_data.queue.as_ref());
-    let players = if phase == "ChampSelect" {
-        read_champ_select_players(&client, &lockfile).await
+        .and_then(|session| session.game_data.as_ref());
+    let queue = game_data.and_then(|game_data| game_data.queue.as_ref());
+    let (players, player_source) = if phase == "ChampSelect" {
+        (
+            read_champ_select_players(&client, &lockfile).await,
+            Some("champ-select".to_string()),
+        )
+    } else if matches!(
+        phase.as_str(),
+        "GameStart" | "InProgress" | "WaitingForStats"
+    ) {
+        (
+            read_gameflow_players(&client, &lockfile, game_data, current_summoner.as_ref()).await,
+            Some("gameflow".to_string()),
+        )
     } else {
-        Vec::new()
+        (Vec::new(), None)
     };
 
     Some(LcuSessionPayload {
         phase,
         mode: map_queue_to_mode(queue),
+        queue_id: queue.and_then(|queue| queue.id),
         local_summoner_name: current_summoner
             .and_then(|summoner| summoner.display_name.or(summoner.game_name)),
         players,
+        player_source,
         source: "lcu".to_string(),
     })
 }
@@ -672,7 +824,10 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{candidate_lockfile_paths, lockfile_path_from_executable, parse_lockfile};
+    use super::{
+        candidate_lockfile_paths, lockfile_path_from_executable, map_queue_to_mode, parse_lockfile,
+        GameflowQueue,
+    };
     use std::path::{Path, PathBuf};
 
     #[test]
@@ -682,6 +837,27 @@ mod tests {
         assert_eq!(lockfile.port, 54321);
         assert_eq!(lockfile.password, "secret");
         assert_eq!(lockfile.protocol, "https");
+    }
+
+    #[test]
+    fn maps_current_queue_ids_without_guessing_plain_aram() {
+        let queue = |id| GameflowQueue {
+            id: Some(id),
+            description: None,
+            game_mode: Some("ARAM".to_string()),
+            name: None,
+            short_name: None,
+        };
+
+        assert_eq!(
+            map_queue_to_mode(Some(&queue(420))).as_deref(),
+            Some("ranked")
+        );
+        assert_eq!(
+            map_queue_to_mode(Some(&queue(2400))).as_deref(),
+            Some("augment")
+        );
+        assert_eq!(map_queue_to_mode(Some(&queue(450))), None);
     }
 
     #[test]

@@ -42,7 +42,9 @@ describe('tauri host bridge', () => {
     tauriMocks.invoke.mockResolvedValue({
       phase: 'ChampSelect',
       mode: 'ranked',
+      queueId: 420,
       localSummonerName: 'DemoSummoner',
+      playerSource: 'champ-select',
       players: [
         {
           id: 'ally-3',
@@ -63,7 +65,9 @@ describe('tauri host bridge', () => {
     await expect(tauriLcuAdapter.readSession()).resolves.toEqual({
       phase: 'ChampSelect',
       mode: 'ranked',
+      queueId: 420,
       localSummonerName: 'DemoSummoner',
+      playerSource: 'champ-select',
       players: [
         {
           id: 'ally-3',
@@ -103,7 +107,9 @@ describe('tauri host bridge', () => {
     await expect(tauriLcuAdapter.readSession()).resolves.toEqual({
       phase: 'ClientRunning',
       mode: null,
+      queueId: undefined,
       players: [],
+      playerSource: undefined,
     })
   })
 

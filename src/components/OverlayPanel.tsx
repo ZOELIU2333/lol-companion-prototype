@@ -5,7 +5,6 @@ import type { MayhemRecommendationMode } from '../features/mayhem/types'
 import { AugmentRecommendation } from './AugmentRecommendation'
 import { ChampionSummary } from './ChampionSummary'
 import { ChatBriefPanel } from './ChatBriefPanel'
-import { DemoScenarioSwitcher } from './DemoScenarioSwitcher'
 import { LiveDecisionPanel } from './LiveDecisionPanel'
 import type { InfoPhase } from '../types'
 import { getRecommendationSourceDisplay } from '../services/recommendationMeta'
@@ -21,12 +20,10 @@ type OverlayPanelProps = {
   isChampionDataSyncing: boolean
   isCompact: boolean
   isDetected: boolean
-  isDemoEnabled: boolean
   hasActiveSession: boolean
   hasTrustedRecommendationData: boolean
   isClientConnected: boolean
   match: Match
-  matches: Match[]
   mayhemRecommendationMode: MayhemRecommendationMode
   recommendations: RecommendationViewModel
   onRefreshDiagnostics: () => void
@@ -37,7 +34,6 @@ type OverlayPanelProps = {
   onToggleAlwaysOnTop: () => void
   onToggleCompact: () => void
   onRefresh: () => void
-  onScenarioChange: (matchId: string) => void
   onSimulateSend: () => void
 }
 
@@ -52,12 +48,10 @@ export function OverlayPanel({
   isChampionDataSyncing,
   isCompact,
   isDetected,
-  isDemoEnabled,
   hasActiveSession,
   hasTrustedRecommendationData,
   isClientConnected,
   match,
-  matches,
   mayhemRecommendationMode,
   recommendations,
   onRefreshDiagnostics,
@@ -68,7 +62,6 @@ export function OverlayPanel({
   onToggleAlwaysOnTop,
   onToggleCompact,
   onRefresh,
-  onScenarioChange,
   onSimulateSend,
 }: OverlayPanelProps) {
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false)
@@ -146,10 +139,6 @@ export function OverlayPanel({
             </div>
           ))}
         </div>
-      )}
-
-      {isDemoEnabled && (
-        <DemoScenarioSwitcher matches={matches} selectedMatchId={match.id} onSelect={onScenarioChange} />
       )}
 
       {!hasActiveSession && (

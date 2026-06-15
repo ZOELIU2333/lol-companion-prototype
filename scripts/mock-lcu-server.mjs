@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 
 const port = Number(process.env.MOCK_LCU_PORT ?? 29999)
 const password = process.env.MOCK_LCU_PASSWORD ?? 'mock-lcu-password'
+const phase = process.env.MOCK_LCU_PHASE ?? 'ChampSelect'
+const queueId = Number(process.env.MOCK_LCU_QUEUE_ID ?? (phase === 'ChampSelect' ? 420 : 2400))
 const lockfileDir = process.env.MOCK_LCU_DIR ?? join(tmpdir(), 'lol-companion-mock-lcu')
 const lockfilePath = join(lockfileDir, 'lockfile')
 
@@ -68,17 +70,33 @@ const server = createServer((request, response) => {
   const url = new URL(request.url ?? '/', `http://127.0.0.1:${port}`)
 
   if (url.pathname === '/lol-gameflow/v1/gameflow-phase') {
-    json(response, 'ChampSelect')
+    json(response, phase)
     return
   }
 
   if (url.pathname === '/lol-gameflow/v1/session') {
+    const isAugment = [2400, 2401, 2403, 2405, 3240, 3270].includes(queueId)
     json(response, {
       gameData: {
         queue: {
-          description: 'Ranked Solo/Duo',
-          gameMode: 'CLASSIC',
+          id: queueId,
+          description: isAugment ? '海克斯大乱斗' : 'Ranked Solo/Duo',
+          gameMode: isAugment ? 'ARAM' : 'CLASSIC',
         },
+        teamOne: players.slice(5).map(([selectedPosition, championId, summonerId, summonerName]) => ({
+          championId,
+          puuid: `mock-puuid-${summonerId}`,
+          selectedPosition,
+          summonerId,
+          summonerName,
+        })),
+        teamTwo: players.slice(0, 5).map(([selectedPosition, championId, summonerId, summonerName]) => ({
+          championId,
+          puuid: `mock-puuid-${summonerId}`,
+          selectedPosition,
+          summonerId,
+          summonerName,
+        })),
       },
     })
     return
@@ -109,6 +127,7 @@ const server = createServer((request, response) => {
 
 server.listen(port, '127.0.0.1', () => {
   console.log(`Mock LCU listening on http://127.0.0.1:${port}`)
+  console.log(`Phase: ${phase}, queue: ${queueId}`)
   console.log(`Lockfile: ${lockfilePath}`)
   console.log(`Use: LEAGUE_CLIENT_LOCKFILE=${lockfilePath} npm run tauri:dev`)
 })

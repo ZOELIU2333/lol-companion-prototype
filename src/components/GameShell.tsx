@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import type { Champion, GameMode, Match, PlayerIntel, PlayerMatchDetail, PlayerRecentMatch } from '../types'
+import type { Match, PlayerIntel, PlayerMatchDetail, PlayerPartyGroup, PlayerRecentMatch } from '../types'
 import { createBrowserRiotApiHost } from '../services/browserRiotHost'
 import { getItemIconUrl } from '../services/dataDragon'
-import { createDemoPartyGroups, createDemoRecentMatches } from '../services/playerData'
 import { loadOpggMatchDetail, loadOpggPlayerProfile, loadOpggRecentMatches } from '../services/opggPlayerData'
 import { getRiotAccountForPlayer, loadRiotPlayerProfile, loadRiotRecentMatches } from '../services/riotPlayerData'
 import { createTauriOpggMcpHost } from '../services/tauriHost'
@@ -12,22 +11,12 @@ import type { OpggMcpPlayerProfile } from '../services/opggMcpAdapter'
 import type { RiotPlayerProfile } from '../services/riotApiAdapter'
 
 type GameShellProps = {
-  activeMode: GameMode
-  allowDemoData: boolean
-  champion: Champion
   match: Match
   children: ReactNode
 }
 
-type PlayerDataStatus = 'demo' | 'loading' | 'opgg' | 'riot' | 'unavailable'
+type PlayerDataStatus = 'loading' | 'opgg' | 'riot' | 'unavailable'
 
-const modeLabels: Record<GameMode, string> = {
-  ranked: '匹配/排位',
-  augment: '海克斯',
-  arena: '海克斯',
-}
-
-const masteryChampions = ['伊泽瑞尔', '阿狸', '卡莎', '盲僧', '青钢影', '泰坦', '辛德拉', '德莱文']
 const roleShortLabels: Record<string, string> = {
   上单: '上',
   打野: '野',
@@ -40,39 +29,12 @@ function getRoleShortLabel(role: string) {
   return roleShortLabels[role] ?? role.slice(0, 1)
 }
 
-function createMasteryTop3(player: PlayerIntel) {
-  return Array.from({ length: 3 }, (_, index) => ({
-    champion: masteryChampions[(player.name.length + index * 2) % masteryChampions.length],
-    games: Math.max(18, player.championGames + 22 - index * 7),
-    mastery: Math.max(50000, player.mastery - index * 180000),
-    winRate: Math.max(42, Math.min(72, player.championWinRate - index * 3 + (index === 0 ? 0 : 2))),
-  }))
-}
-
 function formatMastery(value: number) {
   return `${Math.round(value / 10000)}万`
 }
 
 function formatChampionMasteryName(championId: number) {
   return `英雄 #${championId}`
-}
-
-function createHistoryDetail(player: PlayerIntel, historyMatch: PlayerRecentMatch) {
-  const [kills, deaths, assists] = historyMatch.kda.split('/').map((value) => Number(value))
-
-  return {
-    kills,
-    deaths,
-    assists,
-    damageShare: Math.max(14, Math.min(38, player.damageShare + (historyMatch.result === '胜' ? 3 : -4))),
-    goldDiffAt15: player.goldDiffAt15 + (historyMatch.result === '胜' ? 180 : -260),
-    visionScore: Math.max(6, player.visionScore + (historyMatch.result === '胜' ? 2 : -3)),
-    note:
-      historyMatch.result === '胜'
-        ? '优势局，参团与经济转换都在线，适合继续放大这一路的节奏。'
-        : '劣势局，死亡与资源转换偏亏，更多像被迫接团或前期节奏断档。',
-    tags: historyMatch.result === '胜' ? ['节奏顺', '转换稳定', '可围绕'] : ['节奏断', '需保护', '谨慎接团'],
-  }
 }
 
 function profileToPlayerIntel(player: PlayerIntel, profile?: RiotPlayerProfile, opggProfile?: OpggMcpPlayerProfile): PlayerIntel {
@@ -113,16 +75,14 @@ function getPlayerDataStatusLabel(status: PlayerDataStatus) {
   if (status === 'loading') return '同步中'
   if (status === 'opgg') return 'OP.GG'
   if (status === 'riot') return 'Riot'
-  if (status === 'unavailable') return '暂无数据'
-  return 'Demo'
+  return '暂无数据'
 }
 
 function getPlayerDataStatusTitle(status: PlayerDataStatus) {
   if (status === 'loading') return '正在读取玩家公开数据'
   if (status === 'opgg') return '来自 OP.GG MCP 的公开玩家数据'
   if (status === 'riot') return '来自 Riot API 的公开玩家数据'
-  if (status === 'unavailable') return '没有查询到可用的公开数据'
-  return '当前显示 Demo 兜底数据'
+  return '没有查询到可用的公开数据'
 }
 
 function PlayerDataSource({ status }: { status: PlayerDataStatus }) {
@@ -133,11 +93,11 @@ function PlayerDataSource({ status }: { status: PlayerDataStatus }) {
   )
 }
 
-export function GameShell({ activeMode, allowDemoData, champion, match, children }: GameShellProps) {
+export function GameShell({ match, children }: GameShellProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerIntel | null>(null)
   const [selectedHistoryMatch, setSelectedHistoryMatch] = useState<PlayerRecentMatch | null>(null)
   const [matchDetailById, setMatchDetailById] = useState<Record<string, PlayerMatchDetail>>({})
-  const [matchDetailStatusById, setMatchDetailStatusById] = useState<Record<string, 'demo' | 'loading' | 'opgg' | 'unavailable'>>({})
+  const [matchDetailStatusById, setMatchDetailStatusById] = useState<Record<string, 'loading' | 'opgg' | 'unavailable'>>({})
   const [realHistoryByPlayerId, setRealHistoryByPlayerId] = useState<Record<string, PlayerRecentMatch[]>>({})
   const [historyStatusByPlayerId, setHistoryStatusByPlayerId] = useState<Record<string, PlayerDataStatus>>({})
   const [profileByPlayerId, setProfileByPlayerId] = useState<Record<string, RiotPlayerProfile>>({})
@@ -152,9 +112,7 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
   const allyPlayers = hydratedPlayers.filter((player) => player.team === 'ally')
   const enemyPlayers = hydratedPlayers.filter((player) => player.team === 'enemy')
   const hasStageIntel = allyPlayers.length > 0 || enemyPlayers.length > 0
-  const parties = allowDemoData
-    ? [...createDemoPartyGroups(hydratedPlayers, 'ally'), ...createDemoPartyGroups(hydratedPlayers, 'enemy')]
-    : []
+  const parties: PlayerPartyGroup[] = []
   const playerById = new Map(hydratedPlayers.map((player) => [player.id, player]))
   const playerPartyMap = new Map(
     parties.flatMap((party, index) =>
@@ -178,13 +136,13 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
       ...current,
       [player.id]: (riotHost || opggHost) && account && !realHistoryByPlayerId[player.id]
         ? 'loading'
-        : current[player.id] ?? (allowDemoData ? 'demo' : 'unavailable'),
+        : current[player.id] ?? 'unavailable',
     }))
     setProfileStatusByPlayerId((current) => ({
       ...current,
       [player.id]: (riotHost || opggHost) && account && !profileByPlayerId[player.id] && !opggProfileByPlayerId[player.id]
         ? 'loading'
-        : current[player.id] ?? (allowDemoData ? 'demo' : 'unavailable'),
+        : current[player.id] ?? 'unavailable',
     }))
   }
   const renderTeam = (teamPlayers: typeof allyPlayers, team: 'ally' | 'enemy') => {
@@ -227,30 +185,22 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
                 <div>
                   <strong>{player.name}</strong>
                   <span>
-                    {allowDemoData || hasPublicProfile
+                    {hasPublicProfile
                       ? `${player.rank} · 近${player.recentRankedGames}场 ${player.recentWinRate}%`
                       : profileStatus === 'loading' ? '公开数据同步中' : '公开数据暂无'}
                   </span>
                 </div>
                 {party && <b title={`${party.games}场车队胜率 ${party.winRate}%`}>{party.label}</b>}
-                <em>{allowDemoData ? player.score : publicScore ? Math.round(publicScore) : '--'}</em>
+                <em>{publicScore ? Math.round(publicScore) : '--'}</em>
               </div>
-              {allowDemoData && (
-                <div className="stage-player-metrics">
-                  <span><i>英雄</i> <strong>{player.championGames}场</strong> <strong>{player.championWinRate}%</strong></span>
-                  <span><i>KDA</i> <strong>{player.kda}</strong></span>
-                  <span><i>均死</i> <strong>{player.averageDeaths}</strong></span>
-                  {party && <span><i>车队</i> <strong>{party.games}场</strong> <strong>{party.winRate}%</strong></span>}
-                </div>
-              )}
-              {!allowDemoData && riotProfile && (
+              {riotProfile && (
                 <div className="stage-player-metrics">
                   <span><i>排位</i> <strong>{riotProfile.rankedGames}场</strong> <strong>{riotProfile.recentWinRate}%</strong></span>
                   <span><i>KDA</i> <strong>{riotProfile.averageKda}</strong></span>
                   <span><i>均死</i> <strong>{riotProfile.averageDeaths}</strong></span>
                 </div>
               )}
-              {!allowDemoData && !riotProfile && opggProfile && (
+              {!riotProfile && opggProfile && (
                 <div className="stage-player-metrics">
                   <span><i>排位</i> <strong>{opggProfile.rankedGames}场</strong> <strong>{opggProfile.rankedWinRate}%</strong></span>
                   {opggProfile.championPoolTop3[0] && (
@@ -265,18 +215,16 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
     )
   }
   const selectedParty = selectedPlayer ? playerPartyMap.get(selectedPlayer.id) : null
-  const selectedHistory = selectedPlayer
-    ? realHistoryByPlayerId[selectedPlayer.id] ?? (allowDemoData ? createDemoRecentMatches(selectedPlayer) : [])
-    : []
+  const selectedHistory = selectedPlayer ? realHistoryByPlayerId[selectedPlayer.id] ?? [] : []
   const selectedHistoryStatus = selectedPlayer
-    ? historyStatusByPlayerId[selectedPlayer.id] ?? (allowDemoData ? 'demo' : 'unavailable')
+    ? historyStatusByPlayerId[selectedPlayer.id] ?? 'unavailable'
     : 'unavailable'
   const selectedProfile = selectedPlayer ? profileByPlayerId[selectedPlayer.id] : null
   const selectedOpggProfile = selectedPlayer ? opggProfileByPlayerId[selectedPlayer.id] : null
-  const hasSelectedProfileData = allowDemoData || Boolean(selectedProfile || selectedOpggProfile)
+  const hasSelectedProfileData = Boolean(selectedProfile || selectedOpggProfile)
   const selectedPublicScore = selectedProfile?.score ?? selectedOpggProfile?.championPoolTop3[0]?.opScore
   const selectedProfileStatus = selectedPlayer
-    ? profileStatusByPlayerId[selectedPlayer.id] ?? (allowDemoData ? 'demo' : 'unavailable')
+    ? profileStatusByPlayerId[selectedPlayer.id] ?? 'unavailable'
     : 'unavailable'
   const selectedMastery =
     selectedProfile?.masteryTop3.length
@@ -293,12 +241,10 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
             mastery: 0,
             winRate: entry.winRate,
           }))
-      : selectedPlayer && allowDemoData ? createMasteryTop3(selectedPlayer) : []
-  const selectedHistoryDetail =
-    selectedPlayer && selectedHistoryMatch && allowDemoData ? createHistoryDetail(selectedPlayer, selectedHistoryMatch) : null
+      : []
   const selectedRealMatchDetail = selectedHistoryMatch ? matchDetailById[selectedHistoryMatch.id] : null
   const selectedMatchDetailStatus = selectedHistoryMatch
-    ? matchDetailStatusById[selectedHistoryMatch.id] ?? (allowDemoData ? 'demo' : 'unavailable')
+    ? matchDetailStatusById[selectedHistoryMatch.id] ?? 'unavailable'
     : 'unavailable'
 
   useEffect(() => {
@@ -339,14 +285,14 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
           setProfileByPlayerId((current) => ({ ...current, [player.id]: profile }))
           setProfileStatusByPlayerId((current) => ({ ...current, [player.id]: 'riot' }))
         } else {
-          setProfileStatusByPlayerId((current) => ({ ...current, [player.id]: allowDemoData ? 'demo' : 'unavailable' }))
+          setProfileStatusByPlayerId((current) => ({ ...current, [player.id]: 'unavailable' }))
         }
 
         if (history.length > 0) {
           setRealHistoryByPlayerId((current) => ({ ...current, [player.id]: history }))
           setHistoryStatusByPlayerId((current) => ({ ...current, [player.id]: 'riot' }))
         } else {
-          setHistoryStatusByPlayerId((current) => ({ ...current, [player.id]: allowDemoData ? 'demo' : 'unavailable' }))
+          setHistoryStatusByPlayerId((current) => ({ ...current, [player.id]: 'unavailable' }))
         }
       }),
     )
@@ -355,7 +301,6 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
       isStale = true
     }
   }, [
-    allowDemoData,
     historyStatusByPlayerId,
     match.players,
     opggProfileByPlayerId,
@@ -382,7 +327,7 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
       .then(({ history, source }) => {
       if (isStale) return
       if (history.length === 0) {
-        setHistoryStatusByPlayerId((current) => ({ ...current, [selectedPlayer.id]: allowDemoData ? 'demo' : 'unavailable' }))
+        setHistoryStatusByPlayerId((current) => ({ ...current, [selectedPlayer.id]: 'unavailable' }))
         return
       }
 
@@ -393,7 +338,7 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
     return () => {
       isStale = true
     }
-  }, [allowDemoData, opggHost, realHistoryByPlayerId, riotHost, selectedPlayer])
+  }, [opggHost, realHistoryByPlayerId, riotHost, selectedPlayer])
 
   useEffect(() => {
     if (!selectedPlayer) return undefined
@@ -413,7 +358,7 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
       .then(({ riotProfile, opggProfile }) => {
       if (isStale) return
       if (!riotProfile && !opggProfile) {
-        setProfileStatusByPlayerId((current) => ({ ...current, [selectedPlayer.id]: allowDemoData ? 'demo' : 'unavailable' }))
+        setProfileStatusByPlayerId((current) => ({ ...current, [selectedPlayer.id]: 'unavailable' }))
         return
       }
 
@@ -429,14 +374,14 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
     return () => {
       isStale = true
     }
-  }, [allowDemoData, opggHost, opggProfileByPlayerId, profileByPlayerId, riotHost, selectedPlayer])
+  }, [opggHost, opggProfileByPlayerId, profileByPlayerId, riotHost, selectedPlayer])
 
   const openHistoryMatch = (historyMatch: PlayerRecentMatch) => {
     setSelectedHistoryMatch(historyMatch)
     if (!matchDetailById[historyMatch.id]) {
       setMatchDetailStatusById((current) => ({
         ...current,
-        [historyMatch.id]: opggHost && historyMatch.createdAt ? 'loading' : allowDemoData ? 'demo' : 'unavailable',
+        [historyMatch.id]: opggHost && historyMatch.createdAt ? 'loading' : 'unavailable',
       }))
     }
   }
@@ -451,7 +396,7 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
       if (!detail) {
         setMatchDetailStatusById((current) => ({
           ...current,
-          [selectedHistoryMatch.id]: allowDemoData ? 'demo' : 'unavailable',
+          [selectedHistoryMatch.id]: 'unavailable',
         }))
         return
       }
@@ -463,20 +408,11 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
     return () => {
       isStale = true
     }
-  }, [allowDemoData, matchDetailById, opggHost, selectedHistoryMatch, selectedPlayer])
+  }, [matchDetailById, opggHost, selectedHistoryMatch, selectedPlayer])
 
   return (
     <main className="game-shell" data-tauri-drag-region>
       <section className="game-stage" aria-label="对局情报" data-tauri-drag-region>
-        {allowDemoData && (
-          <div className="top-hud">
-            <div>
-              <span>{modeLabels[activeMode]}</span>
-              <strong>{champion.name}</strong>
-            </div>
-            <div className="timer">{match.timer}</div>
-          </div>
-        )}
         <div className="lane-glow lane-one" />
         <div className="lane-glow lane-two" />
         {hasStageIntel && (
@@ -516,9 +452,7 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
               <>
                 <div className="player-detail-score">
                   <strong>
-                    {allowDemoData
-                      ? selectedProfile?.score ?? selectedPlayer.score
-                      : selectedPublicScore === undefined ? '--' : Math.round(selectedPublicScore)}
+                    {selectedPublicScore === undefined ? '--' : Math.round(selectedPublicScore)}
                   </strong>
                   <div>
                     <span>
@@ -618,7 +552,7 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
               </div>
             </div>
 
-            {selectedHistoryMatch && (selectedHistoryDetail || selectedRealMatchDetail) && (
+            {selectedHistoryMatch && selectedRealMatchDetail && (
               <div className="match-record-panel">
                 <div className="player-detail-title">
                   <strong>单局详情</strong>
@@ -631,54 +565,33 @@ export function GameShell({ activeMode, allowDemoData, champion, match, children
                     <p>{selectedHistoryMatch.kda} · 评分 {selectedHistoryMatch.score}</p>
                   </div>
                 </div>
-                {selectedRealMatchDetail ? (
-                  <>
-                    <div className="match-team-summary">
-                      {selectedRealMatchDetail.teams.map((team) => (
-                        <div className={team.isWin ? 'match-team win' : 'match-team loss'} key={team.key}>
-                          <strong>{team.key === 'BLUE' ? '蓝方' : '红方'} · {team.isWin ? '胜' : '负'}</strong>
-                          <span>{team.kills}杀 · {team.towers}塔 · {team.dragons}龙 · {Math.round(team.gold / 1000)}k经济</span>
+                <div className="match-team-summary">
+                  {selectedRealMatchDetail.teams.map((team) => (
+                    <div className={team.isWin ? 'match-team win' : 'match-team loss'} key={team.key}>
+                      <strong>{team.key === 'BLUE' ? '蓝方' : '红方'} · {team.isWin ? '胜' : '负'}</strong>
+                      <span>{team.kills}杀 · {team.towers}塔 · {team.dragons}龙 · {Math.round(team.gold / 1000)}k经济</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="match-lineup-grid">
+                  {selectedRealMatchDetail.teams.map((team) => (
+                    <div className="match-lineup" key={team.key}>
+                      {team.participants.map((participant) => (
+                        <div className="match-lineup-row" key={`${team.key}-${participant.summonerName}-${participant.championName}`}>
+                          <div>
+                            <strong>{participant.championName}</strong>
+                            <span>{participant.position} · {participant.kill}/{participant.death}/{participant.assist} · {participant.opScore.toFixed(1)}</span>
+                          </div>
+                          <div className="match-item-row">
+                            {participant.items.slice(0, 6).map((item) => (
+                              <img alt={item.name} key={`${participant.summonerName}-${item.id}-${item.name}`} src={getItemIconUrl(item.id)} title={item.name} />
+                            ))}
+                          </div>
                         </div>
                       ))}
                     </div>
-                    <div className="match-lineup-grid">
-                      {selectedRealMatchDetail.teams.map((team) => (
-                        <div className="match-lineup" key={team.key}>
-                          {team.participants.map((participant) => (
-                            <div className="match-lineup-row" key={`${team.key}-${participant.summonerName}-${participant.championName}`}>
-                              <div>
-                                <strong>{participant.championName}</strong>
-                                <span>{participant.position} · {participant.kill}/{participant.death}/{participant.assist} · {participant.opScore.toFixed(1)}</span>
-                              </div>
-                              <div className="match-item-row">
-                                {participant.items.slice(0, 6).map((item) => (
-                                  <img alt={item.name} key={`${participant.summonerName}-${item.id}-${item.name}`} src={getItemIconUrl(item.id)} title={item.name} />
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : selectedHistoryDetail ? (
-                  <>
-                    <div className="match-record-grid">
-                      <span>参团率 <strong>{selectedHistoryMatch.kp}%</strong></span>
-                      <span>CS/分 <strong>{selectedHistoryMatch.cs}</strong></span>
-                      <span>伤害占比 <strong>{selectedHistoryDetail.damageShare}%</strong></span>
-                      <span>视野分 <strong>{selectedHistoryDetail.visionScore}</strong></span>
-                      <span>15分经济差 <strong>{selectedHistoryDetail.goldDiffAt15 > 0 ? '+' : ''}{selectedHistoryDetail.goldDiffAt15}</strong></span>
-                      <span>本局死亡 <strong>{selectedHistoryDetail.deaths}</strong></span>
-                    </div>
-                    <div className="match-record-tags">
-                      {selectedHistoryDetail.tags.map((tag) => (
-                        <span key={tag}>{tag}</span>
-                      ))}
-                    </div>
-                    <p className="match-record-note">{selectedHistoryDetail.note}</p>
-                  </>
-                ) : null}
+                  ))}
+                </div>
               </div>
             )}
           </div>

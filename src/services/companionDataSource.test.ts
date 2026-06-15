@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   applyLcuPlayersToMatch,
   createCompanionDataSource,
-  mockCompanionDataSource,
   type CompanionDataSource,
 } from './companionDataSource'
 import type { LcuAdapter } from './lcuAdapter'
+import { mockCompanionDataSource } from './mockCompanionDataSource'
 
 const createLcuStub = (session: Awaited<ReturnType<LcuAdapter['readSession']>>): LcuAdapter => ({
   async isAvailable() {
@@ -41,7 +41,7 @@ describe('companion data source', () => {
     )
 
     await expect(dataSource.detectSession()).resolves.toMatchObject({
-      matchId: 'augment-ahri-002',
+      matchId: 'lcu-augment',
       mode: 'augment',
       phase: 'ChampSelect',
       players: [
@@ -116,7 +116,7 @@ describe('companion data source', () => {
     expect(augmentMatch?.players.some((player) => player.team === 'enemy')).toBe(true)
   })
 
-  it('keeps the LCU source when the client is open but not in a mapped queue', async () => {
+  it('keeps an active unknown queue unmapped instead of guessing ranked', async () => {
     const dataSource = createCompanionDataSource(
       createLcuStub({
         phase: 'Lobby',
@@ -125,8 +125,8 @@ describe('companion data source', () => {
     )
 
     await expect(dataSource.detectSession()).resolves.toMatchObject({
-      matchId: 'rift-ezreal-001',
-      mode: 'ranked',
+      matchId: null,
+      mode: null,
       phase: 'Lobby',
       source: 'lcu',
     })
@@ -141,8 +141,8 @@ describe('companion data source', () => {
     )
 
     await expect(dataSource.detectSession()).resolves.toMatchObject({
-      matchId: 'rift-ezreal-001',
-      mode: 'ranked',
+      matchId: null,
+      mode: null,
       phase: 'ClientRunning',
       source: 'lcu',
     })
@@ -181,11 +181,10 @@ describe('companion data source', () => {
     })
   })
 
-  it('keeps structural match templates available for an active real session', () => {
+  it('does not expose demo match templates to a production data source', () => {
     const dataSource = createCompanionDataSource(createLcuStub(null))
-    const firstMatch = mockCompanionDataSource.listMatches()[0]
 
-    expect(dataSource.listMatches()).toEqual(mockCompanionDataSource.listMatches())
-    expect(dataSource.getMatch(firstMatch.id)).toEqual(firstMatch)
+    expect(dataSource.listMatches()).toEqual([])
+    expect(dataSource.getMatch('rift-ezreal-001')).toBeNull()
   })
 })

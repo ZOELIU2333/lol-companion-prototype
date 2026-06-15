@@ -39,6 +39,9 @@ describe('lcu adapter boundary', () => {
     expect(mapLcuQueueToMode('Ranked Solo/Duo')).toBe('ranked')
     expect(mapLcuQueueToMode('Normal Draft')).toBe('ranked')
     expect(mapLcuQueueToMode('Arena')).toBe('augment')
+    expect(mapLcuQueueToMode('CLASSIC', 420)).toBe('ranked')
+    expect(mapLcuQueueToMode('ARAM', 2400)).toBe('augment')
+    expect(mapLcuQueueToMode('极地大乱斗', 450)).toBeNull()
   })
 
   it('keeps unknown queues unmapped', () => {
@@ -65,6 +68,7 @@ describe('lcu adapter boundary', () => {
           return {
             gameData: {
               queue: {
+                id: 420,
                 description: 'Ranked Solo/Duo',
               },
             },
@@ -124,7 +128,9 @@ describe('lcu adapter boundary', () => {
     await expect(adapter.readSession()).resolves.toEqual({
       phase: 'ChampSelect',
       mode: 'ranked',
+      queueId: 420,
       localSummonerName: 'DemoSummoner',
+      playerSource: 'champ-select',
       players: [
         {
           id: 'ally-3',
@@ -196,5 +202,48 @@ describe('lcu adapter boundary', () => {
 
     await expect(adapter.isAvailable()).resolves.toBe(false)
     await expect(adapter.readSession()).resolves.toBeNull()
+  })
+
+  it('reads loading-screen players from gameflow and makes the local team allied', async () => {
+    const adapter = createLcuAdapter({
+      readLockfile: async () => 'LeagueClient:1234:2999:secret:https',
+      requestJson: async <T,>({ path }: LcuRequestOptions) => {
+        if (path === '/lol-gameflow/v1/gameflow-phase') return 'GameStart' as T
+        if (path === '/lol-summoner/v1/current-summoner') {
+          return { displayName: 'Local Player', summonerId: 2001, puuid: 'local-puuid' } as T
+        }
+        if (path === '/lol-gameflow/v1/session') {
+          return {
+            gameData: {
+              queue: { id: 2400, name: '海克斯大乱斗' },
+              teamOne: [
+                { championId: 81, summonerId: 1001, summonerName: 'Blue Player' },
+              ],
+              teamTwo: [
+                { championId: 115, summonerId: 2001, summonerName: 'Local Player', puuid: 'local-puuid' },
+              ],
+            },
+          } as T
+        }
+        if (path === '/lol-summoner/v1/summoners/1001') {
+          return { displayName: 'Blue Player', gameName: 'Blue Player' } as T
+        }
+        if (path === '/lol-summoner/v1/summoners/2001') {
+          return { displayName: 'Local Player', gameName: 'Local Player', puuid: 'local-puuid' } as T
+        }
+        return null
+      },
+    })
+
+    await expect(adapter.readSession()).resolves.toMatchObject({
+      phase: 'GameStart',
+      mode: 'augment',
+      queueId: 2400,
+      playerSource: 'gameflow',
+      players: [
+        { team: 'ally', summonerName: 'Local Player', championId: 115 },
+        { team: 'enemy', summonerName: 'Blue Player', championId: 81 },
+      ],
+    })
   })
 })
