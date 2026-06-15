@@ -13,6 +13,7 @@ describe('LCU production match', () => {
         {
           id: 'ally-1',
           team: 'ally',
+          isLocal: true,
           role: '下路',
           championId: 115,
           summonerName: 'Local Player',
@@ -36,5 +37,21 @@ describe('LCU production match', () => {
     })
     expect(match.players.some((player) => player.name.includes('伊泽瑞尔'))).toBe(false)
     expect(match.augmentCandidates).toEqual([])
+  })
+
+  it('uses honest allied slot labels while champ-select identities are pending', () => {
+    const match = createLcuMatch({
+      matchId: 'lcu-420',
+      mode: 'ranked',
+      queueId: 420,
+      source: 'lcu',
+      players: [
+        { id: 'ally-0', team: 'ally', role: '上单' },
+        { id: 'ally-1', team: 'ally', role: '打野', isLocal: true, championId: 64 },
+      ],
+    })
+
+    expect(match.players.map((player) => player.name)).toEqual(['我方上单', '我'])
+    expect(match.currentChampionId).toBe('64')
   })
 })

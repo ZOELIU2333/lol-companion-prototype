@@ -83,6 +83,7 @@ describe('lcu adapter boundary', () => {
 
         if (options.path === '/lol-champ-select/v1/session') {
           return {
+            localPlayerCellId: 3,
             myTeam: [
               {
                 assignedPosition: 'bottom',
@@ -135,6 +136,7 @@ describe('lcu adapter boundary', () => {
         {
           id: 'ally-3',
           team: 'ally',
+          isLocal: true,
           role: '下路',
           championId: 81,
           summonerId: 1001,
@@ -148,6 +150,7 @@ describe('lcu adapter boundary', () => {
         {
           id: 'enemy-8',
           team: 'enemy',
+          isLocal: false,
           role: '辅助',
           championId: 412,
           summonerId: 2001,
@@ -202,6 +205,42 @@ describe('lcu adapter boundary', () => {
 
     await expect(adapter.isAvailable()).resolves.toBe(false)
     await expect(adapter.readSession()).resolves.toBeNull()
+  })
+
+  it('keeps all allied champ-select slots even before identities are available', async () => {
+    const adapter = createLcuAdapter({
+      readLockfile: async () => 'LeagueClient:1234:2999:secret:https',
+      requestJson: async <T,>({ path }: LcuRequestOptions) => {
+        if (path === '/lol-gameflow/v1/gameflow-phase') return 'ChampSelect' as T
+        if (path === '/lol-gameflow/v1/session') {
+          return { gameData: { queue: { id: 420, description: 'Ranked Solo/Duo' } } } as T
+        }
+        if (path === '/lol-summoner/v1/current-summoner') return { displayName: 'Local Player' } as T
+        if (path === '/lol-champ-select/v1/session') {
+          return {
+            localPlayerCellId: 1,
+            myTeam: [
+              { assignedPosition: 'top', cellId: 0, championId: 0 },
+              { assignedPosition: 'jungle', cellId: 1, championId: 64 },
+              { assignedPosition: 'middle', cellId: 2, championId: 0 },
+              { assignedPosition: 'bottom', cellId: 3, championId: 0 },
+              { assignedPosition: 'utility', cellId: 4, championId: 0 },
+            ],
+            theirTeam: [],
+          } as T
+        }
+        return null
+      },
+    })
+
+    const session = await adapter.readSession()
+    expect(session?.players).toHaveLength(5)
+    expect(session?.players?.map((player) => player.role)).toEqual(['上单', '打野', '中路', '下路', '辅助'])
+    expect(session?.players?.find((player) => player.isLocal)).toMatchObject({
+      id: 'ally-1',
+      championId: 64,
+      role: '打野',
+    })
   })
 
   it('reads loading-screen players from gameflow and makes the local team allied', async () => {

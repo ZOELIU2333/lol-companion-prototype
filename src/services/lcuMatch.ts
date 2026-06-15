@@ -16,9 +16,16 @@ const unavailableRestrictedFields = {
 }
 
 function createPlayer(player: LcuPlayerSnapshot): PlayerIntel {
+  const role = player.role ?? '未知'
+  const fallbackName = player.isLocal
+    ? '我'
+    : player.team === 'ally'
+      ? role === '未知' ? '我方召唤师' : `我方${role}`
+      : role === '未知' ? '敌方召唤师' : `敌方${role}`
+
   return {
     id: player.id,
-    name: player.summonerName ?? player.riotAccount?.gameName ?? '召唤师',
+    name: player.summonerName ?? player.riotAccount?.gameName ?? fallbackName,
     riotAccount: player.riotAccount?.gameName || player.riotAccount?.puuid
       ? {
           gameName: player.riotAccount.gameName ?? player.summonerName ?? player.id,
@@ -29,7 +36,7 @@ function createPlayer(player: LcuPlayerSnapshot): PlayerIntel {
         }
       : undefined,
     team: player.team,
-    role: player.role ?? '未知',
+    role,
     championId: player.championId ? String(player.championId) : '',
     rank: '',
     recentWinRate: 0,
@@ -71,7 +78,8 @@ function createUnknownChampion(id = ''): Champion {
 
 export function createLcuMatch(session: DetectedGameSession): Match {
   const players = (session.players ?? []).map(createPlayer)
-  const localPlayer = players.find((player) => {
+  const localSnapshot = session.players?.find((player) => player.isLocal)
+  const localPlayer = players.find((player) => player.id === localSnapshot?.id) ?? players.find((player) => {
     const accountName = player.riotAccount?.gameName
     return Boolean(session.localSummonerName)
       && (player.name === session.localSummonerName || accountName === session.localSummonerName)

@@ -24,6 +24,7 @@ export type LcuSessionSnapshot = {
 export type LcuPlayerSnapshot = {
   id: string
   team: TeamSide
+  isLocal?: boolean
   role?: string
   championId?: number
   summonerId?: number
@@ -161,15 +162,21 @@ async function readChampSelectPlayers(
 
   const participants = [
     ...(champSelect.myTeam ?? []).map((player) => ({ ...player, team: 'ally' as const })),
-    ...(champSelect.theirTeam ?? []).map((player) => ({ ...player, team: 'enemy' as const })),
-  ].filter((player) => Number.isFinite(player.summonerId) || player.summonerName || player.puuid)
+    ...(champSelect.theirTeam ?? [])
+      .filter((player) => Number.isFinite(player.summonerId) || player.summonerName || player.puuid || (player.championId ?? 0) > 0)
+      .map((player) => ({ ...player, team: 'enemy' as const })),
+  ]
 
   const identities = await Promise.all(
-    participants.map((player) =>
-      player.summonerId
-        ? request<LcuSummonerIdentity>(`/lol-summoner/v1/summoners/${player.summonerId}`)
-        : Promise.resolve(null),
-    ),
+    participants.map(async (player) => {
+      if (player.summonerId) {
+        const identity = await request<LcuSummonerIdentity>(`/lol-summoner/v1/summoners/${player.summonerId}`)
+        if (identity) return identity
+      }
+      return player.puuid
+        ? request<LcuSummonerIdentity>(`/lol-summoner/v2/summoners/puuid/${player.puuid}`)
+        : null
+    }),
   )
 
   return participants.map((player, index) => {
@@ -179,6 +186,7 @@ async function readChampSelectPlayers(
     return {
       id: `${player.team}-${player.cellId ?? player.summonerId ?? index}`,
       team: player.team,
+      isLocal: player.cellId === champSelect.localPlayerCellId,
       role: mapLcuPositionToRole(player.assignedPosition),
       championId: player.championId && player.championId > 0 ? player.championId : undefined,
       summonerId: player.summonerId,
@@ -211,11 +219,15 @@ async function readGameflowPlayers(
   ].filter((player) => Number.isFinite(player.summonerId) || player.summonerName || player.summonerInternalName || player.puuid)
 
   const identities = await Promise.all(
-    participants.map((player) =>
-      player.summonerId
-        ? request<LcuSummonerIdentity>(`/lol-summoner/v1/summoners/${player.summonerId}`)
-        : Promise.resolve(null),
-    ),
+    participants.map(async (player) => {
+      if (player.summonerId) {
+        const identity = await request<LcuSummonerIdentity>(`/lol-summoner/v1/summoners/${player.summonerId}`)
+        if (identity) return identity
+      }
+      return player.puuid
+        ? request<LcuSummonerIdentity>(`/lol-summoner/v2/summoners/puuid/${player.puuid}`)
+        : null
+    }),
   )
 
   return participants.map((player, index) => {
@@ -226,6 +238,7 @@ async function readGameflowPlayers(
     return {
       id: `${player.team}-${player.summonerId ?? player.puuid ?? index}`,
       team: player.team,
+      isLocal: isLocalPlayer(player),
       role: mapLcuPositionToRole(player.selectedPosition),
       championId: player.championId && player.championId > 0 ? player.championId : undefined,
       summonerId: player.summonerId,

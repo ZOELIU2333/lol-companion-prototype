@@ -35,6 +35,7 @@ struct LeagueClientDiscovery {
 struct LcuPlayerPayload {
     id: String,
     team: String,
+    is_local: bool,
     role: Option<String>,
     champion_id: Option<u16>,
     summoner_id: Option<u64>,
@@ -98,6 +99,7 @@ struct CurrentSummoner {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ChampSelectSession {
+    local_player_cell_id: Option<u16>,
     my_team: Option<Vec<ChampSelectParticipant>>,
     their_team: Option<Vec<ChampSelectParticipant>>,
 }
@@ -352,6 +354,7 @@ async fn build_player_payload(
     client: &reqwest::Client,
     lockfile: &LcuLockfile,
     team: String,
+    is_local: bool,
     index: usize,
     role: Option<&str>,
     champion_id: Option<u16>,
@@ -365,6 +368,17 @@ async fn build_player_payload(
             request_lcu_json::<SummonerIdentity>(client, lockfile, &path).await
         }
         None => None,
+    };
+    let identity = if identity.is_none() {
+        match puuid.as_deref() {
+            Some(puuid) => {
+                let path = format!("/lol-summoner/v2/summoners/puuid/{}", puuid);
+                request_lcu_json::<SummonerIdentity>(client, lockfile, &path).await
+            }
+            None => None,
+        }
+    } else {
+        identity
     };
     let game_name = identity
         .as_ref()
@@ -391,6 +405,7 @@ async fn build_player_payload(
                 .unwrap_or_else(|| index.to_string())
         ),
         team,
+        is_local,
         role: map_position_to_role(role),
         champion_id: champion_id.filter(|champion_id| *champion_id > 0),
         summoner_id,
@@ -614,6 +629,7 @@ async fn read_champ_select_players(
         return Vec::new();
     };
 
+    let local_player_cell_id = session.local_player_cell_id;
     let participants = session
         .my_team
         .unwrap_or_default()
@@ -624,11 +640,16 @@ async fn read_champ_select_players(
                 .their_team
                 .unwrap_or_default()
                 .into_iter()
+                .filter(|player| {
+                    player.summoner_id.is_some()
+                        || player.summoner_name.is_some()
+                        || player.puuid.is_some()
+                        || player
+                            .champion_id
+                            .is_some_and(|champion_id| champion_id > 0)
+                })
                 .map(|player| ("enemy".to_string(), player)),
-        )
-        .filter(|(_, player)| {
-            player.summoner_id.is_some() || player.summoner_name.is_some() || player.puuid.is_some()
-        });
+        );
 
     let mut players = Vec::new();
 
@@ -639,6 +660,7 @@ async fn read_champ_select_players(
                 client,
                 lockfile,
                 team,
+                player.cell_id == local_player_cell_id,
                 fallback_index,
                 player.assigned_position.as_deref(),
                 player.champion_id,
@@ -706,6 +728,7 @@ async fn read_gameflow_players(
                 client,
                 lockfile,
                 team,
+                is_local_player(&player),
                 index,
                 player.selected_position.as_deref(),
                 player.champion_id,
