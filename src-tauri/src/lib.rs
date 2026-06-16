@@ -27,6 +27,7 @@ struct LcuSessionPayload {
 
 struct LeagueClientDiscovery {
     lockfile: Option<LcuLockfile>,
+    lockfile_candidate_count: usize,
     process_running: bool,
 }
 
@@ -146,6 +147,7 @@ struct LiveClientSnapshotPayload {
 struct LcuDiagnosticsPayload {
     process_running: bool,
     lockfile_found: bool,
+    lockfile_candidate_count: usize,
     lockfile_protocol: Option<String>,
     lockfile_port: Option<u16>,
     phase_status: String,
@@ -163,6 +165,10 @@ struct LcuDiagnosticsPayload {
     gameflow_team_one_count: usize,
     gameflow_team_two_count: usize,
     live_client_status: String,
+    live_client_all_data_status: String,
+    live_client_active_player_status: String,
+    live_client_player_list_status: String,
+    live_client_game_stats_status: String,
     live_client_game_mode: Option<String>,
     live_client_player_count: usize,
     live_client_active_player: Option<String>,
@@ -238,6 +244,10 @@ fn lockfile_path_from_executable(executable: &Path) -> Option<PathBuf> {
     executable.parent().map(|parent| parent.join("lockfile"))
 }
 
+fn lockfile_path_from_process_dir(process_dir: &Path) -> PathBuf {
+    process_dir.join("lockfile")
+}
+
 #[cfg(target_os = "windows")]
 fn running_league_client_paths() -> (bool, Vec<PathBuf>) {
     use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
@@ -246,7 +256,9 @@ fn running_league_client_paths() -> (bool, Vec<PathBuf>) {
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
         true,
-        ProcessRefreshKind::nothing().with_exe(sysinfo::UpdateKind::OnlyIfNotSet),
+        ProcessRefreshKind::nothing()
+            .with_exe(sysinfo::UpdateKind::OnlyIfNotSet)
+            .with_cwd(sysinfo::UpdateKind::OnlyIfNotSet),
     );
 
     let mut process_running = false;
@@ -260,6 +272,9 @@ fn running_league_client_paths() -> (bool, Vec<PathBuf>) {
             process_running = true;
             if let Some(executable) = process.exe() {
                 executable_paths.push(executable.to_path_buf());
+            }
+            if let Some(cwd) = process.cwd() {
+                executable_paths.push(cwd.to_path_buf());
             }
         }
     }
@@ -284,17 +299,40 @@ fn candidate_lockfile_paths(executable_paths: &[PathBuf]) -> Vec<PathBuf> {
             .iter()
             .filter_map(|path| lockfile_path_from_executable(path)),
     );
+    paths.extend(
+        executable_paths
+            .iter()
+            .filter(|path| path.is_dir())
+            .map(|path| lockfile_path_from_process_dir(path)),
+    );
 
     paths.push(PathBuf::from(r"C:\Riot Games\League of Legends\lockfile"));
+    paths.push(PathBuf::from(
+        r"C:\Program Files (x86)\Tencent\WeGameApps\英雄联盟\Game\lockfile",
+    ));
+    paths.push(PathBuf::from(
+        r"C:\Program Files\Tencent\WeGameApps\英雄联盟\Game\lockfile",
+    ));
+    paths.push(PathBuf::from(r"C:\英雄联盟\Game\lockfile"));
+    paths.push(PathBuf::from(r"C:\腾讯游戏\英雄联盟\Game\lockfile"));
 
     for key in ["ProgramFiles", "ProgramFiles(x86)"] {
         if let Ok(root) = env::var(key) {
-            paths.push(PathBuf::from(root).join(r"Riot Games\League of Legends\lockfile"));
+            let root = PathBuf::from(root);
+            paths.push(root.join(r"Riot Games\League of Legends\lockfile"));
+            paths.push(root.join(r"Tencent\WeGameApps\英雄联盟\Game\lockfile"));
+            paths.push(root.join(r"WeGameApps\英雄联盟\Game\lockfile"));
+            paths.push(root.join(r"腾讯游戏\英雄联盟\Game\lockfile"));
         }
     }
 
     if let Ok(system_drive) = env::var("SystemDrive") {
-        paths.push(PathBuf::from(system_drive).join(r"Riot Games\League of Legends\lockfile"));
+        let system_drive = PathBuf::from(system_drive);
+        paths.push(system_drive.join(r"Riot Games\League of Legends\lockfile"));
+        paths.push(system_drive.join(r"WeGameApps\英雄联盟\Game\lockfile"));
+        paths.push(system_drive.join(r"Tencent\WeGameApps\英雄联盟\Game\lockfile"));
+        paths.push(system_drive.join(r"英雄联盟\Game\lockfile"));
+        paths.push(system_drive.join(r"腾讯游戏\英雄联盟\Game\lockfile"));
     }
 
     #[cfg(target_os = "windows")]
@@ -303,6 +341,24 @@ fn candidate_lockfile_paths(executable_paths: &[PathBuf]) -> Vec<PathBuf> {
         paths.push(PathBuf::from(&drive_root).join(r"Riot Games\League of Legends\lockfile"));
         paths.push(
             PathBuf::from(&drive_root).join(r"Program Files\Riot Games\League of Legends\lockfile"),
+        );
+        paths.push(PathBuf::from(&drive_root).join(r"WeGameApps\英雄联盟\Game\lockfile"));
+        paths.push(PathBuf::from(&drive_root).join(r"Tencent\WeGameApps\英雄联盟\Game\lockfile"));
+        paths.push(PathBuf::from(&drive_root).join(r"英雄联盟\Game\lockfile"));
+        paths.push(PathBuf::from(&drive_root).join(r"腾讯游戏\英雄联盟\Game\lockfile"));
+        paths.push(
+            PathBuf::from(&drive_root)
+                .join(r"Program Files\Tencent\WeGameApps\英雄联盟\Game\lockfile"),
+        );
+        paths.push(
+            PathBuf::from(&drive_root)
+                .join(r"Program Files (x86)\Tencent\WeGameApps\英雄联盟\Game\lockfile"),
+        );
+        paths.push(
+            PathBuf::from(&drive_root).join(r"Program Files\腾讯游戏\英雄联盟\Game\lockfile"),
+        );
+        paths.push(
+            PathBuf::from(&drive_root).join(r"Program Files (x86)\腾讯游戏\英雄联盟\Game\lockfile"),
         );
     }
 
@@ -313,13 +369,16 @@ fn candidate_lockfile_paths(executable_paths: &[PathBuf]) -> Vec<PathBuf> {
 
 fn discover_league_client() -> LeagueClientDiscovery {
     let (process_running, executable_paths) = running_league_client_paths();
-    let lockfile = candidate_lockfile_paths(&executable_paths)
+    let lockfile_paths = candidate_lockfile_paths(&executable_paths);
+    let lockfile_candidate_count = lockfile_paths.len();
+    let lockfile = lockfile_paths
         .into_iter()
         .find_map(|path| fs::read_to_string(path).ok())
         .and_then(|raw| parse_lockfile(&raw));
 
     LeagueClientDiscovery {
         lockfile,
+        lockfile_candidate_count,
         process_running,
     }
 }
@@ -503,16 +562,23 @@ async fn request_lcu_json<T: for<'de> Deserialize<'de>>(
         .ok()
 }
 
-async fn read_live_client_all_data(client: &reqwest::Client) -> Option<LiveClientAllData> {
+async fn read_live_client_json<T: for<'de> Deserialize<'de>>(
+    client: &reqwest::Client,
+    path: &str,
+) -> Option<T> {
     let base_url = live_client_data_base_url();
     client
-        .get(format!("{}/liveclientdata/allgamedata", base_url))
+        .get(format!("{}{}", base_url, path))
         .send()
         .await
         .ok()?
-        .json::<LiveClientAllData>()
+        .json::<T>()
         .await
         .ok()
+}
+
+async fn read_live_client_all_data(client: &reqwest::Client) -> Option<LiveClientAllData> {
+    read_live_client_json(client, "/liveclientdata/allgamedata").await
 }
 
 fn is_allowed_riot_api_url(raw_url: &str) -> bool {
@@ -618,47 +684,71 @@ async fn read_live_client_snapshot() -> Option<LiveClientSnapshotPayload> {
         .danger_accept_invalid_certs(true)
         .build()
         .ok()?;
-    let payload = read_live_client_all_data(&client).await?;
+    let mut active_endpoint_player = None;
+    let mut all_players = None;
+    let mut game_data = None;
 
-    let active_name = payload
-        .active_player
+    if let Some(payload) = read_live_client_all_data(&client).await {
+        active_endpoint_player = payload.active_player;
+        all_players = payload.all_players;
+        game_data = payload.game_data;
+    }
+
+    if active_endpoint_player.is_none() {
+        active_endpoint_player = read_live_client_json::<LiveClientActivePlayer>(
+            &client,
+            "/liveclientdata/activeplayer",
+        )
+        .await;
+    }
+    if all_players.is_none() {
+        all_players =
+            read_live_client_json::<Vec<LiveClientPlayer>>(&client, "/liveclientdata/playerlist")
+                .await;
+    }
+    if game_data.is_none() {
+        game_data =
+            read_live_client_json::<LiveClientGameData>(&client, "/liveclientdata/gamestats").await;
+    }
+
+    if active_endpoint_player.is_none() && all_players.is_none() && game_data.is_none() {
+        return None;
+    }
+
+    let active_name = active_endpoint_player
         .as_ref()
         .and_then(|active| active.summoner_name.clone());
-    let active_player = active_name
+    let listed_active_player = active_name
         .as_ref()
         .and_then(|name| {
-            payload.all_players.as_ref()?.iter().find(|player| {
+            all_players.as_ref()?.iter().find(|player| {
                 player
                     .summoner_name
                     .as_ref()
                     .is_some_and(|candidate| candidate == name)
             })
         })
-        .or_else(|| payload.all_players.as_ref()?.first());
+        .or_else(|| all_players.as_ref()?.first());
 
     Some(LiveClientSnapshotPayload {
-        game_time: payload
-            .game_data
+        game_time: game_data
             .as_ref()
             .and_then(|game_data| game_data.game_time)
             .unwrap_or_default(),
-        game_mode: payload
-            .game_data
+        game_mode: game_data
             .as_ref()
             .and_then(|game_data| game_data.game_mode.clone()),
         active_player_name: active_name,
-        champion_name: active_player.and_then(|player| player.champion_name.clone()),
-        level: payload
-            .active_player
+        champion_name: listed_active_player.and_then(|player| player.champion_name.clone()),
+        level: active_endpoint_player
             .as_ref()
             .and_then(|active| active.level)
-            .or_else(|| active_player.and_then(|player| player.level)),
-        current_gold: payload
-            .active_player
+            .or_else(|| listed_active_player.and_then(|player| player.level)),
+        current_gold: active_endpoint_player
             .as_ref()
             .and_then(|active| active.current_gold)
             .map(|gold| gold.max(0.0).round() as u32),
-        current_item_ids: active_player
+        current_item_ids: listed_active_player
             .and_then(|player| player.items.as_ref())
             .map(|items| items.iter().filter_map(|item| item.item_id).collect())
             .unwrap_or_default(),
@@ -819,7 +909,55 @@ async fn read_lcu_diagnostics() -> LcuDiagnosticsPayload {
         Some(client) => read_live_client_all_data(client).await,
         None => None,
     };
-    let live_client_status = if live_payload.is_some() {
+    let live_active_player = match live_client.as_ref() {
+        Some(client) => {
+            read_live_client_json::<LiveClientActivePlayer>(client, "/liveclientdata/activeplayer")
+                .await
+        }
+        None => None,
+    };
+    let live_player_list = match live_client.as_ref() {
+        Some(client) => {
+            read_live_client_json::<Vec<LiveClientPlayer>>(client, "/liveclientdata/playerlist")
+                .await
+        }
+        None => None,
+    };
+    let live_game_stats = match live_client.as_ref() {
+        Some(client) => {
+            read_live_client_json::<LiveClientGameData>(client, "/liveclientdata/gamestats").await
+        }
+        None => None,
+    };
+    let live_client_all_data_status = if live_payload.is_some() {
+        "ok"
+    } else {
+        "unavailable"
+    }
+    .to_string();
+    let live_client_active_player_status = if live_active_player.is_some() {
+        "ok"
+    } else {
+        "unavailable"
+    }
+    .to_string();
+    let live_client_player_list_status = if live_player_list.is_some() {
+        "ok"
+    } else {
+        "unavailable"
+    }
+    .to_string();
+    let live_client_game_stats_status = if live_game_stats.is_some() {
+        "ok"
+    } else {
+        "unavailable"
+    }
+    .to_string();
+    let live_client_status = if live_payload.is_some()
+        || live_active_player.is_some()
+        || live_player_list.is_some()
+        || live_game_stats.is_some()
+    {
         "ok"
     } else {
         "unavailable"
@@ -828,18 +966,28 @@ async fn read_lcu_diagnostics() -> LcuDiagnosticsPayload {
     let live_client_game_mode = live_payload
         .as_ref()
         .and_then(|payload| payload.game_data.as_ref())
-        .and_then(|game_data| game_data.game_mode.clone());
+        .and_then(|game_data| game_data.game_mode.clone())
+        .or_else(|| {
+            live_game_stats
+                .as_ref()
+                .and_then(|game_data| game_data.game_mode.clone())
+        });
     let live_client_player_count = live_payload
         .as_ref()
         .and_then(|payload| payload.all_players.as_ref())
-        .map_or(0, |players| players.len());
+        .map(|players| players.len())
+        .or_else(|| live_player_list.as_ref().map(|players| players.len()))
+        .unwrap_or_default();
     let live_client_active_player = live_payload
-        .and_then(|payload| payload.active_player)
-        .and_then(|active| active.summoner_name);
+        .as_ref()
+        .and_then(|payload| payload.active_player.as_ref())
+        .and_then(|active| active.summoner_name.clone())
+        .or_else(|| live_active_player.and_then(|active| active.summoner_name));
 
     LcuDiagnosticsPayload {
         process_running: discovery.process_running,
         lockfile_found,
+        lockfile_candidate_count: discovery.lockfile_candidate_count,
         lockfile_protocol,
         lockfile_port,
         phase_status,
@@ -857,6 +1005,10 @@ async fn read_lcu_diagnostics() -> LcuDiagnosticsPayload {
         gameflow_team_one_count,
         gameflow_team_two_count,
         live_client_status,
+        live_client_all_data_status,
+        live_client_active_player_status,
+        live_client_player_list_status,
+        live_client_game_stats_status,
         live_client_game_mode,
         live_client_player_count,
         live_client_active_player,
@@ -1115,5 +1267,24 @@ mod tests {
             .unwrap();
 
         assert!(process_index < standard_index);
+    }
+
+    #[test]
+    fn includes_common_wegame_lockfile_candidates() {
+        let paths = candidate_lockfile_paths(&[]);
+        let rendered_paths = paths
+            .iter()
+            .map(|path| path.to_string_lossy().to_string())
+            .collect::<Vec<_>>();
+
+        assert!(rendered_paths
+            .iter()
+            .any(|path| path.contains(r"Tencent\WeGameApps\英雄联盟\Game\lockfile")));
+        assert!(rendered_paths
+            .iter()
+            .any(|path| path.contains(r"腾讯游戏\英雄联盟\Game\lockfile")));
+        assert!(rendered_paths
+            .iter()
+            .any(|path| path.contains(r"英雄联盟\Game\lockfile")));
     }
 }

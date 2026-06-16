@@ -118,6 +118,7 @@ describe('tauri host bridge', () => {
     tauriMocks.invoke.mockResolvedValue({
       processRunning: true,
       lockfileFound: true,
+      lockfileCandidateCount: 42,
       lockfileProtocol: 'https',
       lockfilePort: 51234,
       phaseStatus: 'ok',
@@ -135,6 +136,10 @@ describe('tauri host bridge', () => {
       gameflowTeamOneCount: 5,
       gameflowTeamTwoCount: 5,
       liveClientStatus: 'unavailable',
+      liveClientAllDataStatus: 'unavailable',
+      liveClientActivePlayerStatus: 'unavailable',
+      liveClientPlayerListStatus: 'unavailable',
+      liveClientGameStatsStatus: 'unavailable',
       liveClientPlayerCount: 0,
       source: 'lcu-diagnostics',
     })

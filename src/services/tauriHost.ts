@@ -17,6 +17,7 @@ type TauriLcuSessionPayload = {
 export type LcuDiagnosticsPayload = {
   processRunning: boolean
   lockfileFound: boolean
+  lockfileCandidateCount?: number
   lockfileProtocol?: string
   lockfilePort?: number
   phaseStatus: string
@@ -34,6 +35,10 @@ export type LcuDiagnosticsPayload = {
   gameflowTeamOneCount: number
   gameflowTeamTwoCount: number
   liveClientStatus: string
+  liveClientAllDataStatus?: string
+  liveClientActivePlayerStatus?: string
+  liveClientPlayerListStatus?: string
+  liveClientGameStatsStatus?: string
   liveClientGameMode?: string
   liveClientPlayerCount: number
   liveClientActivePlayer?: string
