@@ -141,6 +141,34 @@ struct LiveClientSnapshotPayload {
     source: String,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LcuDiagnosticsPayload {
+    process_running: bool,
+    lockfile_found: bool,
+    lockfile_protocol: Option<String>,
+    lockfile_port: Option<u16>,
+    phase_status: String,
+    phase: Option<String>,
+    queue_id: Option<u32>,
+    queue_label: Option<String>,
+    mapped_mode: Option<String>,
+    current_summoner_status: String,
+    current_summoner_name: Option<String>,
+    champ_select_status: String,
+    champ_select_local_cell_id: Option<u16>,
+    champ_select_ally_count: usize,
+    champ_select_enemy_count: usize,
+    gameflow_status: String,
+    gameflow_team_one_count: usize,
+    gameflow_team_two_count: usize,
+    live_client_status: String,
+    live_client_game_mode: Option<String>,
+    live_client_player_count: usize,
+    live_client_active_player: Option<String>,
+    source: String,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct LiveClientAllData {
@@ -350,6 +378,29 @@ fn map_queue_to_mode(queue: Option<&GameflowQueue>) -> Option<String> {
     None
 }
 
+fn queue_label(queue: Option<&GameflowQueue>) -> Option<String> {
+    let label = queue
+        .map(|queue| {
+            [
+                queue.name.as_deref(),
+                queue.short_name.as_deref(),
+                queue.description.as_deref(),
+                queue.game_mode.as_deref(),
+            ]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
+            .join(" ")
+        })
+        .unwrap_or_default();
+
+    if label.trim().is_empty() {
+        None
+    } else {
+        Some(label)
+    }
+}
+
 async fn build_player_payload(
     client: &reqwest::Client,
     lockfile: &LcuLockfile,
@@ -452,6 +503,18 @@ async fn request_lcu_json<T: for<'de> Deserialize<'de>>(
         .ok()
 }
 
+async fn read_live_client_all_data(client: &reqwest::Client) -> Option<LiveClientAllData> {
+    let base_url = live_client_data_base_url();
+    client
+        .get(format!("{}/liveclientdata/allgamedata", base_url))
+        .send()
+        .await
+        .ok()?
+        .json::<LiveClientAllData>()
+        .await
+        .ok()
+}
+
 fn is_allowed_riot_api_url(raw_url: &str) -> bool {
     let Ok(url) = reqwest::Url::parse(raw_url) else {
         return false;
@@ -550,20 +613,12 @@ fn live_client_data_base_url() -> String {
 
 #[tauri::command]
 async fn read_live_client_snapshot() -> Option<LiveClientSnapshotPayload> {
-    let base_url = live_client_data_base_url();
     let client = reqwest::Client::builder()
         .timeout(Duration::from_millis(900))
         .danger_accept_invalid_certs(true)
         .build()
         .ok()?;
-    let payload = client
-        .get(format!("{}/liveclientdata/allgamedata", base_url))
-        .send()
-        .await
-        .ok()?
-        .json::<LiveClientAllData>()
-        .await
-        .ok()?;
+    let payload = read_live_client_all_data(&client).await?;
 
     let active_name = payload
         .active_player
@@ -675,6 +730,140 @@ async fn read_champ_select_players(
     players
 }
 
+#[tauri::command]
+async fn read_lcu_diagnostics() -> LcuDiagnosticsPayload {
+    let discovery = discover_league_client();
+    let lockfile = discovery.lockfile;
+    let lockfile_found = lockfile.is_some();
+    let lockfile_protocol = lockfile.as_ref().map(|lockfile| lockfile.protocol.clone());
+    let lockfile_port = lockfile.as_ref().map(|lockfile| lockfile.port);
+
+    let mut phase_status = "unavailable".to_string();
+    let mut phase = None;
+    let mut queue_id = None;
+    let mut queue_label_value = None;
+    let mut mapped_mode = None;
+    let mut current_summoner_status = "unavailable".to_string();
+    let mut current_summoner_name = None;
+    let mut champ_select_status = "unavailable".to_string();
+    let mut champ_select_local_cell_id = None;
+    let mut champ_select_ally_count = 0;
+    let mut champ_select_enemy_count = 0;
+    let mut gameflow_status = "unavailable".to_string();
+    let mut gameflow_team_one_count = 0;
+    let mut gameflow_team_two_count = 0;
+
+    if let Some(lockfile) = lockfile.as_ref() {
+        if let Ok(client) = reqwest::Client::builder()
+            .timeout(Duration::from_millis(1400))
+            .danger_accept_invalid_certs(true)
+            .build()
+        {
+            let phase_result =
+                request_lcu_json::<String>(&client, lockfile, "/lol-gameflow/v1/gameflow-phase")
+                    .await;
+            if let Some(value) = phase_result {
+                phase_status = "ok".to_string();
+                phase = Some(value);
+            }
+
+            let gameflow_session =
+                request_lcu_json::<GameflowSession>(&client, lockfile, "/lol-gameflow/v1/session")
+                    .await;
+            if let Some(session) = gameflow_session.as_ref() {
+                gameflow_status = "ok".to_string();
+                if let Some(game_data) = session.game_data.as_ref() {
+                    gameflow_team_one_count =
+                        game_data.team_one.as_ref().map_or(0, |team| team.len());
+                    gameflow_team_two_count =
+                        game_data.team_two.as_ref().map_or(0, |team| team.len());
+                    let queue = game_data.queue.as_ref();
+                    queue_id = queue.and_then(|queue| queue.id);
+                    queue_label_value = queue_label(queue);
+                    mapped_mode = map_queue_to_mode(queue);
+                }
+            }
+
+            let current_summoner = request_lcu_json::<CurrentSummoner>(
+                &client,
+                lockfile,
+                "/lol-summoner/v1/current-summoner",
+            )
+            .await;
+            if let Some(summoner) = current_summoner {
+                current_summoner_status = "ok".to_string();
+                current_summoner_name = summoner.display_name.or(summoner.game_name);
+            }
+
+            let champ_select = request_lcu_json::<ChampSelectSession>(
+                &client,
+                lockfile,
+                "/lol-champ-select/v1/session",
+            )
+            .await;
+            if let Some(session) = champ_select {
+                champ_select_status = "ok".to_string();
+                champ_select_local_cell_id = session.local_player_cell_id;
+                champ_select_ally_count = session.my_team.as_ref().map_or(0, |team| team.len());
+                champ_select_enemy_count = session.their_team.as_ref().map_or(0, |team| team.len());
+            }
+        }
+    }
+
+    let live_client = reqwest::Client::builder()
+        .timeout(Duration::from_millis(900))
+        .danger_accept_invalid_certs(true)
+        .build()
+        .ok();
+    let live_payload = match live_client.as_ref() {
+        Some(client) => read_live_client_all_data(client).await,
+        None => None,
+    };
+    let live_client_status = if live_payload.is_some() {
+        "ok"
+    } else {
+        "unavailable"
+    }
+    .to_string();
+    let live_client_game_mode = live_payload
+        .as_ref()
+        .and_then(|payload| payload.game_data.as_ref())
+        .and_then(|game_data| game_data.game_mode.clone());
+    let live_client_player_count = live_payload
+        .as_ref()
+        .and_then(|payload| payload.all_players.as_ref())
+        .map_or(0, |players| players.len());
+    let live_client_active_player = live_payload
+        .and_then(|payload| payload.active_player)
+        .and_then(|active| active.summoner_name);
+
+    LcuDiagnosticsPayload {
+        process_running: discovery.process_running,
+        lockfile_found,
+        lockfile_protocol,
+        lockfile_port,
+        phase_status,
+        phase,
+        queue_id,
+        queue_label: queue_label_value,
+        mapped_mode,
+        current_summoner_status,
+        current_summoner_name,
+        champ_select_status,
+        champ_select_local_cell_id,
+        champ_select_ally_count,
+        champ_select_enemy_count,
+        gameflow_status,
+        gameflow_team_one_count,
+        gameflow_team_two_count,
+        live_client_status,
+        live_client_game_mode,
+        live_client_player_count,
+        live_client_active_player,
+        source: "lcu-diagnostics".to_string(),
+    }
+}
+
 async fn read_gameflow_players(
     client: &reqwest::Client,
     lockfile: &LcuLockfile,
@@ -783,10 +972,19 @@ async fn read_lcu_session() -> Option<LcuSessionPayload> {
         .and_then(|session| session.game_data.as_ref());
     let queue = game_data.and_then(|game_data| game_data.queue.as_ref());
     let (players, player_source) = if phase == "ChampSelect" {
-        (
-            read_champ_select_players(&client, &lockfile).await,
-            Some("champ-select".to_string()),
-        )
+        let champ_select_players = read_champ_select_players(&client, &lockfile).await;
+        if champ_select_players.is_empty() {
+            let gameflow_players =
+                read_gameflow_players(&client, &lockfile, game_data, current_summoner.as_ref())
+                    .await;
+            if gameflow_players.is_empty() {
+                (champ_select_players, Some("champ-select".to_string()))
+            } else {
+                (gameflow_players, Some("gameflow".to_string()))
+            }
+        } else {
+            (champ_select_players, Some("champ-select".to_string()))
+        }
     } else if matches!(
         phase.as_str(),
         "GameStart" | "InProgress" | "WaitingForStats"
@@ -835,6 +1033,7 @@ pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             opgg_mcp_call,
+            read_lcu_diagnostics,
             read_lcu_session,
             read_live_client_snapshot,
             riot_api_get,

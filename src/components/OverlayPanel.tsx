@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, Minimize2, Pin, RefreshCcw } from 'lucide-react'
+import { Activity, Clipboard, Minimize2, Pin, RefreshCcw } from 'lucide-react'
 import type { Champion, ConnectionDiagnostic, DiagnosticStatus, GameMode, Match, RecommendationViewModel } from '../types'
 import type { MayhemRecommendationMode } from '../features/mayhem/types'
 import { AugmentRecommendation } from './AugmentRecommendation'
@@ -27,6 +27,7 @@ type OverlayPanelProps = {
   mayhemRecommendationMode: MayhemRecommendationMode
   recommendations: RecommendationViewModel
   onRefreshDiagnostics: () => void
+  onCopyDiagnostics: () => void
   onCopy: () => void
   onApplyLoadout: (loadoutName: string) => void
   onApplyRunePage: (pageName: string) => void
@@ -55,6 +56,7 @@ export function OverlayPanel({
   mayhemRecommendationMode,
   recommendations,
   onRefreshDiagnostics,
+  onCopyDiagnostics,
   onCopy,
   onApplyLoadout,
   onApplyRunePage,
@@ -127,9 +129,15 @@ export function OverlayPanel({
 
       {isDiagnosticsOpen && (
         <div className="diagnostic-panel">
-          <button className="diagnostic-refresh" type="button" onClick={onRefreshDiagnostics}>
-            重新检测
-          </button>
+          <div className="diagnostic-actions">
+            <button className="diagnostic-refresh" type="button" onClick={onRefreshDiagnostics}>
+              重新检测
+            </button>
+            <button className="diagnostic-refresh" type="button" onClick={onCopyDiagnostics}>
+              <Clipboard size={12} />
+              复制诊断
+            </button>
+          </div>
           {diagnostics.map((item) => (
             <div className="diagnostic-row" key={item.id}>
               <span className={`diagnostic-dot diagnostic-dot--${item.status}`} />

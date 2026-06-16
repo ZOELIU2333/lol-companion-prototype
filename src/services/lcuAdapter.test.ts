@@ -243,6 +243,52 @@ describe('lcu adapter boundary', () => {
     })
   })
 
+  it('falls back to gameflow players when champ-select returns no slots', async () => {
+    const adapter = createLcuAdapter({
+      readLockfile: async () => 'LeagueClient:1234:2999:secret:https',
+      requestJson: async <T,>({ path }: LcuRequestOptions) => {
+        if (path === '/lol-gameflow/v1/gameflow-phase') return 'ChampSelect' as T
+        if (path === '/lol-summoner/v1/current-summoner') {
+          return { displayName: 'Local Player', summonerId: 2001, puuid: 'local-puuid' } as T
+        }
+        if (path === '/lol-gameflow/v1/session') {
+          return {
+            gameData: {
+              queue: { id: 420, description: 'Ranked Solo/Duo' },
+              teamOne: [
+                { championId: 81, summonerId: 1001, summonerName: 'Enemy Player' },
+              ],
+              teamTwo: [
+                { championId: 64, summonerId: 2001, summonerName: 'Local Player', puuid: 'local-puuid' },
+              ],
+            },
+          } as T
+        }
+        if (path === '/lol-champ-select/v1/session') {
+          return { localPlayerCellId: 1, myTeam: [], theirTeam: [] } as T
+        }
+        if (path === '/lol-summoner/v1/summoners/1001') {
+          return { displayName: 'Enemy Player', gameName: 'Enemy Player' } as T
+        }
+        if (path === '/lol-summoner/v1/summoners/2001') {
+          return { displayName: 'Local Player', gameName: 'Local Player', puuid: 'local-puuid' } as T
+        }
+        return null
+      },
+    })
+
+    await expect(adapter.readSession()).resolves.toMatchObject({
+      phase: 'ChampSelect',
+      mode: 'ranked',
+      queueId: 420,
+      playerSource: 'gameflow',
+      players: [
+        { team: 'ally', summonerName: 'Local Player', championId: 64 },
+        { team: 'enemy', summonerName: 'Enemy Player', championId: 81 },
+      ],
+    })
+  })
+
   it('reads loading-screen players from gameflow and makes the local team allied', async () => {
     const adapter = createLcuAdapter({
       readLockfile: async () => 'LeagueClient:1234:2999:secret:https',

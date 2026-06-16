@@ -44,6 +44,7 @@ function App() {
       onApplyLoadout={session.applyLoadout}
       onApplyRunePage={session.applyRunePage}
       onCopy={session.copyBrief}
+      onCopyDiagnostics={session.copyDiagnostics}
       onMayhemModeChange={session.onMayhemModeChange}
       onRefreshDiagnostics={session.refreshDiagnostics}
       onRefresh={session.refreshMatch}

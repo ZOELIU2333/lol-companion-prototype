@@ -14,6 +14,32 @@ type TauriLcuSessionPayload = {
   source: 'lcu'
 }
 
+export type LcuDiagnosticsPayload = {
+  processRunning: boolean
+  lockfileFound: boolean
+  lockfileProtocol?: string
+  lockfilePort?: number
+  phaseStatus: string
+  phase?: string
+  queueId?: number
+  queueLabel?: string
+  mappedMode?: Exclude<GameMode, 'arena'>
+  currentSummonerStatus: string
+  currentSummonerName?: string
+  champSelectStatus: string
+  champSelectLocalCellId?: number
+  champSelectAllyCount: number
+  champSelectEnemyCount: number
+  gameflowStatus: string
+  gameflowTeamOneCount: number
+  gameflowTeamTwoCount: number
+  liveClientStatus: string
+  liveClientGameMode?: string
+  liveClientPlayerCount: number
+  liveClientActivePlayer?: string
+  source: 'lcu-diagnostics'
+}
+
 const knownLcuPhases: readonly LcuGamePhase[] = [
   'ClientRunning',
   'None',
@@ -68,6 +94,16 @@ export const tauriLcuAdapter: LcuAdapter = {
       return null
     }
   },
+}
+
+export async function readLcuDiagnostics() {
+  if (!isTauri()) return null
+
+  try {
+    return await invoke<LcuDiagnosticsPayload>('read_lcu_diagnostics')
+  } catch {
+    return null
+  }
 }
 
 export async function setOverlayAlwaysOnTop(enabled: boolean) {

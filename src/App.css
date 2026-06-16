@@ -1100,7 +1100,16 @@ a,
   padding: 0.2rem 0.1rem 0.35rem;
 }
 
+.diagnostic-actions {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+}
+
 .diagnostic-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   justify-self: end;
   min-height: 1.45rem;
   border: 0;

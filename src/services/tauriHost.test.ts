@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { setOverlayAlwaysOnTop, setOverlayCompact, startOverlayDragging, tauriLcuAdapter } from './tauriHost'
+import { readLcuDiagnostics, setOverlayAlwaysOnTop, setOverlayCompact, startOverlayDragging, tauriLcuAdapter } from './tauriHost'
 import { createTauriRiotApiHost } from './tauriRiotHost'
 
 const tauriMocks = vi.hoisted(() => ({
@@ -111,6 +111,40 @@ describe('tauri host bridge', () => {
       players: [],
       playerSource: undefined,
     })
+  })
+
+  it('copies sanitized LCU diagnostics through the Tauri backend', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockResolvedValue({
+      processRunning: true,
+      lockfileFound: true,
+      lockfileProtocol: 'https',
+      lockfilePort: 51234,
+      phaseStatus: 'ok',
+      phase: 'ChampSelect',
+      queueId: 420,
+      queueLabel: 'Ranked Solo/Duo',
+      mappedMode: 'ranked',
+      currentSummonerStatus: 'ok',
+      currentSummonerName: 'Local Player',
+      champSelectStatus: 'ok',
+      champSelectLocalCellId: 3,
+      champSelectAllyCount: 5,
+      champSelectEnemyCount: 0,
+      gameflowStatus: 'ok',
+      gameflowTeamOneCount: 5,
+      gameflowTeamTwoCount: 5,
+      liveClientStatus: 'unavailable',
+      liveClientPlayerCount: 0,
+      source: 'lcu-diagnostics',
+    })
+
+    await expect(readLcuDiagnostics()).resolves.toMatchObject({
+      phase: 'ChampSelect',
+      champSelectAllyCount: 5,
+      source: 'lcu-diagnostics',
+    })
+    expect(tauriMocks.invoke).toHaveBeenCalledWith('read_lcu_diagnostics')
   })
 
   it('proxies overlay window commands when running in Tauri', async () => {

@@ -316,11 +316,23 @@ export function createLcuAdapter(host: LcuAdapterHost): LcuAdapter {
       const queueLabel = [queue?.name, queue?.shortName, queue?.description, queue?.gameMode].filter(Boolean).join(' ')
       const mode = mapLcuQueueToMode(queueLabel, queue?.id)
       const readsGameflowPlayers = phase === 'GameStart' || phase === 'InProgress' || phase === 'WaitingForStats'
-      const players = phase === 'ChampSelect'
-          ? await readChampSelectPlayers(request)
-          : readsGameflowPlayers
-          ? await readGameflowPlayers(request, gameflowSession, currentSummoner)
-          : []
+      let players: LcuPlayerSnapshot[] = []
+      let playerSource: LcuSessionSnapshot['playerSource']
+
+      if (phase === 'ChampSelect') {
+        const champSelectPlayers = await readChampSelectPlayers(request)
+        if (champSelectPlayers.length > 0) {
+          players = champSelectPlayers
+          playerSource = 'champ-select'
+        } else {
+          const gameflowPlayers = await readGameflowPlayers(request, gameflowSession, currentSummoner)
+          players = gameflowPlayers.length > 0 ? gameflowPlayers : champSelectPlayers
+          playerSource = gameflowPlayers.length > 0 ? 'gameflow' : 'champ-select'
+        }
+      } else if (readsGameflowPlayers) {
+        players = await readGameflowPlayers(request, gameflowSession, currentSummoner)
+        playerSource = 'gameflow'
+      }
 
       return {
         phase,
@@ -328,7 +340,7 @@ export function createLcuAdapter(host: LcuAdapterHost): LcuAdapter {
         queueId: queue?.id,
         localSummonerName: currentSummoner?.displayName ?? currentSummoner?.gameName,
         players,
-        playerSource: phase === 'ChampSelect' ? 'champ-select' : readsGameflowPlayers ? 'gameflow' : undefined,
+        playerSource,
       }
     },
   }

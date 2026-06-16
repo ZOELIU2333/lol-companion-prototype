@@ -6,7 +6,7 @@ import { applyLiveClientSnapshotToMatch, createTauriLiveClientDataHost, type Liv
 import { createLcuMatch } from '../services/lcuMatch'
 import { loadOpggChampionDetail } from '../services/opggChampionData'
 import { mockPluginActions } from '../services/pluginActions'
-import { createTauriOpggMcpHost, isRunningInTauri, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from '../services/tauriHost'
+import { createTauriOpggMcpHost, isRunningInTauri, readLcuDiagnostics, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from '../services/tauriHost'
 import type { ConnectionDiagnostic, DiagnosticStatus, GameMode, InfoPhase, PlayerFilter } from '../types'
 import type { LcuGamePhase } from '../services/lcuAdapter'
 import type { MayhemRecommendationMode } from '../features/mayhem/types'
@@ -150,12 +150,14 @@ export function useCompanionSession() {
           setActivePhase(session.mode === 'augment' ? 'live' : 'pregame')
         }
         const isActivePhase = Boolean(session.phase && connectedPhases.has(session.phase))
-        setConnectionStatus(isActivePhase ? (session.mode ? 'match' : 'syncing') : 'client')
+        const hasRealPlayers = (session.players?.length ?? 0) > 0
+        const hasVisibleMatch = isActivePhase && (Boolean(session.mode) || hasRealPlayers)
+        setConnectionStatus(hasVisibleMatch ? 'match' : isActivePhase ? 'syncing' : 'client')
         setLcuPhase(session.phase ?? null)
         setLcuQueueId(session.queueId ?? null)
         setLcuPlayerSource(session.playerSource ?? null)
-        setLcuMatch(session.mode ? createLcuMatch(session) : null)
-        setIsDetected(isActivePhase && Boolean(session.mode))
+        setLcuMatch(hasVisibleMatch ? createLcuMatch(session) : null)
+        setIsDetected(hasVisibleMatch)
         return
       }
 
@@ -244,6 +246,21 @@ export function useCompanionSession() {
     setToast('已刷新连接诊断')
   }
 
+  const copyDiagnostics = async () => {
+    const diagnosticsPayload = await readLcuDiagnostics()
+    if (!diagnosticsPayload) {
+      setToast('诊断读取失败，请确认正在桌面版运行')
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(diagnosticsPayload, null, 2))
+      setToast('连接诊断已复制')
+    } catch {
+      setToast('复制失败，请手动截图诊断信息')
+    }
+  }
+
   const copyBrief = async () => {
     try {
       await navigator.clipboard.writeText(brief)
@@ -293,6 +310,7 @@ export function useCompanionSession() {
     connectionStatus,
     connectionStatusLabel: connectionLabels[connectionStatus],
     copyBrief,
+    copyDiagnostics,
     diagnostics,
     effectivePhase,
     isAlwaysOnTop,
