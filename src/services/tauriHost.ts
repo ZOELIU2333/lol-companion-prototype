@@ -57,6 +57,7 @@ const knownLcuPhases: readonly LcuGamePhase[] = [
   'ChampSelect',
   'GameStart',
   'InProgress',
+  'Reconnect',
   'WaitingForStats',
   'EndOfGame',
 ]

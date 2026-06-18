@@ -32,7 +32,8 @@ function App() {
       connectionStatusLabel={session.connectionStatusLabel}
       diagnostics={session.diagnostics}
       hasActiveSession={session.hasActiveSession}
-      hasTrustedRecommendationData={session.isDemoEnabled}
+      hasLiveData={session.hasLiveData}
+      hasTrustedRecommendationData={session.hasTrustedRecommendationData}
       isAlwaysOnTop={session.isAlwaysOnTop}
       isChampionDataSyncing={session.isChampionDataSyncing}
       isClientConnected={session.isClientConnected}

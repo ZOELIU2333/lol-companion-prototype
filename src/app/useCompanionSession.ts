@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { buildChatBrief } from '../lib/chatBrief'
 import { createCompanionDataSource } from '../services/companionDataSource'
 import { emptyRecommendations } from '../services/emptyRecommendations'
+import { hasMeaningfulLiveData, isSessionActive, resolveActiveMode } from '../services/sessionVisibility'
 import { applyLiveClientSnapshotToMatch, createTauriLiveClientDataHost, type LiveClientSnapshot } from '../services/liveClientData'
 import { createLcuMatch } from '../services/lcuMatch'
 import { loadOpggChampionDetail } from '../services/opggChampionData'
@@ -13,7 +14,7 @@ import type { MayhemRecommendationMode } from '../features/mayhem/types'
 
 const companionDataSource = createCompanionDataSource(tauriLcuAdapter)
 const pluginActions = mockPluginActions
-const connectedPhases = new Set(['ChampSelect', 'GameStart', 'InProgress', 'WaitingForStats', 'EndOfGame'])
+const connectedPhases = new Set(['ChampSelect', 'GameStart', 'InProgress', 'Reconnect', 'WaitingForStats', 'EndOfGame'])
 const idleMatch = createLcuMatch({ matchId: null, mode: null, source: 'lcu' })
 
 type ConnectionStatus = 'detecting' | 'disconnected' | 'client' | 'syncing' | 'match'
@@ -69,7 +70,8 @@ function getLcuDiagnostic(
 
 function getLiveClientDiagnostic(hostReady: boolean, snapshot: LiveClientSnapshot | null): ConnectionDiagnostic {
   if (snapshot) {
-    return { id: 'live-client', label: 'Live Client', status: 'online', detail: `127.0.0.1:2999 已连接，${Math.floor(snapshot.gameTime / 60)} 分钟` }
+    const timeDetail = snapshot.gameTime === null ? '时间未同步' : `${Math.floor(snapshot.gameTime / 60)} 分钟`
+    return { id: 'live-client', label: 'Live Client', status: 'online', detail: `127.0.0.1:2999 已连接，${timeDetail}` }
   }
 
   if (!hostReady) {
@@ -86,7 +88,7 @@ function getOpggDiagnostic(status: DiagnosticStatus): ConnectionDiagnostic {
 }
 
 export function useCompanionSession() {
-  const [activeMode, setActiveMode] = useState<GameMode>('ranked')
+  const [lcuMode, setLcuMode] = useState<GameMode | null>(null)
   const [mayhemRecommendationMode, setMayhemRecommendationMode] = useState<MayhemRecommendationMode>('strength')
   const [activePhase, setActivePhase] = useState<InfoPhase>('pregame')
   const [isDetected, setIsDetected] = useState(false)
@@ -109,10 +111,17 @@ export function useCompanionSession() {
 
   const availableMatches = useMemo(() => companionDataSource.listMatches(), [])
   const baseMatch = lcuMatch ?? idleMatch
+  const activeMode = useMemo(
+    () => resolveActiveMode(lcuMode, liveSnapshot?.gameMode),
+    [lcuMode, liveSnapshot?.gameMode],
+  )
   const match = useMemo(
     () => applyLiveClientSnapshotToMatch(baseMatch, liveSnapshot),
     [baseMatch, liveSnapshot],
   )
+  // A live snapshot is meaningful on its own (e.g. lockfile/LCU failed but 2999 works)
+  // when it carries any real in-game signal: game time, players, gold, or items.
+  const hasLiveData = useMemo(() => hasMeaningfulLiveData(liveSnapshot), [liveSnapshot])
   const champion = match.champions.find((candidate) => candidate.id === match.currentChampionId) ?? match.champions[0]
   const effectivePhase: InfoPhase = activeMode === 'augment' ? 'live' : 'pregame'
   const recommendations = emptyRecommendations
@@ -139,16 +148,14 @@ export function useCompanionSession() {
         setLcuQueueId(null)
         setLcuPlayerSource(null)
         setLcuMatch(null)
-        setLiveSnapshot(null)
+        setLcuMode(null)
         setIsDetected(false)
         return
       }
 
       if (session.source === 'lcu') {
-        if (session.mode) {
-          setActiveMode(session.mode)
-          setActivePhase(session.mode === 'augment' ? 'live' : 'pregame')
-        }
+        setLcuMode(session.mode ?? null)
+        setActivePhase(session.mode === 'augment' ? 'live' : 'pregame')
         const isActivePhase = Boolean(session.phase && connectedPhases.has(session.phase))
         const hasRealPlayers = (session.players?.length ?? 0) > 0
         const hasVisibleMatch = isActivePhase && (Boolean(session.mode) || hasRealPlayers)
@@ -166,6 +173,7 @@ export function useCompanionSession() {
       setLcuQueueId(null)
       setLcuPlayerSource(null)
       setLcuMatch(null)
+      setLcuMode(null)
       setIsDetected(false)
     })
 
@@ -185,7 +193,8 @@ export function useCompanionSession() {
 
     let isStale = false
     const readSnapshot = () => liveClientDataHost.readSnapshot().then((snapshot) => {
-      if (!isStale) setLiveSnapshot(snapshot)
+      if (isStale) return
+      setLiveSnapshot(snapshot)
     })
 
     readSnapshot()
@@ -318,7 +327,13 @@ export function useCompanionSession() {
     isCompact,
     isDetected,
     isDemoEnabled: false,
-    hasActiveSession: connectionStatus === 'match',
+    // Live in-game data alone can drive an active session even when LCU/lockfile fails.
+    hasActiveSession: isSessionActive(connectionStatus, hasLiveData),
+    hasLiveData,
+    // Recommendation trust is independent of live data: it is only true once real,
+    // sourced build/rune data is loaded (carries meta). Empty recommendations stay false
+    // so the live player list can render while recommendations keep waiting.
+    hasTrustedRecommendationData: Boolean(recommendations.build.meta),
     isClientConnected: connectionStatus === 'client' || connectionStatus === 'syncing' || connectionStatus === 'match',
     match,
     mayhemRecommendationMode,

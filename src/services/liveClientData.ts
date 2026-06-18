@@ -1,8 +1,25 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
-import type { Match } from '../types'
+import type { LiveStatePlayer, Match } from '../types'
+
+export type LiveClientPlayer = {
+  summonerName?: string | null
+  riotId?: string | null
+  championName?: string | null
+  team?: string | null
+  position?: string | null
+  level?: number | null
+  isLocal: boolean
+  isBot: boolean
+  isDead: boolean
+  itemIds: number[]
+  kills?: number | null
+  deaths?: number | null
+  assists?: number | null
+  creepScore?: number | null
+}
 
 export type LiveClientSnapshot = {
-  gameTime: number
+  gameTime: number | null
   gameMode?: string | null
   activePlayerName?: string | null
   championName?: string | null
@@ -12,6 +29,7 @@ export type LiveClientSnapshot = {
   selectedAugmentIds?: number[]
   selectedAugmentNames?: string[]
   candidateAugmentIds?: number[]
+  players: LiveClientPlayer[]
   source: 'live-client-data'
 }
 
@@ -19,11 +37,32 @@ export type LiveClientDataHost = {
   readSnapshot: () => Promise<LiveClientSnapshot | null>
 }
 
+function normalizeLiveClientPlayer(player: LiveClientPlayer | null | undefined): LiveClientPlayer | null {
+  if (!player) return null
+
+  return {
+    summonerName: player.summonerName ?? null,
+    riotId: player.riotId ?? null,
+    championName: player.championName ?? null,
+    team: player.team ?? null,
+    position: player.position ?? null,
+    level: player.level ?? null,
+    isLocal: Boolean(player.isLocal),
+    isBot: Boolean(player.isBot),
+    isDead: Boolean(player.isDead),
+    itemIds: Array.isArray(player.itemIds) ? player.itemIds.filter((id) => id > 0) : [],
+    kills: player.kills ?? null,
+    deaths: player.deaths ?? null,
+    assists: player.assists ?? null,
+    creepScore: player.creepScore ?? null,
+  }
+}
+
 function normalizeLiveClientSnapshot(payload: LiveClientSnapshot | null): LiveClientSnapshot | null {
   if (!payload || payload.source !== 'live-client-data') return null
 
   return {
-    gameTime: Number.isFinite(payload.gameTime) ? Math.max(0, payload.gameTime) : 0,
+    gameTime: typeof payload.gameTime === 'number' && Number.isFinite(payload.gameTime) ? Math.max(0, payload.gameTime) : null,
     gameMode: payload.gameMode ?? null,
     activePlayerName: payload.activePlayerName ?? null,
     championName: payload.championName ?? null,
@@ -35,6 +74,9 @@ function normalizeLiveClientSnapshot(payload: LiveClientSnapshot | null): LiveCl
       ? payload.selectedAugmentNames.filter((name) => typeof name === 'string' && name.length > 0)
       : [],
     candidateAugmentIds: Array.isArray(payload.candidateAugmentIds) ? payload.candidateAugmentIds.filter((id) => id > 0) : [],
+    players: Array.isArray(payload.players)
+      ? payload.players.map(normalizeLiveClientPlayer).filter((player): player is LiveClientPlayer => player !== null)
+      : [],
     source: 'live-client-data',
   }
 }
@@ -60,16 +102,63 @@ function inferNextObjective(minute: number, current: string) {
   return '小龙 / 男爵视野'
 }
 
+function mapLiveClientPosition(position: string | null | undefined): string | null {
+  switch ((position ?? '').toUpperCase()) {
+    case 'TOP':
+      return '上单'
+    case 'JUNGLE':
+      return '打野'
+    case 'MIDDLE':
+      return '中路'
+    case 'BOTTOM':
+      return '下路'
+    case 'UTILITY':
+      return '辅助'
+    default:
+      return null
+  }
+}
+
+function mapLiveClientPlayersToLiveState(players: LiveClientPlayer[]): LiveStatePlayer[] {
+  // The local player's raw team ("ORDER"/"CHAOS") anchors which side is "ally".
+  // When the local player can't be located we leave team null rather than guessing.
+  const localTeam = players.find((player) => player.isLocal)?.team ?? null
+
+  return players.map((player) => ({
+    summonerName: player.summonerName ?? null,
+    championName: player.championName ?? null,
+    team: localTeam && player.team ? (player.team === localTeam ? 'ally' : 'enemy') : null,
+    position: mapLiveClientPosition(player.position),
+    level: player.level ?? null,
+    isLocal: player.isLocal,
+    isBot: player.isBot,
+    isDead: player.isDead,
+    itemIds: player.itemIds,
+    kills: player.kills ?? null,
+    deaths: player.deaths ?? null,
+    assists: player.assists ?? null,
+    creepScore: player.creepScore ?? null,
+  }))
+}
+
 export function applyLiveClientSnapshotToMatch(match: Match, snapshot: LiveClientSnapshot | null): Match {
   if (!snapshot) return match
 
-  const minute = Math.max(0, Math.floor(snapshot.gameTime / 60))
-  const currentGold = snapshot.currentGold ?? match.liveState.goldOnHand
+  // gameTime / currentGold may be null when only the player list is available
+  // (gamestats / activeplayer endpoints down). Keep them null instead of
+  // coercing to 0 so the UI can show "未同步" rather than a fake real value.
+  const hasGameTime = typeof snapshot.gameTime === 'number'
+  const minute = hasGameTime ? Math.max(0, Math.floor((snapshot.gameTime as number) / 60)) : null
+  const timer = hasGameTime
+    ? `${(minute as number).toString().padStart(2, '0')}:${Math.floor((snapshot.gameTime as number) % 60).toString().padStart(2, '0')}`
+    : match.timer
+  const currentGold = snapshot.currentGold ?? null
   const itemLabels = snapshot.currentItemIds.length > 0
     ? snapshot.currentItemIds.map((itemId) => `item:${itemId}`)
     : match.liveState.currentItems
   const levelText = snapshot.level ? `等级 ${snapshot.level}` : '等级未知'
   const championText = snapshot.championName ? `${snapshot.championName} ` : ''
+  const goldText = currentGold === null ? '金币未同步' : `当前金币 ${currentGold}`
 
   const liveSelectedAugmentNames = snapshot.selectedAugmentNames ?? []
   const liveSelectedAugmentIds = snapshot.selectedAugmentIds ?? []
@@ -81,7 +170,7 @@ export function applyLiveClientSnapshotToMatch(match: Match, snapshot: LiveClien
 
   return {
     ...match,
-    timer: `${minute.toString().padStart(2, '0')}:${Math.floor(snapshot.gameTime % 60).toString().padStart(2, '0')}`,
+    timer,
     liveState: {
       ...match.liveState,
       minute,
@@ -91,12 +180,15 @@ export function applyLiveClientSnapshotToMatch(match: Match, snapshot: LiveClien
       selectedAugmentIds: liveSelectedAugmentIds,
       candidateAugmentIds: liveCandidateAugmentIds,
       isLiveDataAuthoritative,
-      currentSituation: `${championText}${levelText}，当前金币 ${currentGold}。`,
-      nextObjective: inferNextObjective(minute, match.liveState.nextObjective),
+      players: mapLiveClientPlayersToLiveState(snapshot.players ?? []),
+      currentSituation: `${championText}${levelText}，${goldText}。`,
+      nextObjective: inferNextObjective(minute ?? 0, match.liveState.nextObjective),
       immediateAction:
-        currentGold >= 1300
-          ? '金币已经够一波关键组件，下一次回城可以优先补强版本核心路线。'
-          : '金币还没到关键回城点，先围绕兵线和资源视野继续攒经济。',
+        currentGold === null
+          ? '实时金币暂未同步，待 2999 接口恢复后会显示装备建议。'
+          : currentGold >= 1300
+            ? '金币已经够一波关键组件，下一次回城可以优先补强版本核心路线。'
+            : '金币还没到关键回城点，先围绕兵线和资源视野继续攒经济。',
     },
   }
 }

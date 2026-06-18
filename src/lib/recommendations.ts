@@ -351,7 +351,7 @@ export function createRecommendations(
     arena: createArenaRecommendation(match, mode),
     live: {
       nextItem,
-      tacticalRead: `${match.liveState.currentSituation} 当前金币 ${match.liveState.goldOnHand}，下一步优先围绕 ${match.liveState.nextObjective} 做装备和站位选择。`,
+      tacticalRead: `${match.liveState.currentSituation} ${match.liveState.goldOnHand === null ? '金币暂未同步' : `当前金币 ${match.liveState.goldOnHand}`}，下一步优先围绕 ${match.liveState.nextObjective} 做装备和站位选择。`,
       nextTwoMinutes: [
         match.liveState.immediateAction,
         match.enemyComposition.crowdControl >= 70 ? '团前不要先交位移，等锤石/蔚第一波控制失败再反打。' : '先推中线，再提前落位资源区。',

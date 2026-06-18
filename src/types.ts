@@ -204,14 +204,31 @@ export type MatchIntel = {
   }[]
 }
 
+export type LiveStatePlayer = {
+  summonerName: string | null
+  championName: string | null
+  team: 'ally' | 'enemy' | null
+  position: string | null
+  level: number | null
+  isLocal: boolean
+  isBot: boolean
+  isDead: boolean
+  itemIds: number[]
+  kills: number | null
+  deaths: number | null
+  assists: number | null
+  creepScore: number | null
+}
+
 export type LiveState = {
-  minute: number
-  goldOnHand: number
+  minute: number | null
+  goldOnHand: number | null
   currentItems: string[]
   selectedAugments: string[]
   selectedAugmentIds: number[]
   candidateAugmentIds: number[]
   isLiveDataAuthoritative: boolean
+  players: LiveStatePlayer[]
   currentSituation: string
   nextObjective: string
   immediateAction: string

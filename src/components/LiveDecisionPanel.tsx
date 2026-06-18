@@ -1,6 +1,7 @@
 import type { GameMode, Match, RecommendationViewModel } from '../types'
 import { getAugmentIconUrl } from '../services/augmentIcons'
 import { getItemIconUrl } from '../services/dataDragon'
+import { LivePlayerList } from './LivePlayerList'
 
 type LiveDecisionPanelProps = {
   activeMode: GameMode
@@ -14,7 +15,7 @@ export function LiveDecisionPanel({ activeMode, match, recommendations }: LiveDe
       <section className="panel-section live-panel augment-live-panel">
         <div className="section-title">
           <h3>实时对局</h3>
-          <span className="status-good">{match.liveState.minute} 分钟</span>
+          <span className="status-good">{match.liveState.minute === null ? '时间未同步' : `${match.liveState.minute} 分钟`}</span>
         </div>
 
         <div className="selected-augment-strip">
@@ -37,6 +38,8 @@ export function LiveDecisionPanel({ activeMode, match, recommendations }: LiveDe
             })}
           </div>
         </div>
+
+        <LivePlayerList players={match.liveState.players} />
       </section>
     )
   }
@@ -45,7 +48,7 @@ export function LiveDecisionPanel({ activeMode, match, recommendations }: LiveDe
     <section className="panel-section live-panel">
       <div className="section-title">
         <h3>实时对局</h3>
-        <span className="status-good">{match.liveState.minute} 分钟</span>
+        <span className="status-good">{match.liveState.minute === null ? '时间未同步' : `${match.liveState.minute} 分钟`}</span>
       </div>
 
       <p className="callout">{recommendations.live.tacticalRead}</p>
@@ -53,7 +56,7 @@ export function LiveDecisionPanel({ activeMode, match, recommendations }: LiveDe
       <div className="live-state-grid">
         <div>
           <span>当前金币</span>
-          <strong>{match.liveState.goldOnHand}</strong>
+          <strong>{match.liveState.goldOnHand === null ? '未同步' : match.liveState.goldOnHand}</strong>
         </div>
         <div>
           <span>下个资源</span>
@@ -66,6 +69,8 @@ export function LiveDecisionPanel({ activeMode, match, recommendations }: LiveDe
           <p key={action}>{action}</p>
         ))}
       </div>
+
+      <LivePlayerList players={match.liveState.players} />
 
       {activeMode === 'ranked' && (
         <div className="next-item-card">

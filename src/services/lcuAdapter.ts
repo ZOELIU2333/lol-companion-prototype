@@ -9,6 +9,7 @@ export type LcuGamePhase =
   | 'ChampSelect'
   | 'GameStart'
   | 'InProgress'
+  | 'Reconnect'
   | 'WaitingForStats'
   | 'EndOfGame'
 
@@ -315,7 +316,7 @@ export function createLcuAdapter(host: LcuAdapterHost): LcuAdapter {
       const queue = gameflowSession?.gameData?.queue
       const queueLabel = [queue?.name, queue?.shortName, queue?.description, queue?.gameMode].filter(Boolean).join(' ')
       const mode = mapLcuQueueToMode(queueLabel, queue?.id)
-      const readsGameflowPlayers = phase === 'GameStart' || phase === 'InProgress' || phase === 'WaitingForStats'
+      const readsGameflowPlayers = phase === 'GameStart' || phase === 'InProgress' || phase === 'Reconnect' || phase === 'WaitingForStats'
       let players: LcuPlayerSnapshot[] = []
       let playerSource: LcuSessionSnapshot['playerSource']
 

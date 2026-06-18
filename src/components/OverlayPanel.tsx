@@ -21,6 +21,7 @@ type OverlayPanelProps = {
   isCompact: boolean
   isDetected: boolean
   hasActiveSession: boolean
+  hasLiveData: boolean
   hasTrustedRecommendationData: boolean
   isClientConnected: boolean
   match: Match
@@ -50,6 +51,7 @@ export function OverlayPanel({
   isCompact,
   isDetected,
   hasActiveSession,
+  hasLiveData,
   hasTrustedRecommendationData,
   isClientConnected,
   match,
@@ -157,14 +159,14 @@ export function OverlayPanel({
         </section>
       )}
 
-      {hasActiveSession && !hasTrustedRecommendationData && (
+      {hasActiveSession && !hasTrustedRecommendationData && !hasLiveData && (
         <section className="session-intel-waiting">
           <h2>真实对局已连接</h2>
           <p>正在同步玩家公开数据。英雄与版本推荐会在确认真实英雄后显示。</p>
         </section>
       )}
 
-      {hasActiveSession && hasTrustedRecommendationData && activeMode === 'ranked' && activePhase === 'pregame' && (
+      {hasActiveSession && activeMode === 'ranked' && activePhase === 'pregame' && hasTrustedRecommendationData && (
         <>
           <div className="recommendation-source-line" title={sourceDisplay.title}>
             <span>数据来源：{sourceDisplay.label}</span>
@@ -182,15 +184,20 @@ export function OverlayPanel({
         </>
       )}
 
-      {hasActiveSession && hasTrustedRecommendationData && activeMode === 'augment' && (
-        <>
-          <LiveDecisionPanel activeMode={activeMode} match={match} recommendations={recommendations} />
-          <AugmentRecommendation
-            augments={recommendations.augments}
-            mode={mayhemRecommendationMode}
-            onModeChange={onMayhemModeChange}
-          />
-        </>
+      {hasActiveSession && activeMode === 'ranked' && hasLiveData && (
+        <LiveDecisionPanel activeMode={activeMode} match={match} recommendations={recommendations} />
+      )}
+
+      {hasActiveSession && activeMode === 'augment' && (hasLiveData || hasTrustedRecommendationData) && (
+        <LiveDecisionPanel activeMode={activeMode} match={match} recommendations={recommendations} />
+      )}
+
+      {hasActiveSession && activeMode === 'augment' && hasTrustedRecommendationData && (
+        <AugmentRecommendation
+          augments={recommendations.augments}
+          mode={mayhemRecommendationMode}
+          onModeChange={onMayhemModeChange}
+        />
       )}
     </aside>
   )
