@@ -116,9 +116,12 @@ describe('tauri host bridge', () => {
   it('copies sanitized LCU diagnostics through the Tauri backend', async () => {
     tauriMocks.isTauri.mockReturnValue(true)
     tauriMocks.invoke.mockResolvedValue({
+      appVersion: '0.1.1',
+      buildCommit: 'abcdef0',
       processRunning: true,
       lockfileFound: true,
       lockfileCandidateCount: 42,
+      credentialSource: 'process-command-line',
       lockfileProtocol: 'https',
       lockfilePort: 51234,
       phaseStatus: 'ok',

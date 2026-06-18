@@ -29,6 +29,7 @@ struct LeagueClientDiscovery {
     lockfile: Option<LcuLockfile>,
     lockfile_candidate_count: usize,
     process_running: bool,
+    credential_source: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -145,9 +146,12 @@ struct LiveClientSnapshotPayload {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct LcuDiagnosticsPayload {
+    app_version: String,
+    build_commit: String,
     process_running: bool,
     lockfile_found: bool,
     lockfile_candidate_count: usize,
+    credential_source: Option<String>,
     lockfile_protocol: Option<String>,
     lockfile_port: Option<u16>,
     phase_status: String,
@@ -233,6 +237,46 @@ fn parse_lockfile(raw: &str) -> Option<LcuLockfile> {
     })
 }
 
+#[cfg(any(target_os = "windows", test))]
+fn process_arg_value(args: &[String], names: &[&str]) -> Option<String> {
+    for (index, arg) in args.iter().enumerate() {
+        for name in names {
+            if arg == name {
+                if let Some(value) = args.get(index + 1) {
+                    return Some(value.trim_matches('"').to_string());
+                }
+            }
+
+            let prefix = format!("{}=", name);
+            if let Some(value) = arg.strip_prefix(&prefix) {
+                return Some(value.trim_matches('"').to_string());
+            }
+        }
+    }
+
+    None
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn parse_lcu_process_args(args: &[String]) -> Option<LcuLockfile> {
+    let port = process_arg_value(args, &["--app-port", "--riotclient-app-port"])?
+        .parse::<u16>()
+        .ok()?;
+    let password = process_arg_value(args, &["--remoting-auth-token", "--riotclient-auth-token"])?;
+    let protocol = process_arg_value(args, &["--app-protocol", "--riotclient-app-protocol"])
+        .unwrap_or_else(|| "https".to_string());
+
+    if protocol != "http" && protocol != "https" {
+        return None;
+    }
+
+    Some(LcuLockfile {
+        password,
+        port,
+        protocol,
+    })
+}
+
 fn lockfile_path_from_executable(executable: &Path) -> Option<PathBuf> {
     let file_name = executable.file_name()?.to_string_lossy();
     if !file_name.eq_ignore_ascii_case("LeagueClient.exe")
@@ -249,7 +293,7 @@ fn lockfile_path_from_process_dir(process_dir: &Path) -> PathBuf {
 }
 
 #[cfg(target_os = "windows")]
-fn running_league_client_paths() -> (bool, Vec<PathBuf>) {
+fn running_league_client_paths() -> (bool, Vec<PathBuf>, Option<LcuLockfile>) {
     use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
     let mut system = System::new();
@@ -258,11 +302,13 @@ fn running_league_client_paths() -> (bool, Vec<PathBuf>) {
         true,
         ProcessRefreshKind::nothing()
             .with_exe(sysinfo::UpdateKind::OnlyIfNotSet)
-            .with_cwd(sysinfo::UpdateKind::OnlyIfNotSet),
+            .with_cwd(sysinfo::UpdateKind::OnlyIfNotSet)
+            .with_cmd(sysinfo::UpdateKind::OnlyIfNotSet),
     );
 
     let mut process_running = false;
     let mut executable_paths = Vec::new();
+    let mut process_credentials = None;
 
     for process in system.processes().values() {
         let process_name = process.name().to_string_lossy();
@@ -276,15 +322,23 @@ fn running_league_client_paths() -> (bool, Vec<PathBuf>) {
             if let Some(cwd) = process.cwd() {
                 executable_paths.push(cwd.to_path_buf());
             }
+            if process_credentials.is_none() {
+                let args = process
+                    .cmd()
+                    .iter()
+                    .map(|arg| arg.to_string_lossy().to_string())
+                    .collect::<Vec<_>>();
+                process_credentials = parse_lcu_process_args(&args);
+            }
         }
     }
 
-    (process_running, executable_paths)
+    (process_running, executable_paths, process_credentials)
 }
 
 #[cfg(not(target_os = "windows"))]
-fn running_league_client_paths() -> (bool, Vec<PathBuf>) {
-    (false, Vec::new())
+fn running_league_client_paths() -> (bool, Vec<PathBuf>, Option<LcuLockfile>) {
+    (false, Vec::new(), None)
 }
 
 fn candidate_lockfile_paths(executable_paths: &[PathBuf]) -> Vec<PathBuf> {
@@ -368,18 +422,27 @@ fn candidate_lockfile_paths(executable_paths: &[PathBuf]) -> Vec<PathBuf> {
 }
 
 fn discover_league_client() -> LeagueClientDiscovery {
-    let (process_running, executable_paths) = running_league_client_paths();
+    let (process_running, executable_paths, process_credentials) = running_league_client_paths();
     let lockfile_paths = candidate_lockfile_paths(&executable_paths);
     let lockfile_candidate_count = lockfile_paths.len();
-    let lockfile = lockfile_paths
+    let file_lockfile = lockfile_paths
         .into_iter()
         .find_map(|path| fs::read_to_string(path).ok())
         .and_then(|raw| parse_lockfile(&raw));
+    let credential_source = if process_credentials.is_some() {
+        Some("process-command-line".to_string())
+    } else if file_lockfile.is_some() {
+        Some("lockfile".to_string())
+    } else {
+        None
+    };
+    let lockfile = process_credentials.or(file_lockfile);
 
     LeagueClientDiscovery {
         lockfile,
         lockfile_candidate_count,
         process_running,
+        credential_source,
     }
 }
 
@@ -985,9 +1048,16 @@ async fn read_lcu_diagnostics() -> LcuDiagnosticsPayload {
         .or_else(|| live_active_player.and_then(|active| active.summoner_name));
 
     LcuDiagnosticsPayload {
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+        build_commit: option_env!("GITHUB_SHA")
+            .unwrap_or("local")
+            .chars()
+            .take(7)
+            .collect(),
         process_running: discovery.process_running,
         lockfile_found,
         lockfile_candidate_count: discovery.lockfile_candidate_count,
+        credential_source: discovery.credential_source,
         lockfile_protocol,
         lockfile_port,
         phase_status,
@@ -1199,8 +1269,8 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        candidate_lockfile_paths, lockfile_path_from_executable, map_queue_to_mode, parse_lockfile,
-        GameflowQueue,
+        candidate_lockfile_paths, lockfile_path_from_executable, map_queue_to_mode,
+        parse_lcu_process_args, parse_lockfile, GameflowQueue,
     };
     use std::path::{Path, PathBuf};
 
@@ -1211,6 +1281,37 @@ mod tests {
         assert_eq!(lockfile.port, 54321);
         assert_eq!(lockfile.password, "secret");
         assert_eq!(lockfile.protocol, "https");
+    }
+
+    #[test]
+    fn parses_lcu_credentials_from_equals_process_arguments() {
+        let args = vec![
+            "LeagueClientUx.exe".to_string(),
+            "--app-port=54321".to_string(),
+            "--remoting-auth-token=process-secret".to_string(),
+            "--app-protocol=https".to_string(),
+        ];
+        let credentials = parse_lcu_process_args(&args).unwrap();
+
+        assert_eq!(credentials.port, 54321);
+        assert_eq!(credentials.password, "process-secret");
+        assert_eq!(credentials.protocol, "https");
+    }
+
+    #[test]
+    fn parses_lcu_credentials_from_split_process_arguments() {
+        let args = vec![
+            "LeagueClientUx.exe".to_string(),
+            "--app-port".to_string(),
+            "54322".to_string(),
+            "--remoting-auth-token".to_string(),
+            "split-secret".to_string(),
+        ];
+        let credentials = parse_lcu_process_args(&args).unwrap();
+
+        assert_eq!(credentials.port, 54322);
+        assert_eq!(credentials.password, "split-secret");
+        assert_eq!(credentials.protocol, "https");
     }
 
     #[test]

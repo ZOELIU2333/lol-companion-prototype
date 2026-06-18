@@ -15,9 +15,12 @@ type TauriLcuSessionPayload = {
 }
 
 export type LcuDiagnosticsPayload = {
+  appVersion?: string
+  buildCommit?: string
   processRunning: boolean
   lockfileFound: boolean
   lockfileCandidateCount?: number
+  credentialSource?: 'lockfile' | 'process-command-line'
   lockfileProtocol?: string
   lockfilePort?: number
   phaseStatus: string
