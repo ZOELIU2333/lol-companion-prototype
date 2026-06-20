@@ -81,11 +81,14 @@ describe('session visibility', () => {
   })
 
   it('maps reliable live game modes but never guesses ambiguous ones', () => {
-    // Reliable: Arena (CHERRY) uses augments; Summoner's Rift (CLASSIC) is ranked.
+    // Reliable: Arena (CHERRY) and ARAM Mayhem (KIWI) use augments; Summoner's
+    // Rift (CLASSIC) is ranked.
     expect(mapLiveGameModeToMode('CHERRY')).toBe('augment')
     expect(mapLiveGameModeToMode('cherry')).toBe('augment')
+    expect(mapLiveGameModeToMode('KIWI')).toBe('augment')
+    expect(mapLiveGameModeToMode('kiwi')).toBe('augment')
     expect(mapLiveGameModeToMode('CLASSIC')).toBe('ranked')
-    // ARAM is ambiguous (plain ARAM vs Mayhem share it) — must NOT be guessed.
+    // ARAM is ambiguous (plain ARAM vs Mayhem can share it) — must NOT be guessed.
     expect(mapLiveGameModeToMode('ARAM')).toBeNull()
     // Unknown / missing modes never produce a guessed mode.
     expect(mapLiveGameModeToMode('ULTBOOK')).toBeNull()

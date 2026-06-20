@@ -249,10 +249,13 @@ struct LiveClientPlayer {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct LiveClientScores {
-    kills: Option<u32>,
-    deaths: Option<u32>,
-    assists: Option<u32>,
-    creep_score: Option<u32>,
+    // Live Client Data returns these as numbers where creepScore/wardScore are
+    // floats (e.g. 0.0). Deserializing a JSON float into u32 fails and would take
+    // the WHOLE player list down with it, so accept f64 and round when projecting.
+    kills: Option<f64>,
+    deaths: Option<f64>,
+    assists: Option<f64>,
+    creep_score: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -786,27 +789,107 @@ fn live_client_data_base_url() -> String {
         .to_string()
 }
 
-/// On the CN/Garena client the `summonerName` field is frequently empty and the
-/// real identity lives in `riotId` / `riotIdGameName`. Match the local player by
-/// any of those identifiers so the active player's champion/items resolve.
-fn live_player_matches_active(player: &LiveClientPlayer, active: &LiveClientActivePlayer) -> bool {
-    let candidates = [
+/// Live Client scores arrive as f64 (creepScore/wardScore are floats). Clamp
+/// negatives to zero and round to the nearest whole number for display.
+fn round_score(value: Option<f64>) -> Option<u32> {
+    value.map(|value| value.max(0.0).round() as u32)
+}
+
+/// Strip the `#tagLine` suffix from a Riot id so diagnostics never expose the
+/// full account tag. CN clients sometimes put the full `name#tag` into
+/// `summonerName`, so this redaction must run before surfacing any name.
+fn redact_riot_tag(name: &str) -> String {
+    name.split('#').next().unwrap_or(name).to_string()
+}
+
+fn active_player_identifiers(active: &LiveClientActivePlayer) -> Vec<&str> {
+    [
         active.summoner_name.as_deref(),
         active.riot_id.as_deref(),
         active.riot_id_game_name.as_deref(),
-    ];
-    let player_keys = [
+    ]
+    .into_iter()
+    .flatten()
+    .filter(|value| !value.is_empty())
+    .collect()
+}
+
+fn live_player_identifiers(player: &LiveClientPlayer) -> Vec<&str> {
+    [
         player.summoner_name.as_deref(),
         player.riot_id.as_deref(),
         player.riot_id_game_name.as_deref(),
-    ];
+    ]
+    .into_iter()
+    .flatten()
+    .filter(|value| !value.is_empty())
+    .collect()
+}
 
-    candidates.iter().flatten().any(|candidate| {
-        player_keys
-            .iter()
-            .flatten()
-            .any(|key| !key.is_empty() && key == candidate)
-    })
+/// Resolve the local player without confusing two accounts that share a game
+/// name but have different Riot tags. A full `name#tag` match wins. Bare-name
+/// fallback is accepted only when exactly one player matches.
+fn find_live_local_player_index(
+    players: &[LiveClientPlayer],
+    active: &LiveClientActivePlayer,
+) -> Option<usize> {
+    let active_identifiers = active_player_identifiers(active);
+
+    let full_matches = players
+        .iter()
+        .enumerate()
+        .filter(|(_, player)| {
+            let player_identifiers = live_player_identifiers(player);
+            active_identifiers.iter().any(|active_id| {
+                active_id.contains('#')
+                    && player_identifiers
+                        .iter()
+                        .any(|player_id| player_id.contains('#') && player_id == active_id)
+            })
+        })
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+    if full_matches.len() == 1 {
+        return full_matches.first().copied();
+    }
+
+    let exact_matches = players
+        .iter()
+        .enumerate()
+        .filter(|(_, player)| {
+            let player_identifiers = live_player_identifiers(player);
+            active_identifiers.iter().any(|active_id| {
+                player_identifiers
+                    .iter()
+                    .any(|player_id| player_id == active_id)
+            })
+        })
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+    if exact_matches.len() == 1 {
+        return exact_matches.first().copied();
+    }
+
+    let bare_matches = players
+        .iter()
+        .enumerate()
+        .filter(|(_, player)| {
+            let player_identifiers = live_player_identifiers(player);
+            active_identifiers.iter().any(|active_id| {
+                let active_name = redact_riot_tag(active_id);
+                player_identifiers
+                    .iter()
+                    .any(|player_id| redact_riot_tag(player_id) == active_name)
+            })
+        })
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+
+    if bare_matches.len() == 1 {
+        bare_matches.first().copied()
+    } else {
+        None
+    }
 }
 
 #[tauri::command]
@@ -855,12 +938,9 @@ async fn read_live_client_snapshot() -> Option<LiveClientSnapshotPayload> {
             .or_else(|| active.riot_id_game_name.clone())
             .or_else(|| active.riot_id.clone())
     });
-    let local_index = active_endpoint_player.as_ref().and_then(|active| {
-        all_players
-            .as_ref()?
-            .iter()
-            .position(|player| live_player_matches_active(player, active))
-    });
+    let local_index = active_endpoint_player
+        .as_ref()
+        .and_then(|active| find_live_local_player_index(all_players.as_ref()?, active));
     // Only resolve the active player's champion/items when we can positively
     // identify them in the player list. Never fall back to the first player —
     // that would attribute another player's champion/level/items to the local user.
@@ -898,10 +978,12 @@ async fn read_live_client_snapshot() -> Option<LiveClientSnapshotPayload> {
                         .as_ref()
                         .map(|items| items.iter().filter_map(|item| item.item_id).collect())
                         .unwrap_or_default(),
-                    kills: player.scores.as_ref().and_then(|scores| scores.kills),
-                    deaths: player.scores.as_ref().and_then(|scores| scores.deaths),
-                    assists: player.scores.as_ref().and_then(|scores| scores.assists),
-                    creep_score: player.scores.as_ref().and_then(|scores| scores.creep_score),
+                    kills: round_score(player.scores.as_ref().and_then(|scores| scores.kills)),
+                    deaths: round_score(player.scores.as_ref().and_then(|scores| scores.deaths)),
+                    assists: round_score(player.scores.as_ref().and_then(|scores| scores.assists)),
+                    creep_score: round_score(
+                        player.scores.as_ref().and_then(|scores| scores.creep_score),
+                    ),
                 })
                 .collect()
         })
@@ -1168,20 +1250,21 @@ async fn read_lcu_diagnostics() -> LcuDiagnosticsPayload {
         .and_then(|payload| payload.all_players.as_ref())
         .or(live_player_list.as_ref());
     // Only surface the active player's own display name (never opponents'),
-    // and prefer the riotIdGameName when summonerName is blank on CN clients.
-    let live_client_active_player = resolved_active_player.and_then(|active| {
-        active
-            .summoner_name
-            .clone()
-            .filter(|name| !name.is_empty())
-            .or_else(|| active.riot_id_game_name.clone())
-    });
+    // preferring riotIdGameName when summonerName is blank, and always stripping
+    // the #tagLine so diagnostics never leak the full account tag.
+    let live_client_active_player = resolved_active_player
+        .and_then(|active| {
+            active
+                .summoner_name
+                .clone()
+                .filter(|name| !name.is_empty())
+                .or_else(|| active.riot_id_game_name.clone())
+        })
+        .map(|name| redact_riot_tag(&name));
     // Diagnostics flags below are intentionally booleans/counts only — they help
     // pinpoint CN field-name mismatches without leaking any player identities.
     let live_client_local_player_resolved = match (resolved_active_player, resolved_player_list) {
-        (Some(active), Some(players)) => players
-            .iter()
-            .any(|player| live_player_matches_active(player, active)),
+        (Some(active), Some(players)) => find_live_local_player_index(players, active).is_some(),
         _ => false,
     };
     let live_client_summoner_name_field_present = resolved_player_list.is_some_and(|players| {
@@ -1428,9 +1511,9 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        candidate_lockfile_paths, live_player_matches_active, lockfile_path_from_executable,
-        map_queue_to_mode, parse_lcu_process_args, parse_lockfile, GameflowQueue,
-        LiveClientActivePlayer, LiveClientPlayer,
+        candidate_lockfile_paths, find_live_local_player_index, lockfile_path_from_executable,
+        map_queue_to_mode, parse_lcu_process_args, parse_lockfile, redact_riot_tag, round_score,
+        GameflowQueue, LiveClientActivePlayer, LiveClientPlayer,
     };
     use std::path::{Path, PathBuf};
 
@@ -1571,7 +1654,7 @@ mod tests {
         }))
         .unwrap();
 
-        assert!(live_player_matches_active(&player, &active));
+        assert_eq!(find_live_local_player_index(&[player], &active), Some(0));
     }
 
     #[test]
@@ -1588,7 +1671,7 @@ mod tests {
         }))
         .unwrap();
 
-        assert!(live_player_matches_active(&player, &active));
+        assert_eq!(find_live_local_player_index(&[player], &active), Some(0));
     }
 
     #[test]
@@ -1611,7 +1694,94 @@ mod tests {
         }))
         .unwrap();
 
-        assert!(!live_player_matches_active(&other, &active));
-        assert!(!live_player_matches_active(&blank, &active));
+        assert_eq!(find_live_local_player_index(&[other], &active), None);
+        assert_eq!(find_live_local_player_index(&[blank], &active), None);
+    }
+
+    #[test]
+    fn deserializes_player_list_with_float_scores() {
+        // Regression: Live Client returns creepScore/wardScore as floats. Parsing
+        // them into u32 previously failed and dropped the WHOLE player list.
+        let players: Vec<LiveClientPlayer> = serde_json::from_value(serde_json::json!([
+            {
+                "championName": "Ezreal",
+                "summonerName": "",
+                "riotId": "我本人#CN1",
+                "riotIdGameName": "我本人",
+                "team": "ORDER",
+                "position": "BOTTOM",
+                "level": 8,
+                "scores": { "kills": 3, "deaths": 1, "assists": 5, "creepScore": 142.0, "wardScore": 7.5 },
+                "items": [{ "itemID": 3004 }]
+            }
+        ]))
+        .expect("player list with float scores must deserialize");
+
+        assert_eq!(players.len(), 1);
+        let scores = players[0].scores.as_ref().unwrap();
+        assert_eq!(round_score(scores.creep_score), Some(142));
+        assert_eq!(round_score(scores.kills), Some(3));
+    }
+
+    #[test]
+    fn matches_active_player_when_summoner_name_carries_a_tag() {
+        // CN client puts the full "name#tag" into summonerName while the player
+        // list exposes a bare riotIdGameName — they must still match.
+        let active: LiveClientActivePlayer = serde_json::from_value(serde_json::json!({
+            "summonerName": "男的两巴掌#88845"
+        }))
+        .unwrap();
+        let player: LiveClientPlayer = serde_json::from_value(serde_json::json!({
+            "championName": "Garen",
+            "riotIdGameName": "男的两巴掌",
+            "team": "ORDER"
+        }))
+        .unwrap();
+
+        assert_eq!(find_live_local_player_index(&[player], &active), Some(0));
+    }
+
+    #[test]
+    fn does_not_guess_when_two_players_share_a_bare_riot_name() {
+        let active: LiveClientActivePlayer = serde_json::from_value(serde_json::json!({
+            "summonerName": "SameName#CN1"
+        }))
+        .unwrap();
+        let players: Vec<LiveClientPlayer> = serde_json::from_value(serde_json::json!([
+            { "championName": "Garen", "riotIdGameName": "SameName", "team": "ORDER" },
+            { "championName": "Lux", "riotIdGameName": "SameName", "team": "CHAOS" }
+        ]))
+        .unwrap();
+
+        assert_eq!(find_live_local_player_index(&players, &active), None);
+    }
+
+    #[test]
+    fn full_riot_id_disambiguates_players_with_the_same_game_name() {
+        let active: LiveClientActivePlayer = serde_json::from_value(serde_json::json!({
+            "summonerName": "SameName#CN1"
+        }))
+        .unwrap();
+        let players: Vec<LiveClientPlayer> = serde_json::from_value(serde_json::json!([
+            { "championName": "Garen", "riotId": "SameName#CN2", "riotIdGameName": "SameName" },
+            { "championName": "Lux", "riotId": "SameName#CN1", "riotIdGameName": "SameName" }
+        ]))
+        .unwrap();
+
+        assert_eq!(find_live_local_player_index(&players, &active), Some(1));
+    }
+
+    #[test]
+    fn redacts_riot_tag_from_names() {
+        assert_eq!(redact_riot_tag("男的两巴掌#88845"), "男的两巴掌");
+        assert_eq!(redact_riot_tag("NoTag"), "NoTag");
+        assert_eq!(redact_riot_tag(""), "");
+    }
+
+    #[test]
+    fn round_score_clamps_negatives_and_rounds() {
+        assert_eq!(round_score(Some(142.6)), Some(143));
+        assert_eq!(round_score(Some(-3.0)), Some(0));
+        assert_eq!(round_score(None), None);
     }
 }

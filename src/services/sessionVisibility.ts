@@ -31,15 +31,18 @@ export function isSessionActive(connectionStatus: ConnectionStatus, hasLiveData:
  * Maps a Live Client Data `gameMode` to a companion mode ONLY when it can be
  * identified with confidence. The 2999 feed is the sole signal here (LCU/queue id
  * is unavailable in this path), so we must not guess:
- *   - `CHERRY`  → augment (Arena / 斗魂竞技场 uses augments) — reliable
+ *   - `CHERRY` → augment (Arena / 斗魂竞技场 uses augments) — reliable
+ *   - `KIWI`   → augment (ARAM Mayhem / 海克斯大乱斗). Observed directly from
+ *               the Windows Live Client `gameMode` field during a Mayhem match.
  *   - `CLASSIC` → ranked (Summoner's Rift) — reliable
- *   - `ARAM`    → null. Plain ARAM and ARAM Mayhem (海克斯) can share this string,
- *                 so it is NOT safe to infer augment from `ARAM` alone.
+ *   - `ARAM`    → null. Plain ARAM and ARAM Mayhem can both surface as `ARAM` in
+ *               some clients, so it is NOT safe to infer augment from `ARAM` alone.
  *   - anything else / null → null (unknown; caller shows a generic live view)
  */
 export function mapLiveGameModeToMode(gameMode: string | null | undefined): GameMode | null {
   switch ((gameMode ?? '').toUpperCase()) {
     case 'CHERRY':
+    case 'KIWI':
       return 'augment'
     case 'CLASSIC':
       return 'ranked'
