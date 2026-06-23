@@ -1,7 +1,6 @@
 import type { GameMode, Match, RecommendationViewModel } from '../types'
 import { getAugmentIconUrl } from '../services/augmentIcons'
 import { getItemIconUrl } from '../services/dataDragon'
-import { LivePlayerList } from './LivePlayerList'
 
 type LiveDecisionPanelProps = {
   activeMode: GameMode
@@ -38,8 +37,6 @@ export function LiveDecisionPanel({ activeMode, match, recommendations }: LiveDe
             })}
           </div>
         </div>
-
-        <LivePlayerList players={match.liveState.players} />
       </section>
     )
   }
@@ -69,8 +66,6 @@ export function LiveDecisionPanel({ activeMode, match, recommendations }: LiveDe
           <p key={action}>{action}</p>
         ))}
       </div>
-
-      <LivePlayerList players={match.liveState.players} />
 
       {activeMode === 'ranked' && (
         <div className="next-item-card">

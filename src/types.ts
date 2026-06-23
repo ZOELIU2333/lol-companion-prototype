@@ -84,6 +84,14 @@ export type PlayerIntel = {
   trendTags: string[]
   heroAdvice: string
   matchupNote: string
+  live?: {
+    championName: string | null
+    level: number | null
+    kills: number | null
+    deaths: number | null
+    assists: number | null
+    isDead: boolean
+  }
   risk: {
     level: RiskLevel
     labels: string[]

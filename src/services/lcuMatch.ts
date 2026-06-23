@@ -1,4 +1,4 @@
-import type { Champion, Match, PlayerIntel, PlayerRiotAccount } from '../types'
+import type { Champion, LiveStatePlayer, Match, PlayerIntel, PlayerRiotAccount } from '../types'
 import type { DetectedGameSession } from './companionDataSource'
 import type { LcuPlayerSnapshot } from './lcuAdapter'
 
@@ -55,6 +55,68 @@ function createPlayer(player: LcuPlayerSnapshot): PlayerIntel {
     trendTags: [],
     heroAdvice: '',
     matchupNote: '',
+    risk: {
+      level: 'low',
+      labels: [],
+      confidence: 'public-data',
+    },
+    restricted: unavailableRestrictedFields,
+  }
+}
+
+/**
+ * Converts a Live Client Data (2999) player into the PlayerIntel shape the
+ * prototype 5v5 board (GameShell) renders. Carries only the real in-game signals
+ * the live feed provides (champion / level / KDA) under `live`; ranked/history
+ * fields stay empty so the board honestly shows "暂无" instead of fake stats.
+ */
+export function liveStatePlayerToIntel(player: LiveStatePlayer, index: number): PlayerIntel {
+  // team should always be resolved (localPlayerResolved), but if the local player
+  // could not be located it may be null — fall back to 'ally' so the player still
+  // shows on the board rather than vanishing from both columns.
+  const team = player.team ?? 'ally'
+  const role = player.position ?? '未知'
+  const fallbackName =
+    team === 'ally'
+      ? role === '未知'
+        ? '我方召唤师'
+        : `我方${role}`
+      : role === '未知'
+        ? '敌方召唤师'
+        : `敌方${role}`
+
+  return {
+    id: `live-${team}-${player.summonerName ?? player.championName ?? index}`,
+    name: player.summonerName ?? player.championName ?? fallbackName,
+    riotAccount: undefined,
+    team,
+    role,
+    championId: '',
+    rank: '',
+    recentWinRate: 0,
+    championWinRate: 0,
+    kda: 0,
+    csPerMin: 0,
+    killParticipation: 0,
+    mastery: 0,
+    score: 0,
+    recentRankedGames: 0,
+    championGames: 0,
+    averageDeaths: 0,
+    visionScore: 0,
+    damageShare: 0,
+    goldDiffAt15: 0,
+    trendTags: [],
+    heroAdvice: '',
+    matchupNote: '',
+    live: {
+      championName: player.championName,
+      level: player.level,
+      kills: player.kills,
+      deaths: player.deaths,
+      assists: player.assists,
+      isDead: player.isDead,
+    },
     risk: {
       level: 'low',
       labels: [],

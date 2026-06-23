@@ -4,7 +4,7 @@ import { createCompanionDataSource } from '../services/companionDataSource'
 import { emptyRecommendations } from '../services/emptyRecommendations'
 import { hasMeaningfulLiveData, isSessionActive, resolveActiveMode } from '../services/sessionVisibility'
 import { applyLiveClientSnapshotToMatch, createTauriLiveClientDataHost, type LiveClientSnapshot } from '../services/liveClientData'
-import { createLcuMatch } from '../services/lcuMatch'
+import { createLcuMatch, liveStatePlayerToIntel } from '../services/lcuMatch'
 import { loadOpggChampionDetail } from '../services/opggChampionData'
 import { mockPluginActions } from '../services/pluginActions'
 import { createTauriOpggMcpHost, isRunningInTauri, readLcuDiagnostics, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from '../services/tauriHost'
@@ -115,10 +115,19 @@ export function useCompanionSession() {
     () => resolveActiveMode(lcuMode, liveSnapshot?.gameMode),
     [lcuMode, liveSnapshot?.gameMode],
   )
-  const match = useMemo(
-    () => applyLiveClientSnapshotToMatch(baseMatch, liveSnapshot),
-    [baseMatch, liveSnapshot],
-  )
+  const match = useMemo(() => {
+    const withLive = applyLiveClientSnapshotToMatch(baseMatch, liveSnapshot)
+    // When LCU supplied no champ-select/gameflow players (e.g. lockfile failed) but
+    // the 2999 feed has the in-game roster, project those real players onto the
+    // prototype 5v5 board. LCU players take priority — only fill when none exist.
+    if (withLive.players.length === 0 && withLive.liveState.players.length > 0) {
+      return {
+        ...withLive,
+        players: withLive.liveState.players.map((player, index) => liveStatePlayerToIntel(player, index)),
+      }
+    }
+    return withLive
+  }, [baseMatch, liveSnapshot])
   // A live snapshot is meaningful on its own (e.g. lockfile/LCU failed but 2999 works)
   // when it carries any real in-game signal: game time, players, gold, or items.
   const hasLiveData = useMemo(() => hasMeaningfulLiveData(liveSnapshot), [liveSnapshot])

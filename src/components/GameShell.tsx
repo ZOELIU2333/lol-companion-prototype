@@ -193,6 +193,18 @@ export function GameShell({ match, children }: GameShellProps) {
                 {party && <b title={`${party.games}场车队胜率 ${party.winRate}%`}>{party.label}</b>}
                 <em>{publicScore ? Math.round(publicScore) : '--'}</em>
               </div>
+              {player.live && (
+                <div className={`stage-player-live ${player.live.isDead ? 'dead' : ''}`}>
+                  <span className="stage-player-live-champion">{player.live.championName ?? '未知英雄'}</span>
+                  <span className="stage-player-live-stat">
+                    {player.live.level ? `Lv${player.live.level}` : 'Lv-'}
+                    {player.live.kills !== null && player.live.deaths !== null && player.live.assists !== null
+                      ? ` · ${player.live.kills}/${player.live.deaths}/${player.live.assists}`
+                      : ''}
+                    {player.live.isDead ? ' · 阵亡' : ''}
+                  </span>
+                </div>
+              )}
               {riotProfile && (
                 <div className="stage-player-metrics">
                   <span><i>排位</i> <strong>{riotProfile.rankedGames}场</strong> <strong>{riotProfile.recentWinRate}%</strong></span>
