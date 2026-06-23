@@ -53,6 +53,9 @@ describe('LiveDecisionPanel real-time roster', () => {
     )
 
     expect(html).toContain('对局玩家（实时）')
+    // Summoner names lead each row; champion names appear as secondary info.
+    expect(html).toContain('我本人')
+    expect(html).toContain('敌方中单')
     expect(html).toContain('Ezreal')
     expect(html).toContain('Ahri')
   })
@@ -63,6 +66,8 @@ describe('LiveDecisionPanel real-time roster', () => {
     )
 
     expect(html).toContain('对局玩家（实时）')
+    expect(html).toContain('我本人')
+    expect(html).toContain('敌方中单')
     expect(html).toContain('Ezreal')
     expect(html).toContain('Ahri')
   })

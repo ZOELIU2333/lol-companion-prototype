@@ -16,23 +16,29 @@ export function LivePlayerList({ players }: LivePlayerListProps) {
     <div className="live-players">
       <span>对局玩家（实时）</span>
       <ul className="live-player-list">
-        {players.map((player, index) => (
-          <li
-            className={`live-player live-player--${player.team ?? 'unknown'}${player.isLocal ? ' live-player--local' : ''}${player.isDead ? ' live-player--dead' : ''}`}
-            key={`${player.team ?? 'unknown'}-${player.championName ?? player.summonerName ?? index}`}
-          >
-            <strong className="live-player-champion">{player.championName ?? '未知英雄'}</strong>
-            <span className="live-player-meta">
-              {player.position ? `${player.position} · ` : ''}
-              {player.level ? `Lv${player.level}` : '等级未知'}
-              {player.kills !== null && player.deaths !== null && player.assists !== null
-                ? ` · ${player.kills}/${player.deaths}/${player.assists}`
-                : ''}
-              {player.itemIds.length > 0 ? ` · ${player.itemIds.length} 件装备` : ''}
-              {player.isDead ? ' · 阵亡' : ''}
-            </span>
-          </li>
-        ))}
+        {players.map((player, index) => {
+          const displayName = player.summonerName ?? player.championName ?? '未知玩家'
+          const championLabel = player.championName ?? '未知英雄'
+
+          return (
+            <li
+              className={`live-player live-player--${player.team ?? 'unknown'}${player.isLocal ? ' live-player--local' : ''}${player.isDead ? ' live-player--dead' : ''}`}
+              key={`${player.team ?? 'unknown'}-${player.summonerName ?? player.championName ?? index}`}
+            >
+              <strong className="live-player-name">{displayName}</strong>
+              <span className="live-player-meta">
+                {championLabel}
+                {player.position ? ` · ${player.position}` : ''}
+                {player.level ? ` · Lv${player.level}` : ''}
+                {player.kills !== null && player.deaths !== null && player.assists !== null
+                  ? ` · ${player.kills}/${player.deaths}/${player.assists}`
+                  : ''}
+                {player.itemIds.length > 0 ? ` · ${player.itemIds.length} 件装备` : ''}
+                {player.isDead ? ' · 阵亡' : ''}
+              </span>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
