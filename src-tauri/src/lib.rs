@@ -339,6 +339,66 @@ fn lockfile_path_from_process_dir(process_dir: &Path) -> PathBuf {
     process_dir.join("lockfile")
 }
 
+/// Relative lockfile locations under a League/WeGame install root. CN WeGame
+/// stores the LCU lockfile under `LeagueClient\lockfile`, while older/global
+/// layouts use `Game\lockfile`; try both.
+#[cfg(any(target_os = "windows", test))]
+const WEGAME_LOCKFILE_SUFFIXES: &[&str] = &[
+    r"英雄联盟\LeagueClient\lockfile",
+    r"英雄联盟\Game\lockfile",
+    r"League of Legends\LeagueClient\lockfile",
+    r"League of Legends\Game\lockfile",
+];
+
+/// Find `WeGameApps` directories within `max_depth` levels of a root and expand
+/// them into candidate lockfile paths. This catches custom install prefixes such
+/// as `E:\游戏\生死狙击2\WeGameApps\英雄联盟\LeagueClient\lockfile` that fixed path
+/// lists can never enumerate, without the cost of a full recursive disk scan.
+#[cfg(any(target_os = "windows", test))]
+fn scan_wegame_lockfiles(root: &Path, max_depth: usize, out: &mut Vec<PathBuf>) {
+    if max_depth == 0 {
+        return;
+    }
+    let Ok(entries) = fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        // Skip large system directories that never hold a WeGame install, to keep
+        // the bounded scan fast on the system drive.
+        if matches!(
+            name.as_ref(),
+            "Windows"
+                | "$Recycle.Bin"
+                | "System Volume Information"
+                | "Windows.old"
+                | "ProgramData"
+                | "AppData"
+                | "node_modules"
+        ) {
+            continue;
+        }
+        if name.eq_ignore_ascii_case("WeGameApps") || name.eq_ignore_ascii_case("rail_apps") {
+            for suffix in WEGAME_LOCKFILE_SUFFIXES {
+                out.push(path.join(suffix));
+            }
+            // rail_apps nests the same WeGameApps tree one level deeper.
+            scan_wegame_lockfiles(&path, 1, out);
+        } else {
+            scan_wegame_lockfiles(&path, max_depth - 1, out);
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "windows", test)))]
+#[allow(dead_code)]
+fn scan_wegame_lockfiles(_root: &Path, _max_depth: usize, _out: &mut [PathBuf]) {}
+
 #[cfg(target_os = "windows")]
 fn running_league_client_paths() -> (bool, Vec<PathBuf>, Option<LcuLockfile>) {
     use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
@@ -446,8 +506,13 @@ fn candidate_lockfile_paths(executable_paths: &[PathBuf]) -> Vec<PathBuf> {
             PathBuf::from(&drive_root).join(r"Program Files\Riot Games\League of Legends\lockfile"),
         );
         paths.push(PathBuf::from(&drive_root).join(r"WeGameApps\英雄联盟\Game\lockfile"));
+        paths.push(PathBuf::from(&drive_root).join(r"WeGameApps\英雄联盟\LeagueClient\lockfile"));
         paths.push(PathBuf::from(&drive_root).join(r"Tencent\WeGameApps\英雄联盟\Game\lockfile"));
+        paths.push(
+            PathBuf::from(&drive_root).join(r"Tencent\WeGameApps\英雄联盟\LeagueClient\lockfile"),
+        );
         paths.push(PathBuf::from(&drive_root).join(r"英雄联盟\Game\lockfile"));
+        paths.push(PathBuf::from(&drive_root).join(r"英雄联盟\LeagueClient\lockfile"));
         paths.push(PathBuf::from(&drive_root).join(r"腾讯游戏\英雄联盟\Game\lockfile"));
         paths.push(
             PathBuf::from(&drive_root)
@@ -463,6 +528,9 @@ fn candidate_lockfile_paths(executable_paths: &[PathBuf]) -> Vec<PathBuf> {
         paths.push(
             PathBuf::from(&drive_root).join(r"Program Files (x86)\腾讯游戏\英雄联盟\Game\lockfile"),
         );
+        // Discover custom install prefixes (e.g. E:\游戏\<...>\WeGameApps\...) by a
+        // shallow scan that stops as soon as it finds a WeGameApps directory.
+        scan_wegame_lockfiles(&PathBuf::from(&drive_root), 3, &mut paths);
     }
 
     let mut seen = HashSet::new();
@@ -1513,7 +1581,7 @@ mod tests {
     use super::{
         candidate_lockfile_paths, find_live_local_player_index, lockfile_path_from_executable,
         map_queue_to_mode, parse_lcu_process_args, parse_lockfile, redact_riot_tag, round_score,
-        GameflowQueue, LiveClientActivePlayer, LiveClientPlayer,
+        scan_wegame_lockfiles, GameflowQueue, LiveClientActivePlayer, LiveClientPlayer,
     };
     use std::path::{Path, PathBuf};
 
@@ -1783,5 +1851,64 @@ mod tests {
         assert_eq!(round_score(Some(142.6)), Some(143));
         assert_eq!(round_score(Some(-3.0)), Some(0));
         assert_eq!(round_score(None), None);
+    }
+
+    #[test]
+    fn scans_custom_wegame_install_prefix_for_lockfile() {
+        // Reproduces the real-world layout E:\游戏\<game>\WeGameApps\英雄联盟\LeagueClient\lockfile,
+        // a custom nested prefix that fixed candidate lists can never enumerate.
+        let base = std::env::temp_dir().join("lol-companion-scan-test-1");
+        let install = base
+            .join("游戏")
+            .join("生死狙击2")
+            .join("WeGameApps")
+            .join("英雄联盟")
+            .join("LeagueClient");
+        std::fs::create_dir_all(&install).unwrap();
+        std::fs::write(install.join("lockfile"), "LeagueClient:1:2999:secret:https").unwrap();
+
+        let mut out = Vec::new();
+        scan_wegame_lockfiles(&base, 3, &mut out);
+
+        // The WEGAME_LOCKFILE_SUFFIXES use Windows separators, so assert on the
+        // discovered WeGameApps root + suffix substring rather than a joined path
+        // (which differs by platform separator in this cross-platform test run).
+        assert!(
+            out.iter().any(|path| {
+                let rendered = path.to_string_lossy();
+                rendered.contains("WeGameApps") && rendered.contains("LeagueClient")
+            }),
+            "expected scan to surface a WeGameApps LeagueClient lockfile, got {:?}",
+            out
+        );
+
+        std::fs::remove_dir_all(&base).ok();
+    }
+
+    #[test]
+    fn scan_skips_system_directories_and_respects_depth() {
+        let base = std::env::temp_dir().join("lol-companion-scan-test-2");
+        // A WeGameApps buried deeper than max_depth must NOT be found.
+        let too_deep = base
+            .join("a")
+            .join("b")
+            .join("c")
+            .join("d")
+            .join("WeGameApps")
+            .join("英雄联盟")
+            .join("LeagueClient");
+        std::fs::create_dir_all(&too_deep).unwrap();
+        std::fs::write(too_deep.join("lockfile"), "x").unwrap();
+
+        let mut out = Vec::new();
+        scan_wegame_lockfiles(&base, 2, &mut out);
+
+        assert!(
+            out.is_empty(),
+            "depth-limited scan must not reach deeply nested installs, got {:?}",
+            out
+        );
+
+        std::fs::remove_dir_all(&base).ok();
     }
 }
