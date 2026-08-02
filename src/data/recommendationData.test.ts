@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   augmentItemChains,
@@ -8,14 +9,16 @@ import {
   listRecommendationChampionIds,
 } from './recommendationData'
 import { getOpggKrHighEloChampionStat, opggKrHighEloChampionStats, opggKrHighEloMeta } from './opggKrHighEloStats'
-import { arenaAugments, arenaAugmentsMeta, getArenaAugmentByApiName } from './arenaAugments'
 import { getMetabotArenaAugmentByChineseName, metabotArenaAugments, metabotArenaAugmentsMeta } from './metabotArenaAugments'
 import { mockMatches } from './mockMatches'
 import { getAugmentIconUrl } from '../services/augmentIcons'
+import { createArenaCatalogIndex, parseArenaCatalog } from '../features/arena/catalog/catalog'
 import type { Champion } from '../types'
 
 const ezreal = mockMatches[0].champions.find((champion) => champion.id === 'ezreal')!
 const ahri = mockMatches[1].champions.find((champion) => champion.id === 'ahri')!
+const arenaCatalog = parseArenaCatalog(JSON.parse(readFileSync('public/data/arena/catalog.json', 'utf8')))
+const arenaCatalogIndex = createArenaCatalogIndex(arenaCatalog)
 const championStub = (id: string): Champion => ({
   id,
   name: id,
@@ -81,17 +84,15 @@ describe('recommendation data layer', () => {
   })
 
   it('uses externally imported CommunityDragon arena augment metadata', () => {
-    expect(arenaAugmentsMeta).toMatchObject({
-      count: 227,
-      source: 'communitydragon',
-      sourceUrl: 'https://raw.communitydragon.org/latest/cdragon/arena/en_us.json',
+    expect(arenaCatalog.augments.length).toBeGreaterThan(200)
+    expect(arenaCatalog.sources).toMatchObject({
+      zhCn: expect.stringContaining('/zh_cn.json'),
+      enUs: expect.stringContaining('/en_us.json'),
     })
-    expect(arenaAugments.length).toBeGreaterThan(200)
-    expect(getArenaAugmentByApiName('Spellwake')).toMatchObject({
-      name: 'Spellwake',
-      iconSmall: expect.stringContaining('spellwake_small.png'),
-    })
-    expect(getAugmentIconUrl('法术苏醒')).toContain('spellwake_small.png')
+    const spellwake = arenaCatalogIndex.find('Spellwake')!
+    expect(spellwake).toMatchObject({ name: '法术苏醒', iconSmallUrl: expect.stringContaining('spellwake_small.png') })
+    expect(getAugmentIconUrl(spellwake)).toBe(spellwake.iconSmallUrl)
+    expect(getAugmentIconUrl('法术苏醒')).toContain('/latest/game/assets/')
   })
 
   it('uses externally imported MetaBot Chinese arena augment tier data', () => {

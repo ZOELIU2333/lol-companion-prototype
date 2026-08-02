@@ -1,6 +1,6 @@
-import { getArenaAugmentByApiName, getArenaAugmentByName } from '../data/arenaAugments'
+import type { ArenaAugmentDefinition } from '../features/arena/catalog/types'
 
-const COMMUNITY_DRAGON_BASE = 'https://raw.communitydragon.org/latest'
+const COMMUNITY_DRAGON_GAME_ASSET_BASE = 'https://raw.communitydragon.org/latest/game/assets/ux/cherry/augments/icons'
 
 const localizedAugmentApiNames: Record<string, string> = {
   主菜上桌: 'BreadAndButter',
@@ -9,9 +9,13 @@ const localizedAugmentApiNames: Record<string, string> = {
   现象级邪恶: 'PhenomenalEvil',
 }
 
-export function getAugmentIconUrl(name: string) {
-  const augment = getArenaAugmentByName(name) ?? getArenaAugmentByApiName(localizedAugmentApiNames[name] ?? name)
-  if (!augment?.iconSmall) return null
+function apiNameToIconFile(apiName: string) {
+  return `${apiName.replaceAll(/[^A-Za-z0-9]/g, '').toLowerCase()}_small.png`
+}
 
-  return `${COMMUNITY_DRAGON_BASE}/${augment.iconSmall}`
+export function getAugmentIconUrl(augment: string | Pick<ArenaAugmentDefinition, 'iconLargeUrl' | 'iconSmallUrl'>) {
+  if (typeof augment !== 'string') return augment.iconSmallUrl ?? augment.iconLargeUrl
+
+  const apiName = localizedAugmentApiNames[augment] ?? augment
+  return `${COMMUNITY_DRAGON_GAME_ASSET_BASE}/${apiNameToIconFile(apiName)}`
 }
