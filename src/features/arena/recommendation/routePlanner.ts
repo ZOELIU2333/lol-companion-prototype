@@ -1,5 +1,6 @@
 import { canRecommendOffMeta } from '../graph/evidence'
 import type { EvidenceRecord } from '../graph/types'
+import { createPurchasePlan } from './purchasePlan'
 import type {
   ArenaPlannedRoute,
   ArenaRouteInput,
@@ -175,7 +176,15 @@ function selectRoute(
     }
   }
   usedSignatures.add(selected.coreSignature)
-  return { kind, label: labels[kind], coreSignature: selected.coreSignature, candidates: [selected] }
+  return {
+    kind,
+    label: labels[kind],
+    coreSignature: selected.coreSignature,
+    candidates: [selected],
+    purchasePlan: input.purchase
+      ? createPurchasePlan(selected, input.purchase.ownedItemIds, input.purchase.gold, input.purchase.itemCatalog)
+      : undefined,
+  }
 }
 
 export function planArenaRoutes(input: ArenaRouteInput): ArenaRouteSet {
