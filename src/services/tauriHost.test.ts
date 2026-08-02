@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from './tauriHost'
+import { createTauriArenaLcuPort, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from './tauriHost'
 import { createTauriRiotApiHost } from './tauriRiotHost'
 
 const tauriMocks = vi.hoisted(() => ({
@@ -79,6 +79,30 @@ describe('tauri host bridge', () => {
     })
 
     await expect(tauriLcuAdapter.readSession()).resolves.toBeNull()
+  })
+
+  it('reads capability-probed Arena fields through the Tauri port', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockResolvedValue({
+      mode: 'arena',
+      championKey: 103,
+      round: 2,
+      selectedAugmentIds: [27],
+      candidateAugmentIds: [],
+      candidateCapability: 'unsupported',
+      source: 'lcu',
+    })
+    const port = createTauriArenaLcuPort(() => 200)
+
+    await expect(port?.read(new AbortController().signal)).resolves.toMatchObject({
+      mode: { value: 'arena' },
+      championKey: { value: 103 },
+      round: { value: 2 },
+      selectedAugments: { value: [27] },
+      candidates: { value: [], state: 'unsupported' },
+      capabilities: { candidates: 'unsupported' },
+    })
+    expect(tauriMocks.invoke).toHaveBeenCalledWith('read_arena_lcu_session')
   })
 
   it('proxies overlay window commands when running in Tauri', async () => {

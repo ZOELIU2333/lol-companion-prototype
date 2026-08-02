@@ -1,13 +1,25 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import type { ArenaSessionPort } from '../features/arena/session/ports'
+import type { ArenaObservationState, ArenaSourceCapability, PartialArenaSession } from '../features/arena/session/types'
 import type { GameMode } from '../types'
 import type { LcuAdapter, LcuGamePhase, LcuPlayerSnapshot, LcuSessionSnapshot } from './lcuAdapter'
 import type { OpggMcpHost } from './opggMcpAdapter'
 
 type TauriLcuSessionPayload = {
   phase: string
-  mode: Exclude<GameMode, 'arena'> | null
+  mode: GameMode | null
   localSummonerName?: string
   players?: LcuPlayerSnapshot[]
+  source: 'lcu'
+}
+
+type TauriArenaLcuPayload = {
+  mode?: GameMode | null
+  championKey?: number | null
+  round?: number | null
+  selectedAugmentIds?: number[]
+  candidateAugmentIds?: number[]
+  candidateCapability: ArenaSourceCapability
   source: 'lcu'
 }
 
@@ -62,6 +74,51 @@ export const tauriLcuAdapter: LcuAdapter = {
       return null
     }
   },
+}
+
+function observationState(capability: ArenaSourceCapability): ArenaObservationState {
+  return capability === 'available' ? 'live' : capability
+}
+
+export function createTauriArenaLcuPort(now: () => number = () => Date.now()): ArenaSessionPort | null {
+  if (!isTauri()) return null
+  return {
+    id: 'tauri-arena-lcu',
+    fields: ['mode', 'champion', 'round', 'selectedAugments', 'candidates'],
+    async read(signal) {
+      if (signal.aborted) throw new DOMException('Arena LCU read aborted', 'AbortError')
+      const payload = await invoke<TauriArenaLcuPayload | null>('read_arena_lcu_session')
+      if (!payload) {
+        return { capabilities: {
+          mode: 'unavailable', champion: 'unavailable', round: 'unavailable',
+          selectedAugments: 'unavailable', candidates: 'unavailable',
+        } }
+      }
+      const observedAt = now()
+      const partial: PartialArenaSession = {
+        candidates: {
+          value: payload.candidateAugmentIds ?? [], source: 'lcu', observedAt,
+          state: observationState(payload.candidateCapability),
+        },
+        capabilities: {
+          mode: payload.mode === 'arena' ? 'available' : 'unavailable',
+          champion: payload.championKey ? 'available' : 'unavailable',
+          round: payload.round === null || payload.round === undefined ? 'unavailable' : 'available',
+          selectedAugments: payload.selectedAugmentIds ? 'available' : 'unsupported',
+          candidates: payload.candidateCapability,
+        },
+      }
+      if (payload.mode === 'arena') partial.mode = { value: 'arena', source: 'lcu', observedAt, state: 'live' }
+      if (payload.championKey) partial.championKey = { value: payload.championKey, source: 'lcu', observedAt, state: 'live' }
+      if (payload.round !== null && payload.round !== undefined) {
+        partial.round = { value: payload.round, source: 'lcu', observedAt, state: 'live' }
+      }
+      if (payload.selectedAugmentIds) {
+        partial.selectedAugments = { value: payload.selectedAugmentIds, source: 'lcu', observedAt, state: 'live' }
+      }
+      return partial
+    },
+  }
 }
 
 export async function setOverlayAlwaysOnTop(enabled: boolean) {

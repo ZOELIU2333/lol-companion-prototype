@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockMatches } from '../data/mockMatches'
-import { applyLiveClientSnapshotToMatch, createTauriLiveClientDataHost } from './liveClientData'
+import { applyLiveClientSnapshotToMatch, createLiveClientArenaPort, createTauriLiveClientDataHost } from './liveClientData'
 
 const tauriMocks = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -70,5 +70,29 @@ describe('live client data bridge', () => {
     expect(match.liveState.goldOnHand).toBe(820)
     expect(match.liveState.currentItems).toEqual(['item:1055', 'item:2003'])
     expect(match.liveState.currentSituation).toContain('Ezreal')
+  })
+
+  it('projects automatic fields into an Arena session port', async () => {
+    const port = createLiveClientArenaPort({
+      readSnapshot: async () => ({
+        gameTime: 126.9,
+        gameMode: 'CHERRY',
+        championName: 'Ezreal',
+        level: 3,
+        currentGold: 820,
+        currentItemIds: [1055, 2003],
+        source: 'live-client-data',
+      }),
+    }, new Map([['ezreal', 81]]), () => 200)
+
+    await expect(port.read(new AbortController().signal)).resolves.toMatchObject({
+      mode: { value: 'arena', source: 'live-client' },
+      championKey: { value: 81 },
+      level: { value: 3 },
+      gold: { value: 820 },
+      itemIds: { value: [1055, 2003] },
+      gameTimeSeconds: { value: 126.9 },
+      capabilities: { candidates: 'unsupported' },
+    })
   })
 })
