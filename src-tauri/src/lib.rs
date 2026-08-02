@@ -1,8 +1,10 @@
 use std::{env, time::Duration};
 
+pub mod diagnostics;
 mod lcu;
 mod live_client;
 
+use diagnostics::export::export_diagnostics;
 use lcu::client::{read_arena_lcu_session, read_lcu_session};
 use live_client::read_live_client_snapshot;
 
@@ -115,9 +117,10 @@ fn set_overlay_compact(window: tauri::Window, enabled: bool) -> Result<(), Strin
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+pub fn run() -> Result<(), String> {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
+            export_diagnostics,
             opgg_mcp_call,
             read_arena_lcu_session,
             read_lcu_session,
@@ -127,5 +130,5 @@ pub fn run() {
             set_overlay_compact
         ])
         .run(tauri::generate_context!())
-        .expect("failed to run LOL Companion desktop shell");
+        .map_err(|error| error.to_string())
 }
