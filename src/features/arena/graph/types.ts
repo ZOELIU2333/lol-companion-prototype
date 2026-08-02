@@ -2,12 +2,15 @@ export type EdgeRelation = 'triggers' | 'amplifies' | 'converts' | 'loops' | 'co
 export type EvidenceKind = 'current-statistics' | 'community-sample' | 'mechanism-verified' | 'theoretical'
 
 export type ArenaCapability =
+  | 'dash'
   | 'dash-trigger'
   | 'multi-dash'
   | 'blink'
   | 'teleport'
   | 'ability-hit-trigger'
+  | 'ability-hit'
   | 'attack-hit-trigger'
+  | 'attack-hit'
   | 'critical-strike'
   | 'heal'
   | 'shield'
