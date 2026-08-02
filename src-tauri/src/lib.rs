@@ -198,7 +198,7 @@ fn map_queue_to_mode(queue: Option<&GameflowQueue>) -> Option<String> {
         .to_lowercase();
 
     if raw.contains("arena") || raw.contains("海克斯") {
-        return Some("augment".to_string());
+        return Some("arena".to_string());
     }
 
     if raw.contains("rank")

@@ -92,7 +92,7 @@ export function useCompanionSession() {
     [baseMatch, lcuPlayers, liveSnapshot],
   )
   const champion = match.champions.find((candidate) => candidate.id === match.currentChampionId) ?? match.champions[0]
-  const effectivePhase: InfoPhase = activeMode === 'augment' ? 'live' : 'pregame'
+  const effectivePhase: InfoPhase = activeMode === 'arena' ? 'live' : 'pregame'
   const recommendations = useMemo(
     () => {
       void recommendationDataVersion
@@ -124,7 +124,7 @@ export function useCompanionSession() {
         }
 
         setActiveMode(session.mode)
-        setActivePhase(session.mode === 'augment' ? 'live' : 'pregame')
+        setActivePhase(session.mode === 'arena' ? 'live' : 'pregame')
         setConnectionStatus(session.phase && connectedPhases.has(session.phase) ? 'match' : 'client')
         setLcuPhase(session.phase ?? null)
         setLcuPlayers(session.players ?? [])
@@ -209,7 +209,7 @@ export function useCompanionSession() {
     setIsDetected(false)
     setActiveMode(nextMode === 'arena' ? 'ranked' : nextMode)
     setPlayerFilter('ally')
-    setActivePhase(nextMode === 'augment' ? 'live' : 'pregame')
+    setActivePhase(nextMode === 'arena' ? 'live' : 'pregame')
     setLcuPlayers([])
     setLiveSnapshot(null)
   }

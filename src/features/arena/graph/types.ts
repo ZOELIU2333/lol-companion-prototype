@@ -82,7 +82,7 @@ export type EvidenceRecord =
 
 export type MechanismNode = {
   id: string
-  kind: 'champion' | 'augment' | 'item' | 'capability'
+  kind: 'champion' | 'arena-augment' | 'item' | 'capability'
   label: string
   sourceKey: string | number
   capabilities: CapabilityWeight[]

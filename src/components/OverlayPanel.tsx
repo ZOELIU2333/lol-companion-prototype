@@ -155,7 +155,7 @@ export function OverlayPanel({
         </>
       )}
 
-      {activeMode === 'augment' && (
+      {activeMode === 'arena' && (
         <>
           <LiveDecisionPanel activeMode={activeMode} match={match} recommendations={recommendations} />
           <AugmentRecommendation augments={recommendations.augments} />

@@ -38,7 +38,7 @@ describe('lcu adapter boundary', () => {
   it('maps known queue descriptions into product modes', () => {
     expect(mapLcuQueueToMode('Ranked Solo/Duo')).toBe('ranked')
     expect(mapLcuQueueToMode('Normal Draft')).toBe('ranked')
-    expect(mapLcuQueueToMode('Arena')).toBe('augment')
+    expect(mapLcuQueueToMode('Arena')).toBe('arena')
   })
 
   it('keeps unknown queues unmapped', () => {

@@ -4,7 +4,7 @@ import type { LcuAdapter, LcuGamePhase, LcuPlayerSnapshot } from './lcuAdapter'
 
 export type DetectedGameSession = {
   matchId: string
-  mode: Exclude<GameMode, 'arena'>
+  mode: GameMode
   phase?: LcuGamePhase
   players?: LcuPlayerSnapshot[]
   source: 'mock' | 'lcu'
@@ -16,9 +16,9 @@ export type CompanionDataSource = {
   getMatch: (matchId: string) => Match | null
 }
 
-const visibleMatches = () => mockMatches.filter((match) => match.mode !== 'arena')
+const visibleMatches = () => mockMatches
 
-function findClosestMatch(mode: Exclude<GameMode, 'arena'>) {
+function findClosestMatch(mode: GameMode) {
   return visibleMatches().find((match) => match.mode === mode) ?? visibleMatches()[0]
 }
 
@@ -81,7 +81,7 @@ export const mockCompanionDataSource: CompanionDataSource = {
 
     return {
       matchId: match.id,
-      mode: match.mode === 'arena' ? 'ranked' : match.mode,
+      mode: match.mode,
       source: 'mock',
     }
   },

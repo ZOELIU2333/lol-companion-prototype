@@ -667,7 +667,7 @@ export const mockMatches: Match[] = [
   },
   {
     id: 'augment-ahri-002',
-    mode: 'augment',
+    mode: 'arena',
     map: '海克斯峡谷',
     status: 'detected',
     timer: '03:18',
@@ -794,7 +794,7 @@ export const mockMatches: Match[] = [
 ]
 
 const rankedPlayerSeed = mockMatches.find((match) => match.mode === 'ranked')?.players
-const augmentSeedMatch = mockMatches.find((match) => match.mode === 'augment')
+const augmentSeedMatch = mockMatches.find((match) => match.mode === 'arena')
 
 if (augmentSeedMatch && augmentSeedMatch.players.length === 0 && rankedPlayerSeed) {
   augmentSeedMatch.players = rankedPlayerSeed.map((player) => ({

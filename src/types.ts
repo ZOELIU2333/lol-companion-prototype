@@ -1,4 +1,4 @@
-export type GameMode = 'ranked' | 'augment' | 'arena'
+export type GameMode = 'ranked' | 'arena'
 export type InfoPhase = 'pregame' | 'live'
 export type TeamSide = 'ally' | 'enemy'
 export type PlayerFilter = 'ally' | 'enemy'

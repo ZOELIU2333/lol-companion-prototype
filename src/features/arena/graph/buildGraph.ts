@@ -82,7 +82,7 @@ export function buildMechanismGraph(input: GraphInput): MechanismGraph {
     },
     ...input.augments.map((augment): MechanismNode => ({
       id: `augment:${augment.apiName}`,
-      kind: 'augment',
+      kind: 'arena-augment',
       label: augment.name,
       sourceKey: augment.apiName,
       capabilities: inferAugmentCapabilities(augment),

@@ -255,7 +255,7 @@ export function createRecommendations(match: Match, mode: GameMode): Recommendat
       nextTwoMinutes: [
         match.liveState.immediateAction,
         match.enemyComposition.crowdControl >= 70 ? '团前不要先交位移，等锤石/蔚第一波控制失败再反打。' : '先推中线，再提前落位资源区。',
-        mode === 'augment' ? '装备链跟随已选强化调整，先看图标路线，不走固定模板。' : '保持当前核心路线，暂不需要强行变装。',
+        mode === 'arena' ? '装备链跟随已选强化调整，先看图标路线，不走固定模板。' : '保持当前核心路线，暂不需要强行变装。',
       ],
       augmentContext: {
         selected: match.liveState.selectedAugments,

@@ -13,7 +13,7 @@ export function DemoScenarioSwitcher({ matches, selectedMatchId, onSelect }: Dem
       <select value={selectedMatchId} onChange={(event) => onSelect(event.target.value)}>
         {matches.map((match) => (
           <option key={match.id} value={match.id}>
-            {match.mode === 'augment' ? '海克斯' : '匹配/排位'} · {match.champions.find((champion) => champion.id === match.currentChampionId)?.name}
+            {match.mode === 'arena' ? '竞技场' : '匹配/排位'} · {match.champions.find((champion) => champion.id === match.currentChampionId)?.name}
           </option>
         ))}
       </select>

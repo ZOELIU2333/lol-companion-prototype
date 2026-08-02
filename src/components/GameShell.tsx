@@ -22,8 +22,7 @@ type PlayerDataStatus = 'demo' | 'loading' | 'opgg' | 'riot'
 
 const modeLabels: Record<GameMode, string> = {
   ranked: '匹配/排位',
-  augment: '海克斯',
-  arena: '海克斯',
+  arena: '竞技场',
 }
 
 const masteryChampions = ['伊泽瑞尔', '阿狸', '卡莎', '盲僧', '青钢影', '泰坦', '辛德拉', '德莱文']
