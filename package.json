@@ -20,9 +20,13 @@
     "data:arena:check": "node scripts/arena-data/import-catalog.mjs --from-cache --check",
     "data:game:import": "node scripts/arena-data/import-ddragon.mjs",
     "data:game:check": "node scripts/arena-data/import-ddragon.mjs --from-cache --check",
+    "verify": "npm run data:arena:check && npm run data:game:check && npm run test && npm run lint && npm run build && cargo check --manifest-path src-tauri/Cargo.toml",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",

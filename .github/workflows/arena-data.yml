@@ -1,0 +1,85 @@
+name: Arena Data
+
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-upstream:
+    name: Validate current Arena catalog
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: npm
+
+      - name: Pin npm
+        run: npm install --global npm@10
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate bundled catalog
+        run: npm run data:arena:check
+
+      - name: Fetch and validate both current locales
+        run: |
+          mkdir -p artifacts/arena
+          node scripts/arena-data/import-catalog.mjs \
+            --out artifacts/arena/catalog.json \
+            --manifest artifacts/arena/manifest.json
+
+      - name: Compare normalized catalog
+        id: compare
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises'
+          for (const [source, destination] of [
+            ['public/data/arena/catalog.json', 'artifacts/arena/bundled.normalized.json'],
+            ['artifacts/arena/catalog.json', 'artifacts/arena/upstream.normalized.json'],
+          ]) {
+            const catalog = JSON.parse(await readFile(source, 'utf8'))
+            delete catalog.generatedAt
+            await writeFile(destination, `${JSON.stringify(catalog, null, 2)}\n`)
+          }
+          NODE
+          bundled_hash=$(node -p "require('./public/data/arena/manifest.json').contentHash")
+          upstream_hash=$(node -p "require('./artifacts/arena/manifest.json').contentHash")
+          if [ "$bundled_hash" = "$upstream_hash" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            set +e
+            git diff --no-index -- \
+              artifacts/arena/bundled.normalized.json \
+              artifacts/arena/upstream.normalized.json \
+              > artifacts/arena/catalog.diff
+            diff_status=$?
+            set -e
+            if [ "$diff_status" -gt 1 ]; then
+              exit "$diff_status"
+            fi
+          fi
+
+      - name: Upload normalized upstream change
+        if: steps.compare.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Arena-Catalog-Upstream-Change
+          path: |
+            artifacts/arena/catalog.json
+            artifacts/arena/manifest.json
+            artifacts/arena/catalog.diff
+          if-no-files-found: error
