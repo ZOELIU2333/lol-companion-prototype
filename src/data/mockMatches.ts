@@ -565,8 +565,6 @@ export const mockMatches: Match[] = [
         name: '珠光莲花',
         tier: 'prismatic',
         tags: ['burst', 'crit', 'poke'],
-        currentValue: 82,
-        scalingValue: 76,
         note: '技能暴击提升爆发，适合消耗命中率高的路线。',
       },
       {
@@ -574,8 +572,6 @@ export const mockMatches: Match[] = [
         name: '法术苏醒',
         tier: 'gold',
         tags: ['haste', 'poke', 'mana'],
-        currentValue: 78,
-        scalingValue: 84,
         note: '持续施法收益稳定，后续配合冷却类强化更好。',
       },
       {
@@ -583,8 +579,6 @@ export const mockMatches: Match[] = [
         name: '巨像勇气',
         tier: 'silver',
         tags: ['defense', 'anti-burst'],
-        currentValue: 58,
-        scalingValue: 66,
         note: '容错提升，但与伊泽瑞尔核心输出节奏不完全匹配。',
       },
     ],
@@ -713,8 +707,6 @@ export const mockMatches: Match[] = [
         name: '地震波',
         tier: 'gold',
         tags: ['mobility', 'burst'],
-        currentValue: 88,
-        scalingValue: 83,
         note: '位移后补伤害，和阿狸三段大招契合。',
       },
       {
@@ -722,8 +714,6 @@ export const mockMatches: Match[] = [
         name: '现象级邪恶',
         tier: 'silver',
         tags: ['ap', 'scaling'],
-        currentValue: 70,
-        scalingValue: 91,
         note: '越打越强，适合后续法强组合。',
       },
       {
@@ -731,8 +721,6 @@ export const mockMatches: Match[] = [
         name: '主菜上桌',
         tier: 'gold',
         tags: ['cooldown', 'pick'],
-        currentValue: 79,
-        scalingValue: 80,
         note: '降低核心技能空窗，提升开点频率。',
       },
     ],
