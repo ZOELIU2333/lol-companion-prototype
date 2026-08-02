@@ -40,10 +40,10 @@ jobs:
         continue-on-error: true
         run: npm run test
 
-      - name: Check imported arena augment metadata
+      - name: Check imported Arena and game data
         run: |
-          npm run data:arena:augments:check
-          npm run data:arena:metabot:check
+          npm run data:arena:check
+          npm run data:game:check
 
       - name: Lint frontend
         run: npm run lint

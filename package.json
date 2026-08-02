@@ -20,10 +20,6 @@
     "data:arena:check": "node scripts/arena-data/import-catalog.mjs --from-cache --check",
     "data:game:import": "node scripts/arena-data/import-ddragon.mjs",
     "data:game:check": "node scripts/arena-data/import-ddragon.mjs --from-cache --check",
-    "data:arena:augments:import": "node scripts/import-cdragon-arena-augments.mjs",
-    "data:arena:augments:check": "node scripts/import-cdragon-arena-augments.mjs --from-cache --check",
-    "data:arena:metabot:import": "node scripts/import-metabot-arena-augments.mjs",
-    "data:arena:metabot:check": "node scripts/import-metabot-arena-augments.mjs --from-cache --check",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"

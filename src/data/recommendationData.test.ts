@@ -9,7 +9,6 @@ import {
   listRecommendationChampionIds,
 } from './recommendationData'
 import { getOpggKrHighEloChampionStat, opggKrHighEloChampionStats, opggKrHighEloMeta } from './opggKrHighEloStats'
-import { getMetabotArenaAugmentByChineseName, metabotArenaAugments, metabotArenaAugmentsMeta } from './metabotArenaAugments'
 import { mockMatches } from './mockMatches'
 import { getAugmentIconUrl } from '../services/augmentIcons'
 import { createArenaCatalogIndex, parseArenaCatalog } from '../features/arena/catalog/catalog'
@@ -93,21 +92,6 @@ describe('recommendation data layer', () => {
     expect(spellwake).toMatchObject({ name: '法术苏醒', iconSmallUrl: expect.stringContaining('spellwake_small.png') })
     expect(getAugmentIconUrl(spellwake)).toBe(spellwake.iconSmallUrl)
     expect(getAugmentIconUrl('法术苏醒')).toContain('/latest/game/assets/')
-  })
-
-  it('uses externally imported MetaBot Chinese arena augment tier data', () => {
-    expect(metabotArenaAugmentsMeta).toMatchObject({
-      count: 220,
-      locale: 'zh_CN',
-      patch: '26.11',
-      source: 'metabot-zh-cn',
-    })
-    expect(metabotArenaAugments.length).toBe(220)
-    expect(getMetabotArenaAugmentByChineseName('法术苏醒')).toMatchObject({
-      patch: '26.11',
-      pickRate: 2.8,
-      tier: 'C',
-    })
   })
 
   it('covers the first match player champion pool with builds and runes', () => {

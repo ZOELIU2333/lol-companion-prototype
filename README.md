@@ -189,12 +189,12 @@ Refresh local OP.GG cache after a live patch:
 ```bash
 npm run data:opgg:details:import -- --patch 16.11
 npm run data:opgg:import
-npm run data:arena:augments:import
-npm run data:arena:metabot:import
+npm run data:arena:import
+npm run data:game:import
 npm run test
 ```
 
-Update `src/services/dataDragon.ts` when Riot publishes a new Data Dragon version. The current default is `16.11.1`.
+`data:arena:import` joins the current Chinese and English CommunityDragon Arena catalogs and writes a verified offline snapshot. `data:game:import` resolves the current Data Dragon version and writes compact Chinese champion and item snapshots, including spell text and item recipes. Pass `--version x.y.z` to pin a reproducible Data Dragon import.
 
 See:
 
@@ -219,8 +219,8 @@ npm run tauri:dev
 npm run test
 npm run lint
 npm run build
-npm run data:arena:augments:check
-npm run data:arena:metabot:check
+npm run data:arena:check
+npm run data:game:check
 npm run data:opgg:details:check
 ```
 

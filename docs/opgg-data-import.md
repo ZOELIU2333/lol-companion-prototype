@@ -48,29 +48,29 @@ npm run data:opgg:import
 Arena augment names, ids, rarity, descriptions, and icon paths are imported from CommunityDragon:
 
 ```bash
-npm run data:arena:augments:import
-npm run data:arena:augments:check
+npm run data:arena:import
+npm run data:arena:check
 ```
 
 Outputs:
 
-- `data/arena/communitydragon-augments-current.json`
-- `src/data/arenaAugments.ts`
+- `public/data/arena/catalog.json`
+- `public/data/arena/manifest.json`
 
-This is an external data pull, but it is metadata only. It does not contain augment win rate, placement, or combo strength. Those need a separate Arena stats layer from public aggregate sources or our own Riot Match-V5 sample aggregation.
+The importer joins the Chinese and English catalogs, validates at least 200 unique records, fixes CommunityDragon game-asset icon URLs, and writes a deterministic SHA-256 manifest. This is metadata only. It does not contain augment win rate, placement, or combo strength; those require a separate evidence layer from public aggregate sources or our own Riot Match-V5 sample aggregation.
 
-## Chinese Arena Augment Tier Import
+## Current Champion and Item Mechanics
 
-Chinese Arena augment tier and popularity data is imported from MetaBot.GG:
+Localized champion spells and item recipes are imported from the current Data Dragon version:
 
 ```bash
-npm run data:arena:metabot:import
-npm run data:arena:metabot:check
+npm run data:game:import
+npm run data:game:check
 ```
 
 Outputs:
 
-- `data/arena/metabot-zh-cn-augments-current.json`
-- `src/data/metabotArenaAugments.ts`
+- `public/data/game/champions-zh-cn.json`
+- `public/data/game/items-zh-cn.json`
 
-This source currently provides patch, Chinese augment name, S/A/B/C/D/F tier, tier rank, global rank, icon URL, and pick rate. It should be treated as Chinese public-site popularity/tier context, not precise `selected augments -> next augment -> placement` combo data.
+The former MetaBot scraper was removed after its endpoint stopped supporting reliable unattended imports. Future popularity or placement evidence must remain optional and cannot replace the canonical CommunityDragon definitions.
