@@ -1,11 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createArenaCatalogIndex, parseArenaCatalog, verifyArenaCatalogManifest } from '../features/arena/catalog/catalog'
+import { loadCurrentGameData, type CurrentGameData } from '../features/arena/catalog/gameData'
+import type { ArenaCatalogIndex } from '../features/arena/catalog/types'
+import { createCompositeArenaSession } from '../features/arena/session/composite'
+import { classifyArenaChange, createEmptyArenaSession, mergeArenaSession } from '../features/arena/session/fusion'
+import { createManualArenaSessionStore } from '../features/arena/session/manualStore'
+import type { ArenaSession } from '../features/arena/session/types'
+import { createArenaDecisionModel } from '../features/arena/ui/createDecisionModel'
 import { buildChatBrief } from '../lib/chatBrief'
 import { createRecommendations } from '../lib/recommendations'
 import { applyLcuPlayersToMatch, createCompanionDataSource } from '../services/companionDataSource'
-import { applyLiveClientSnapshotToMatch, createTauriLiveClientDataHost, type LiveClientSnapshot } from '../services/liveClientData'
+import { applyLiveClientSnapshotToMatch, createLiveClientArenaPort, createTauriLiveClientDataHost, type LiveClientSnapshot } from '../services/liveClientData'
 import { loadOpggChampionDetail } from '../services/opggChampionData'
 import { mockPluginActions } from '../services/pluginActions'
-import { createTauriOpggMcpHost, isRunningInTauri, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from '../services/tauriHost'
+import { createTauriArenaLcuPort, createTauriOpggMcpHost, isRunningInTauri, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from '../services/tauriHost'
 import type { ConnectionDiagnostic, DiagnosticStatus, GameMode, InfoPhase, PlayerFilter } from '../types'
 import type { LcuGamePhase, LcuPlayerSnapshot } from '../services/lcuAdapter'
 
@@ -80,9 +88,19 @@ export function useCompanionSession() {
   const [isChampionDataSyncing, setIsChampionDataSyncing] = useState(false)
   const [opggMcpStatus, setOpggMcpStatus] = useState<DiagnosticStatus>('checking')
   const [toast, setToast] = useState('')
+  const [arenaCatalog, setArenaCatalog] = useState<ArenaCatalogIndex | null>(null)
+  const [arenaGameData, setArenaGameData] = useState<CurrentGameData | null>(null)
+  const [arenaSession, setArenaSession] = useState<ArenaSession>(() => createEmptyArenaSession())
+  const arenaSessionRef = useRef(arenaSession)
   const isDesktopShell = useMemo(() => isRunningInTauri(), [])
   const liveClientDataHost = useMemo(() => createTauriLiveClientDataHost(), [])
   const opggMcpHost = useMemo(() => createTauriOpggMcpHost(), [])
+  const manualArenaStore = useMemo(
+    () => arenaCatalog
+      ? createManualArenaSessionStore(new Set(arenaCatalog.catalog.augments.map((augment) => augment.id)))
+      : null,
+    [arenaCatalog],
+  )
 
   const matches = useMemo(() => companionDataSource.listMatches(), [])
   const availableMatches = matches
@@ -100,6 +118,12 @@ export function useCompanionSession() {
     },
     [activeMode, match, recommendationDataVersion],
   )
+  const arenaDecisionModel = useMemo(
+    () => activeMode === 'arena' && arenaCatalog && arenaGameData
+      ? createArenaDecisionModel({ champion, session: arenaSession, catalog: arenaCatalog, gameData: arenaGameData })
+      : null,
+    [activeMode, arenaCatalog, arenaGameData, arenaSession, champion],
+  )
   const brief = useMemo(() => buildChatBrief(match, match.players), [match])
   const diagnostics = useMemo(
     () => [
@@ -112,38 +136,125 @@ export function useCompanionSession() {
   )
 
   useEffect(() => {
-    let isStale = false
+    arenaSessionRef.current = arenaSession
+  }, [arenaSession])
 
-    const detectSession = () => companionDataSource.detectSession().then((session) => {
-      if (isStale || !session) return
-
-      if (session.source === 'lcu') {
-        const detectedIndex = availableMatches.findIndex((candidate) => candidate.id === session.matchId)
-        if (detectedIndex >= 0) {
-          setMatchIndex(detectedIndex)
-        }
-
-        setActiveMode(session.mode)
-        setActivePhase(session.mode === 'arena' ? 'live' : 'pregame')
-        setConnectionStatus(session.phase && connectedPhases.has(session.phase) ? 'match' : 'client')
-        setLcuPhase(session.phase ?? null)
-        setLcuPlayers(session.players ?? [])
-        setIsDetected(true)
-        return
+  useEffect(() => {
+    const controller = new AbortController()
+    Promise.all([
+      fetch('/data/arena/catalog.json', { signal: controller.signal }).then((response) => response.json()),
+      fetch('/data/arena/manifest.json', { signal: controller.signal }).then((response) => response.json()),
+      loadCurrentGameData((input, init) => fetch(input, { ...init, signal: controller.signal })),
+    ]).then(async ([catalogValue, manifestValue, gameData]) => {
+      const catalog = parseArenaCatalog(catalogValue)
+      await verifyArenaCatalogManifest(catalog, manifestValue)
+      if (!controller.signal.aborted) {
+        setArenaCatalog(createArenaCatalogIndex(catalog))
+        setArenaGameData(gameData)
       }
+    }).catch(() => undefined)
+    return () => controller.abort()
+  }, [])
 
-      setConnectionStatus('demo')
-      setLcuPhase(null)
-      setLcuPlayers([])
-      setIsDetected(false)
+  useEffect(() => {
+    if (activeMode !== 'arena' || !manualArenaStore || !arenaCatalog || !arenaGameData) return
+    const championDefinition = [...arenaGameData.champions.values()].find((definition) =>
+      definition.id.toLowerCase() === champion.id.toLowerCase() || definition.name === champion.name)
+    if (championDefinition) manualArenaStore.setChampion(championDefinition.key)
+    const aliases: Record<string, string> = {
+      earthwake: 'Earthwake',
+      phenomenal: 'PhenomenalEvil',
+      'bread-butter': 'BreadAndButter',
+      jewelled: 'JeweledGauntlet',
+      goliath: 'Goliath',
+      spellwake: 'Spellwake',
+    }
+    const candidateIds = match.augmentCandidates.map((candidate) =>
+      arenaCatalog.find(aliases[candidate.id] ?? candidate.name)?.id).filter((id): id is number => id !== undefined)
+    if (candidateIds.length === 3) manualArenaStore.setCandidates(candidateIds)
+    const seeded = mergeArenaSession(arenaSessionRef.current, manualArenaStore.read())
+    arenaSessionRef.current = seeded
+    setArenaSession(seeded)
+  }, [activeMode, arenaCatalog, arenaGameData, champion, manualArenaStore, match.augmentCandidates])
+
+  useEffect(() => {
+    if (activeMode !== 'arena' || !manualArenaStore || !arenaGameData) return undefined
+    const controller = new AbortController()
+    const championKeys = new Map<string, number>()
+    arenaGameData.champions.forEach((definition) => {
+      championKeys.set(definition.id.toLowerCase(), definition.key)
+      championKeys.set(definition.name.toLowerCase(), definition.key)
     })
+    const ports = [manualArenaStore.port]
+    const lcuPort = createTauriArenaLcuPort()
+    if (lcuPort) ports.push(lcuPort)
+    if (liveClientDataHost) ports.push(createLiveClientArenaPort(liveClientDataHost, championKeys))
+    const composite = createCompositeArenaSession(ports, arenaSessionRef.current)
+    let timer: number | undefined
+    let hasObserved = false
+    const poll = async () => {
+      try {
+        const next = await composite.read(controller.signal)
+        if (controller.signal.aborted) return
+        const changes = classifyArenaChange(arenaSessionRef.current, next)
+        if (changes.length > 0) {
+          arenaSessionRef.current = next
+          setArenaSession(next)
+          if (hasObserved && changes.includes('notification-relevant')) setToast('竞技场构筑已根据实况更新')
+        }
+        hasObserved = true
+      } catch {
+        // Per-port health is already represented in the fused session.
+      } finally {
+        if (!controller.signal.aborted) timer = window.setTimeout(poll, 1500)
+      }
+    }
+    void poll()
+    return () => {
+      controller.abort()
+      if (timer !== undefined) window.clearTimeout(timer)
+    }
+  }, [activeMode, arenaGameData, diagnosticRefreshKey, liveClientDataHost, manualArenaStore])
 
-    detectSession()
-    const interval = window.setInterval(detectSession, 4000)
+  useEffect(() => {
+    let isStale = false
+    let timer: number | undefined
+
+    const detectSession = async () => {
+      try {
+        const session = await companionDataSource.detectSession()
+        if (isStale || !session) return
+
+        if (session.source === 'lcu') {
+          const detectedIndex = availableMatches.findIndex((candidate) => candidate.id === session.matchId)
+          if (detectedIndex >= 0) {
+            setMatchIndex(detectedIndex)
+          }
+
+          setActiveMode(session.mode)
+          setActivePhase(session.mode === 'arena' ? 'live' : 'pregame')
+          setConnectionStatus(session.phase && connectedPhases.has(session.phase) ? 'match' : 'client')
+          setLcuPhase(session.phase ?? null)
+          setLcuPlayers(session.players ?? [])
+          setIsDetected(true)
+        } else {
+          setConnectionStatus('demo')
+          setLcuPhase(null)
+          setLcuPlayers([])
+          setIsDetected(false)
+        }
+      } catch {
+        if (!isStale) setConnectionStatus('demo')
+      } finally {
+        if (!isStale) timer = window.setTimeout(detectSession, 4000)
+      }
+    }
+
+    void detectSession()
 
     return () => {
       isStale = true
-      window.clearInterval(interval)
+      if (timer !== undefined) window.clearTimeout(timer)
     }
   }, [availableMatches, diagnosticRefreshKey])
 
@@ -153,16 +264,23 @@ export function useCompanionSession() {
     }
 
     let isStale = false
-    const readSnapshot = () => liveClientDataHost.readSnapshot().then((snapshot) => {
-      if (!isStale) setLiveSnapshot(snapshot)
-    })
+    let timer: number | undefined
+    const readSnapshot = async () => {
+      try {
+        const snapshot = await liveClientDataHost.readSnapshot()
+        if (!isStale) setLiveSnapshot(snapshot)
+      } catch {
+        if (!isStale) setLiveSnapshot(null)
+      } finally {
+        if (!isStale) timer = window.setTimeout(readSnapshot, 2500)
+      }
+    }
 
-    readSnapshot()
-    const interval = window.setInterval(readSnapshot, 2500)
+    void readSnapshot()
 
     return () => {
       isStale = true
-      window.clearInterval(interval)
+      if (timer !== undefined) window.clearTimeout(timer)
     }
   }, [diagnosticRefreshKey, liveClientDataHost])
 
@@ -207,7 +325,7 @@ export function useCompanionSession() {
 
   const resetForMatch = (nextMode: GameMode) => {
     setIsDetected(false)
-    setActiveMode(nextMode === 'arena' ? 'ranked' : nextMode)
+    setActiveMode(nextMode)
     setPlayerFilter('ally')
     setActivePhase(nextMode === 'arena' ? 'live' : 'pregame')
     setLcuPlayers([])
@@ -239,6 +357,19 @@ export function useCompanionSession() {
     setMatchIndex(nextIndex)
     resetForMatch(nextMatch.mode)
     setToast('已切换 Demo 场景')
+  }
+
+  const setArenaCandidates = (candidateIds: number[]) => {
+    if (!manualArenaStore) return
+    try {
+      manualArenaStore.setCandidates(candidateIds)
+      const next = mergeArenaSession(arenaSessionRef.current, manualArenaStore.read())
+      arenaSessionRef.current = next
+      setArenaSession(next)
+      setToast('已更新本轮三个候选')
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : '候选更新失败')
+    }
   }
 
   const copyBrief = async () => {
@@ -282,6 +413,7 @@ export function useCompanionSession() {
   return {
     activeMode,
     activePhase,
+    arenaDecisionModel,
     applyLoadout,
     applyRunePage,
     availableMatches,
@@ -302,6 +434,7 @@ export function useCompanionSession() {
     refreshDiagnostics,
     refreshMatch,
     selectScenario,
+    setArenaCandidates,
     setActivePhase,
     setPlayerFilter,
     simulateSend,

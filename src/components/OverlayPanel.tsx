@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { Activity, Minimize2, Pin, RefreshCcw } from 'lucide-react'
 import type { Champion, ConnectionDiagnostic, DiagnosticStatus, GameMode, Match, RecommendationViewModel } from '../types'
-import { AugmentRecommendation } from './AugmentRecommendation'
+import { ArenaDecisionView } from '../features/arena/ui/ArenaDecisionView'
+import { AugmentPicker } from '../features/arena/ui/AugmentPicker'
+import type { ArenaDecisionViewModel } from '../features/arena/ui/types'
 import { ChampionSummary } from './ChampionSummary'
 import { ChatBriefPanel } from './ChatBriefPanel'
 import { DemoScenarioSwitcher } from './DemoScenarioSwitcher'
-import { LiveDecisionPanel } from './LiveDecisionPanel'
 import type { InfoPhase } from '../types'
 import { getRecommendationSourceDisplay } from '../services/recommendationMeta'
 
 type OverlayPanelProps = {
   activeMode: GameMode
   activePhase: InfoPhase
+  arenaDecisionModel: ArenaDecisionViewModel | null
   brief: string
   champion: Champion
   connectionStatusLabel: string
@@ -27,6 +29,7 @@ type OverlayPanelProps = {
   onCopy: () => void
   onApplyLoadout: (loadoutName: string) => void
   onApplyRunePage: (pageName: string) => void
+  onArenaCandidates: (candidateIds: number[]) => void
   onToggleAlwaysOnTop: () => void
   onToggleCompact: () => void
   onRefresh: () => void
@@ -37,6 +40,7 @@ type OverlayPanelProps = {
 export function OverlayPanel({
   activeMode,
   activePhase,
+  arenaDecisionModel,
   brief,
   champion,
   connectionStatusLabel,
@@ -52,6 +56,7 @@ export function OverlayPanel({
   onCopy,
   onApplyLoadout,
   onApplyRunePage,
+  onArenaCandidates,
   onToggleAlwaysOnTop,
   onToggleCompact,
   onRefresh,
@@ -59,6 +64,7 @@ export function OverlayPanel({
   onSimulateSend,
 }: OverlayPanelProps) {
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false)
+  const [isManualPickerOpen, setIsManualPickerOpen] = useState(false)
   const sourceDisplay = getRecommendationSourceDisplay(recommendations.build.meta, isChampionDataSyncing)
   const worstStatus = diagnostics.some((item) => item.status === 'offline')
     ? 'offline'
@@ -156,10 +162,20 @@ export function OverlayPanel({
       )}
 
       {activeMode === 'arena' && (
-        <>
-          <LiveDecisionPanel activeMode={activeMode} match={match} recommendations={recommendations} />
-          <AugmentRecommendation augments={recommendations.augments} />
-        </>
+        arenaDecisionModel ? (
+          <>
+            <ArenaDecisionView model={arenaDecisionModel} />
+            <details
+              className="arena-manual-details"
+              onToggle={(event) => setIsManualPickerOpen(event.currentTarget.open)}
+            >
+              <summary>手动修正三个候选</summary>
+              {isManualPickerOpen && (
+                <AugmentPicker catalog={arenaDecisionModel.catalog} onConfirm={onArenaCandidates} />
+              )}
+            </details>
+          </>
+        ) : <p className="arena-loading">正在校验海克斯与装备目录…</p>
       )}
     </aside>
   )

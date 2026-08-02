@@ -13,6 +13,7 @@ function App() {
         <OverlayPanel
           activeMode={session.activeMode}
           activePhase={session.effectivePhase}
+          arenaDecisionModel={session.arenaDecisionModel}
           brief={session.brief}
           champion={session.champion}
           connectionStatusLabel={session.connectionStatusLabel}
@@ -26,6 +27,7 @@ function App() {
           recommendations={session.recommendations}
           onApplyLoadout={session.applyLoadout}
           onApplyRunePage={session.applyRunePage}
+          onArenaCandidates={session.setArenaCandidates}
           onCopy={session.copyBrief}
           onRefreshDiagnostics={session.refreshDiagnostics}
           onRefresh={session.refreshMatch}

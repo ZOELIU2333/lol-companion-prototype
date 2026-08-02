@@ -416,8 +416,8 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
   }, [matchDetailById, opggHost, selectedHistoryMatch, selectedPlayer])
 
   return (
-    <main className="game-shell" data-tauri-drag-region>
-      <section className="game-stage" aria-label="模拟游戏画面" data-tauri-drag-region>
+    <main className={activeMode === 'arena' ? 'game-shell arena-shell' : 'game-shell'} data-tauri-drag-region>
+      {activeMode === 'ranked' && <section className="game-stage" aria-label="模拟游戏画面" data-tauri-drag-region>
         <div className="top-hud">
           <div>
             <span>{modeLabels[activeMode]}</span>
@@ -435,7 +435,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
             </div>
           </div>
         )}
-      </section>
+      </section>}
       {children}
       {selectedPlayer && createPortal(
         <div className="player-detail-backdrop" role="dialog" aria-modal="true" aria-label={`${selectedPlayer.name} 玩家详情`}>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Arena icon placeholder">
+  <rect width="64" height="64" rx="12" fill="#111827"/>
+  <path d="M32 10 48 20v24L32 54 16 44V20Z" fill="#172554" stroke="#60a5fa" stroke-width="3"/>
+  <path d="m25 36 7-16 7 16-7 8Z" fill="#93c5fd"/>
+</svg>
