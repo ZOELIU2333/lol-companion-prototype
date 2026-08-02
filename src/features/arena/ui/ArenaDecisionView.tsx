@@ -3,8 +3,25 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { ArenaExpandedView } from './ArenaExpandedView'
 import { ArenaIcon } from './ArenaIcon'
 import type { ArenaDecisionViewModel } from './types'
+import type { DesktopHealthSnapshot } from '../../../services/tauriHost'
 
-export function ArenaDecisionView({ model }: { model: ArenaDecisionViewModel }) {
+type ArenaDecisionViewProps = {
+  model: ArenaDecisionViewModel
+  health?: DesktopHealthSnapshot | null
+  onRetry?: () => void | Promise<void>
+  onManualMode?: () => void
+  onDiscardCache?: () => boolean | Promise<boolean>
+  onExport?: () => Promise<string>
+}
+
+export function ArenaDecisionView({
+  model,
+  health = null,
+  onRetry,
+  onManualMode,
+  onDiscardCache,
+  onExport,
+}: ArenaDecisionViewProps) {
   const [expanded, setExpanded] = useState(false)
   const candidates = model.session.candidates.value.slice(0, 3)
     .map((id) => model.catalog.find(id))
@@ -80,7 +97,16 @@ export function ArenaDecisionView({ model }: { model: ArenaDecisionViewModel }) 
         {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         {expanded ? '收起路线详情' : '展开路线详情'}
       </button>
-      {expanded && <ArenaExpandedView routes={model.routes} />}
+      {expanded && (
+        <ArenaExpandedView
+          routes={model.routes}
+          health={health}
+          onRetry={onRetry}
+          onManualMode={onManualMode}
+          onDiscardCache={onDiscardCache}
+          onExport={onExport}
+        />
+      )}
     </div>
   )
 }

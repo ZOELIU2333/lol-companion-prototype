@@ -4,7 +4,10 @@ pub mod diagnostics;
 mod lcu;
 mod live_client;
 
-use diagnostics::export::export_diagnostics;
+use diagnostics::{
+    export::export_diagnostics,
+    health::{discard_runtime_cache, get_desktop_health},
+};
 use lcu::client::{read_arena_lcu_session, read_lcu_session};
 use live_client::read_live_client_snapshot;
 
@@ -120,7 +123,9 @@ fn set_overlay_compact(window: tauri::Window, enabled: bool) -> Result<(), Strin
 pub fn run() -> Result<(), String> {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
+            discard_runtime_cache,
             export_diagnostics,
+            get_desktop_health,
             opgg_mcp_call,
             read_arena_lcu_session,
             read_lcu_session,

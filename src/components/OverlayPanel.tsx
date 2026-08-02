@@ -4,6 +4,7 @@ import type { Champion, ConnectionDiagnostic, DiagnosticStatus, GameMode, Match,
 import { ArenaDecisionView } from '../features/arena/ui/ArenaDecisionView'
 import { AugmentPicker } from '../features/arena/ui/AugmentPicker'
 import type { ArenaDecisionViewModel } from '../features/arena/ui/types'
+import type { DesktopHealthSnapshot } from '../services/tauriHost'
 import { ChampionSummary } from './ChampionSummary'
 import { ChatBriefPanel } from './ChatBriefPanel'
 import { DemoScenarioSwitcher } from './DemoScenarioSwitcher'
@@ -18,6 +19,7 @@ type OverlayPanelProps = {
   champion: Champion
   connectionStatusLabel: string
   diagnostics: ConnectionDiagnostic[]
+  desktopHealth: DesktopHealthSnapshot | null
   isAlwaysOnTop: boolean
   isChampionDataSyncing: boolean
   isCompact: boolean
@@ -27,6 +29,8 @@ type OverlayPanelProps = {
   recommendations: RecommendationViewModel
   onRefreshDiagnostics: () => void
   onCopy: () => void
+  onDiscardRuntimeCache: () => Promise<boolean>
+  onExportDiagnostics: () => Promise<string>
   onApplyLoadout: (loadoutName: string) => void
   onApplyRunePage: (pageName: string) => void
   onArenaCandidates: (candidateIds: number[]) => void
@@ -45,6 +49,7 @@ export function OverlayPanel({
   champion,
   connectionStatusLabel,
   diagnostics,
+  desktopHealth,
   isAlwaysOnTop,
   isChampionDataSyncing,
   isCompact,
@@ -54,6 +59,8 @@ export function OverlayPanel({
   recommendations,
   onRefreshDiagnostics,
   onCopy,
+  onDiscardRuntimeCache,
+  onExportDiagnostics,
   onApplyLoadout,
   onApplyRunePage,
   onArenaCandidates,
@@ -164,9 +171,17 @@ export function OverlayPanel({
       {activeMode === 'arena' && (
         arenaDecisionModel ? (
           <>
-            <ArenaDecisionView model={arenaDecisionModel} />
+            <ArenaDecisionView
+              model={arenaDecisionModel}
+              health={desktopHealth}
+              onRetry={onRefreshDiagnostics}
+              onManualMode={() => setIsManualPickerOpen(true)}
+              onDiscardCache={onDiscardRuntimeCache}
+              onExport={onExportDiagnostics}
+            />
             <details
               className="arena-manual-details"
+              open={isManualPickerOpen}
               onToggle={(event) => setIsManualPickerOpen(event.currentTarget.open)}
             >
               <summary>手动修正三个候选</summary>

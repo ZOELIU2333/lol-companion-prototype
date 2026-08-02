@@ -18,6 +18,7 @@ function App() {
           champion={session.champion}
           connectionStatusLabel={session.connectionStatusLabel}
           diagnostics={session.diagnostics}
+          desktopHealth={session.desktopHealth}
           isAlwaysOnTop={session.isAlwaysOnTop}
           isChampionDataSyncing={session.isChampionDataSyncing}
           isCompact={session.isCompact}
@@ -29,6 +30,8 @@ function App() {
           onApplyRunePage={session.applyRunePage}
           onArenaCandidates={session.setArenaCandidates}
           onCopy={session.copyBrief}
+          onDiscardRuntimeCache={session.discardInvalidRuntimeCache}
+          onExportDiagnostics={session.exportDiagnostics}
           onRefreshDiagnostics={session.refreshDiagnostics}
           onRefresh={session.refreshMatch}
           onScenarioChange={session.selectScenario}

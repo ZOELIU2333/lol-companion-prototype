@@ -1,6 +1,24 @@
 import type { ArenaRouteSet } from '../recommendation/types'
+import type { DesktopHealthSnapshot } from '../../../services/tauriHost'
+import { DiagnosticsPanel } from './DiagnosticsPanel'
 
-export function ArenaExpandedView({ routes }: { routes: ArenaRouteSet }) {
+type ArenaExpandedViewProps = {
+  routes: ArenaRouteSet
+  health?: DesktopHealthSnapshot | null
+  onRetry?: () => void | Promise<void>
+  onManualMode?: () => void
+  onDiscardCache?: () => boolean | Promise<boolean>
+  onExport?: () => Promise<string>
+}
+
+export function ArenaExpandedView({
+  routes,
+  health = null,
+  onRetry,
+  onManualMode,
+  onDiscardCache,
+  onExport,
+}: ArenaExpandedViewProps) {
   return (
     <section className="arena-expanded" aria-label="Arena 路线详情">
       <h2>三条构筑路线</h2>
@@ -33,6 +51,13 @@ export function ArenaExpandedView({ routes }: { routes: ArenaRouteSet }) {
           )
         })}
       </div>
+      <DiagnosticsPanel
+        health={health}
+        onRetry={onRetry}
+        onManualMode={onManualMode}
+        onDiscardCache={onDiscardCache}
+        onExport={onExport}
+      />
     </section>
   )
 }

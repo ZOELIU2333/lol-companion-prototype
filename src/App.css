@@ -3064,6 +3064,67 @@ a,
 
 .arena-route-unavailable { color: #fbbf24 !important; }
 
+.desktop-health {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.2rem;
+  padding: 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 8px;
+  background: #0b111a;
+}
+
+.desktop-health > header,
+.desktop-health-item,
+.desktop-health-export {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.desktop-health h3,
+.desktop-health small,
+.desktop-health-item strong,
+.desktop-health-item small {
+  display: block;
+  margin: 0;
+}
+
+.desktop-health h3 { color: #e5e7eb; font-size: 0.72rem; }
+.desktop-health header small,
+.desktop-health-item small { margin-top: 0.12rem; color: #718096; font-size: 0.57rem; }
+.desktop-health > header > svg { color: #60a5fa; }
+
+.desktop-health-item {
+  padding: 0.42rem;
+  border-radius: 6px;
+  background: #111827;
+}
+
+.desktop-health-item > div { min-width: 0; }
+.desktop-health-item strong { color: #d1d5db; font-size: 0.64rem; }
+.desktop-health-item button,
+.desktop-health-export button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 1.8rem;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 6px;
+  background: #172554;
+  color: #bfdbfe;
+  padding: 0 0.45rem;
+  cursor: pointer;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+.desktop-health-export { justify-content: flex-start; }
+.desktop-health-export span { color: #93c5fd; font-size: 0.6rem; }
+.desktop-health-unavailable { margin: 0; color: #64748b; font-size: 0.62rem; }
+
 .arena-manual-details {
   color: #94a3b8;
   font-size: 0.68rem;

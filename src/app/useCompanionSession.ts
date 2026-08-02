@@ -13,7 +13,18 @@ import { applyLcuPlayersToMatch, createCompanionDataSource } from '../services/c
 import { applyLiveClientSnapshotToMatch, createLiveClientArenaPort, createTauriLiveClientDataHost, type LiveClientSnapshot } from '../services/liveClientData'
 import { loadOpggChampionDetail } from '../services/opggChampionData'
 import { mockPluginActions } from '../services/pluginActions'
-import { createTauriArenaLcuPort, createTauriOpggMcpHost, isRunningInTauri, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from '../services/tauriHost'
+import {
+  createTauriArenaLcuPort,
+  createTauriOpggMcpHost,
+  discardRuntimeCache,
+  exportDesktopDiagnostics,
+  isRunningInTauri,
+  readDesktopHealth,
+  setOverlayAlwaysOnTop,
+  setOverlayCompact,
+  tauriLcuAdapter,
+  type DesktopHealthSnapshot,
+} from '../services/tauriHost'
 import type { ConnectionDiagnostic, DiagnosticStatus, GameMode, InfoPhase, PlayerFilter } from '../types'
 import type { LcuGamePhase, LcuPlayerSnapshot } from '../services/lcuAdapter'
 
@@ -88,6 +99,7 @@ export function useCompanionSession() {
   const [isChampionDataSyncing, setIsChampionDataSyncing] = useState(false)
   const [opggMcpStatus, setOpggMcpStatus] = useState<DiagnosticStatus>('checking')
   const [toast, setToast] = useState('')
+  const [desktopHealth, setDesktopHealth] = useState<DesktopHealthSnapshot | null>(null)
   const [arenaCatalog, setArenaCatalog] = useState<ArenaCatalogIndex | null>(null)
   const [arenaGameData, setArenaGameData] = useState<CurrentGameData | null>(null)
   const [arenaSession, setArenaSession] = useState<ArenaSession>(() => createEmptyArenaSession())
@@ -138,6 +150,17 @@ export function useCompanionSession() {
   useEffect(() => {
     arenaSessionRef.current = arenaSession
   }, [arenaSession])
+
+  useEffect(() => {
+    let isStale = false
+    if (!isDesktopShell) {
+      return () => { isStale = true }
+    }
+    void readDesktopHealth().then((health) => {
+      if (!isStale) setDesktopHealth(health)
+    })
+    return () => { isStale = true }
+  }, [diagnosticRefreshKey, isDesktopShell])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -349,6 +372,29 @@ export function useCompanionSession() {
     setToast('已刷新连接诊断')
   }
 
+  const exportDiagnostics = async () => {
+    try {
+      const path = await exportDesktopDiagnostics()
+      setToast('诊断包已导出')
+      return path
+    } catch (error) {
+      setToast('诊断包导出失败')
+      throw error
+    }
+  }
+
+  const discardInvalidRuntimeCache = async () => {
+    try {
+      const removed = await discardRuntimeCache()
+      setDiagnosticRefreshKey((value) => value + 1)
+      setToast(removed ? '已丢弃无效缓存' : '没有需要清理的缓存')
+      return removed
+    } catch {
+      setToast('缓存清理失败')
+      return false
+    }
+  }
+
   const selectScenario = (matchId: string) => {
     const nextIndex = availableMatches.findIndex((candidate) => candidate.id === matchId)
     if (nextIndex < 0) return
@@ -423,7 +469,10 @@ export function useCompanionSession() {
     connectionStatusLabel: connectionLabels[connectionStatus],
     copyBrief,
     diagnostics,
+    desktopHealth,
+    discardInvalidRuntimeCache,
     effectivePhase,
+    exportDiagnostics,
     isAlwaysOnTop,
     isChampionDataSyncing,
     isCompact,

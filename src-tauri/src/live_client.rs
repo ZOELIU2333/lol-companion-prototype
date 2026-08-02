@@ -1,6 +1,24 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{env, time::Duration};
+use std::{
+    env,
+    sync::atomic::{AtomicU64, Ordering},
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+
+static LAST_SUCCESS_UNIX_SECONDS: AtomicU64 = AtomicU64::new(0);
+
+fn unix_seconds() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+}
+
+pub fn last_success_age_seconds() -> Option<u64> {
+    let observed = LAST_SUCCESS_UNIX_SECONDS.load(Ordering::Relaxed);
+    (observed > 0).then(|| unix_seconds().saturating_sub(observed))
+}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -132,7 +150,9 @@ pub async fn read_live_client_snapshot() -> Option<LiveClientSnapshotPayload> {
         .json::<Value>()
         .await
         .ok()?;
-    parse_live_client_snapshot(payload)
+    let snapshot = parse_live_client_snapshot(payload)?;
+    LAST_SUCCESS_UNIX_SECONDS.store(unix_seconds(), Ordering::Relaxed);
+    Some(snapshot)
 }
 
 #[cfg(test)]

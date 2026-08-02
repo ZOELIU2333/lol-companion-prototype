@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createTauriArenaLcuPort, setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from './tauriHost'
+import {
+  createTauriArenaLcuPort,
+  discardRuntimeCache,
+  exportDesktopDiagnostics,
+  readDesktopHealth,
+  setOverlayAlwaysOnTop,
+  setOverlayCompact,
+  tauriLcuAdapter,
+} from './tauriHost'
 import { createTauriRiotApiHost } from './tauriRiotHost'
 
 const tauriMocks = vi.hoisted(() => ({
@@ -126,5 +134,38 @@ describe('tauri host bridge', () => {
     expect(tauriMocks.invoke).toHaveBeenCalledWith('riot_api_get', {
       url: 'https://asia.api.riotgames.com/lol/match/v5/matches/KR_1',
     })
+  })
+
+  it('reads typed desktop health and returns null outside Tauri', async () => {
+    tauriMocks.isTauri.mockReturnValue(false)
+    await expect(readDesktopHealth()).resolves.toBeNull()
+
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockResolvedValue({
+      generatedAtMs: 123,
+      shell: { code: 'shell', status: 'ready', detail: 'Tauri ready' },
+      webview2: { code: 'webview2', status: 'ready', detail: 'WebView2 ready' },
+    })
+    await expect(readDesktopHealth()).resolves.toMatchObject({ generatedAtMs: 123 })
+    expect(tauriMocks.invoke).toHaveBeenCalledWith('get_desktop_health')
+  })
+
+  it('exports diagnostics and discards a corrupt runtime cache through typed commands', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke
+      .mockResolvedValueOnce('C:\\Logs\\LOL-Companion-diagnostics.zip')
+      .mockResolvedValueOnce(true)
+
+    await expect(exportDesktopDiagnostics()).resolves.toContain('diagnostics.zip')
+    await expect(discardRuntimeCache()).resolves.toBe(true)
+    expect(tauriMocks.invoke).toHaveBeenNthCalledWith(1, 'export_diagnostics')
+    expect(tauriMocks.invoke).toHaveBeenNthCalledWith(2, 'discard_runtime_cache')
+  })
+
+  it('surfaces diagnostic export failure to the recovery UI', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockRejectedValue(new Error('zip unavailable'))
+
+    await expect(exportDesktopDiagnostics()).rejects.toThrow('zip unavailable')
   })
 })

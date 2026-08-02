@@ -108,10 +108,14 @@ pub fn candidate_lockfile_paths(environment: &DiscoveryEnvironment) -> Vec<PathB
     unique
 }
 
-pub fn read_lockfile_contents() -> Option<String> {
+pub fn find_lockfile_path() -> Option<PathBuf> {
     candidate_lockfile_paths(&DiscoveryEnvironment::current())
         .into_iter()
-        .find_map(|path| fs::read_to_string(path).ok())
+        .find(|path| path.is_file())
+}
+
+pub fn read_lockfile_contents() -> Option<String> {
+    fs::read_to_string(find_lockfile_path()?).ok()
 }
 
 #[cfg(target_os = "windows")]

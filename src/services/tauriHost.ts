@@ -23,6 +23,39 @@ type TauriArenaLcuPayload = {
   source: 'lcu'
 }
 
+export type DesktopHealthStatus = 'ready' | 'degraded' | 'unavailable' | 'unsupported' | 'stale' | 'error' | 'missing'
+
+export type DesktopRecoveryCode =
+  | 'retry'
+  | 'manual-arena'
+  | 'discard-cache'
+  | 'install-webview2'
+  | 'open-logs'
+  | 'export-diagnostics'
+
+export type DesktopHealthCheck = {
+  code: string
+  status: DesktopHealthStatus
+  detail: string
+  recoveryCode?: DesktopRecoveryCode | null
+  safePath?: string | null
+  ageSeconds?: number | null
+  version?: string | null
+}
+
+export type DesktopHealthSnapshot = {
+  generatedAtMs: number
+  shell: DesktopHealthCheck
+  webview2: DesktopHealthCheck
+  leagueDiscovery: DesktopHealthCheck
+  lcu: DesktopHealthCheck
+  liveClient: DesktopHealthCheck
+  augmentCapability: DesktopHealthCheck
+  catalog: DesktopHealthCheck
+  runtimeCache: DesktopHealthCheck
+  logs: DesktopHealthCheck
+}
+
 const knownLcuPhases: readonly LcuGamePhase[] = [
   'None',
   'Lobby',
@@ -52,6 +85,26 @@ function normalizeLcuPayload(payload: TauriLcuSessionPayload | null): LcuSession
 
 export function isRunningInTauri() {
   return isTauri()
+}
+
+export async function readDesktopHealth(): Promise<DesktopHealthSnapshot | null> {
+  if (!isTauri()) return null
+  try {
+    const health = await invoke<DesktopHealthSnapshot>('get_desktop_health')
+    return health && typeof health.generatedAtMs === 'number' ? health : null
+  } catch {
+    return null
+  }
+}
+
+export async function exportDesktopDiagnostics(): Promise<string> {
+  if (!isTauri()) throw new Error('诊断导出仅在桌面客户端可用')
+  return invoke<string>('export_diagnostics')
+}
+
+export async function discardRuntimeCache(): Promise<boolean> {
+  if (!isTauri()) return false
+  return Boolean(await invoke<boolean>('discard_runtime_cache'))
 }
 
 export const tauriLcuAdapter: LcuAdapter = {

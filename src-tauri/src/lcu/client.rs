@@ -116,6 +116,12 @@ pub struct ArenaLcuSnapshot {
     source: String,
 }
 
+impl ArenaLcuSnapshot {
+    pub fn candidate_capability(&self) -> CandidateCapability {
+        self.candidate_capability
+    }
+}
+
 #[derive(Debug)]
 pub struct ArenaFields {
     pub round: Option<u16>,

@@ -1,4 +1,5 @@
 pub mod export;
+pub mod health;
 pub mod redact;
 
 use std::{
