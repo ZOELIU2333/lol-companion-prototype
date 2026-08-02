@@ -12,9 +12,10 @@ permissions:
   contents: read
 
 jobs:
-  build-windows-installer:
-    name: Build Windows installer
-    runs-on: windows-latest
+  build-windows-x64:
+    name: Verify and build Windows x64
+    runs-on: windows-2025
+    timeout-minutes: 40
 
     steps:
       - name: Checkout
@@ -23,84 +24,166 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.19.0
           cache: npm
-          registry-url: https://registry.npmjs.org
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
 
       - name: Pin npm
-        run: npm install -g npm@10
+        run: npm install --global npm@10
+
+      - name: Setup Rust x64 MSVC
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
 
       - name: Install frontend dependencies
-        run: npm ci --registry=https://registry.npmjs.org
+        run: npm ci
 
-      - name: Test frontend and data adapters
-        continue-on-error: true
-        run: npm run test
-
-      - name: Check imported Arena and game data
+      - name: Validate bundled data
         run: |
           npm run data:arena:check
           npm run data:game:check
 
-      - name: Lint frontend
-        run: npm run lint
-
-      - name: Build portable Windows app
+      - name: Test and lint frontend
         run: |
-          npm run build
-          cargo build --release --manifest-path src-tauri/Cargo.toml
+          npm run test
+          npm run lint
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Check and test Rust
+        run: |
+          cargo check --manifest-path src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
+          cargo test --manifest-path src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
+
+      - name: Build portable executable
+        run: cargo build --release --manifest-path src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
+
+      - name: Smoke-start portable executable by PID
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path "src-tauri/target/x86_64-pc-windows-msvc/release/lol-companion.exe"
+          $logRoot = Join-Path $env:LOCALAPPDATA "LOL Companion\logs"
+          $startedAt = Get-Date
+          $process = $null
+          $ready = $false
+          try {
+            $process = Start-Process -FilePath $exe -PassThru
+            $deadline = (Get-Date).AddSeconds(20)
+            while ((Get-Date) -lt $deadline) {
+              Start-Sleep -Milliseconds 500
+              if ($process.HasExited) {
+                break
+              }
+              $process.Refresh()
+              if ($process.MainWindowHandle -ne [IntPtr]::Zero) {
+                $ready = $true
+                break
+              }
+              if (Test-Path $logRoot) {
+                $readyLog = Get-ChildItem $logRoot -Filter "lol-companion.*.log" -File |
+                  Where-Object { $_.LastWriteTime -ge $startedAt } |
+                  Select-String -Pattern "desktop diagnostics initialized" -Quiet
+                if ($readyLog) {
+                  $ready = $true
+                  break
+                }
+              }
+            }
+            if (-not $ready) {
+              if (Test-Path $logRoot) {
+                Get-ChildItem $logRoot -Filter "lol-companion.*.log" -File |
+                  ForEach-Object { Get-Content $_.FullName }
+              }
+              throw "Portable executable did not expose a window or ready log marker within 20 seconds."
+            }
+          }
+          finally {
+            if ($process -and -not $process.HasExited) {
+              Stop-Process -Id $process.Id -Force
+              Wait-Process -Id $process.Id -ErrorAction SilentlyContinue
+            }
+          }
 
       - name: Build NSIS installer
-        id: nsis
         shell: pwsh
         run: |
-          npm run tauri:build -- --bundles nsis --ci *> tauri-nsis.log
-          if ($LASTEXITCODE -eq 0) {
-            "success" | Out-File tauri-nsis-status.txt
-          } else {
-            "failed" | Out-File tauri-nsis-status.txt
-            Get-Content tauri-nsis.log
+          npm run tauri:build -- --bundles nsis --target x86_64-pc-windows-msvc --ci 2>&1 |
+            Tee-Object -FilePath tauri-nsis.log
+          $buildExit = $LASTEXITCODE
+          if ($buildExit -ne 0) {
+            throw "Tauri NSIS build failed with exit code $buildExit."
           }
-          exit 0
 
-      - name: List Tauri build outputs
-        if: always()
+      - name: Assert and stage release artifacts
         shell: pwsh
         run: |
-          if (Test-Path src-tauri/target/release) {
-            Get-ChildItem src-tauri/target/release -Recurse |
-              Select-Object FullName, Length |
-              Format-Table -AutoSize |
-              Out-String -Width 4096
-          } else {
-            Write-Output "src-tauri/target/release does not exist"
+          $portable = Get-Item "src-tauri/target/x86_64-pc-windows-msvc/release/lol-companion.exe"
+          if ($portable.Length -le 0) {
+            throw "Portable executable is empty."
+          }
+          $installers = @(Get-ChildItem "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis" -Filter "*-setup.exe" -File)
+          if ($installers.Count -lt 1) {
+            throw "No NSIS setup executable was produced."
           }
 
-      - name: Upload Windows installers
-        if: always()
+          New-Item -ItemType Directory -Force "artifacts/portable", "artifacts/installer" | Out-Null
+          Copy-Item $portable.FullName "artifacts/portable/LOL-Companion-Portable.exe"
+          $installers | ForEach-Object { Copy-Item $_.FullName "artifacts/installer/$($_.Name)" }
+
+          $files = @(
+            Get-Item "artifacts/portable/LOL-Companion-Portable.exe"
+            Get-ChildItem "artifacts/installer" -Filter "*.exe" -File
+          )
+          $checksums = $files | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          }
+          $checksums | Set-Content "artifacts/SHA256SUMS.txt"
+          Get-Content "artifacts/SHA256SUMS.txt"
+
+      - name: Upload verified NSIS installer
         uses: actions/upload-artifact@v4
         with:
           name: LOL-Companion-Windows-Installer
-          path: src-tauri/target/release/bundle/nsis/*.exe
-          if-no-files-found: warn
+          path: |
+            artifacts/installer/*.exe
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: error
 
-      - name: Upload portable Windows exe
-        if: always()
+      - name: Upload verified portable executable
         uses: actions/upload-artifact@v4
         with:
           name: LOL-Companion-Windows-Portable
-          path: src-tauri/target/release/lol-companion.exe
+          path: |
+            artifacts/portable/LOL-Companion-Portable.exe
+            artifacts/SHA256SUMS.txt
           if-no-files-found: error
 
-      - name: Upload Tauri Windows diagnostics
-        if: always()
+      - name: Collect failure diagnostics
+        if: failure()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force "artifacts/diagnostics" | Out-Null
+          if (Test-Path "tauri-nsis.log") {
+            Copy-Item "tauri-nsis.log" "artifacts/diagnostics/tauri-nsis.log"
+          }
+          $logRoot = Join-Path $env:LOCALAPPDATA "LOL Companion\logs"
+          if (Test-Path $logRoot) {
+            Copy-Item "$logRoot\*.log" "artifacts/diagnostics" -ErrorAction SilentlyContinue
+          }
+          if (Test-Path "src-tauri/target/x86_64-pc-windows-msvc/release") {
+            Get-ChildItem "src-tauri/target/x86_64-pc-windows-msvc/release" -Recurse |
+              Select-Object FullName, Length, LastWriteTime |
+              Format-Table -AutoSize |
+              Out-String -Width 4096 |
+              Set-Content "artifacts/diagnostics/build-tree.txt"
+          }
+
+      - name: Upload build failure diagnostics
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: LOL-Companion-Windows-Diagnostics
-          path: |
-            tauri-nsis.log
-            tauri-nsis-status.txt
+          path: artifacts/diagnostics
           if-no-files-found: warn

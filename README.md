@@ -1,229 +1,86 @@
-# LOL Companion Prototype
+# LOL Companion
 
-A WeGame-like League of Legends desktop companion prototype built with React, Vite, TypeScript, and Tauri 2.
+Windows-first《英雄联盟》竞技场决策助手。它在本地读取 League Client（LCU）与游戏内 Live Client Data，把当前英雄、本轮三个海克斯、金币和装备合并成三条不同构筑路线：稳健、上限、黑科技。
 
-The project is currently focused on a plugin-style overlay experience:
+核心界面固定为三个问题：
 
-- Pregame player intelligence for both teams.
-- Clickable player details with recent match history and match detail views.
-- Version-strong item builds and rune pages using OP.GG Korean Diamond+ data.
-- Arena/augment live recommendation prototype.
-- Tauri desktop shell with floating-window controls.
-- Local League Client/LCU detection, Live Client Data reads, and OP.GG MCP integration.
-- Demo and cache fallback paths when real data is unavailable.
+1. 本轮选什么：显示游戏原生海克斯图标与当前排序。
+2. 回城买什么：根据现有装备、配方与金币给出买得起的组件和成装目标。
+3. 这套怎么成型：解释海克斯、英雄机制和装备如何触发、放大或冲突。
 
-## Windows Quick Install
+自动候选接口不可用时，仍可用图标手动选择三个候选；离线时继续使用随应用打包且已校验的数据目录。
 
-For normal Windows testing, you should not need Node.js, Rust, Cargo, or Tauri prerequisites.
+## Windows 安装
 
-1. Open the GitHub repo:
+普通用户不需要安装 Node.js、Rust 或 Tauri。
 
-   https://github.com/ZOELIU2333/lol-companion-prototype
+1. 打开仓库的 `Actions` → `Windows Installer`。
+2. 选择最近一次成功运行。
+3. 优先下载 `LOL-Companion-Windows-Installer` 并运行 `*-setup.exe`。
+4. 安装器异常时，下载 `LOL-Companion-Windows-Portable`，解压后运行 `LOL-Companion-Portable.exe`。
+5. 用 artifact 内的 `SHA256SUMS.txt` 校验文件哈希。
 
-2. Go to `Actions` -> `Windows Installer`.
-3. Click the latest successful run.
-4. Download one artifact:
-   - `LOL-Companion-Windows-Portable`: unzip and double-click `lol-companion.exe`. This is the fastest test path.
-   - `LOL-Companion-Windows-Installer`: unzip and run an installer.
-5. If you choose the installer artifact, run one installer:
-   - Prefer `LOL Companion_*_x64-setup.exe` if available.
-   - Use `.msi` if Windows blocks the setup executable.
+当前构建尚未签名，Windows SmartScreen 可能提示风险。只应运行从本仓库 GitHub Actions 下载、且哈希匹配的文件。
 
-The app is currently unsigned, so Windows SmartScreen may show a warning. For this early internal build, choose `More info` -> `Run anyway` only if you downloaded it from this repo's GitHub Actions. Always unzip the artifact before running the `.exe` or `.msi`.
+NSIS 使用当前用户安装，不要求管理员权限。WebView2 缺失时安装器会联网下载官方 bootstrapper；Windows 10/11 通常已自带 WebView2 Runtime。
 
-Every push to `main` creates a fresh Windows artifact. You can also open `Actions` -> `Windows Installer` -> `Run workflow` to build one manually.
+## 实时数据边界
 
-## Tech Stack
+- LCU：客户端阶段、模式、英雄、玩家及可能存在的竞技场候选接口。
+- Live Client Data：游戏时间、等级、金币、当前装备。
+- CommunityDragon：中英文竞技场海克斯目录和原生图标。
+- Data Dragon：英雄、技能、装备、配方和金币。
+- 手动输入：LCU 不公开本轮候选时的可靠回退。
 
-- React 19
-- Vite
-- TypeScript
-- Tauri 2
-- Rust
-- OP.GG MCP HTTP API
-- Riot API support for keyed local development
+本项目不会注入游戏进程，也不是 DirectX 覆盖层；它是本地 Tauri 悬浮窗口。
 
-## Requirements
+## 连接诊断
 
-These are only required for local development:
+竞技场路线详情中包含 Windows 连接诊断，覆盖：
 
-- Node.js 20+
-- npm
-- Git
-- Rust/Cargo
-- Tauri system dependencies
+- Desktop Shell / WebView2
+- League 安装发现与 LCU
+- Live Client Data 新鲜度
+- 海克斯候选能力
+- 内置目录与运行缓存
+- 脱敏日志与诊断包导出
 
-For Windows, follow the official Tauri prerequisites:
+日志最多保留七天，并在写入与导出时移除 LCU 密码、Riot Token、Authorization 和常见 JSON 密钥。详见 [Windows 故障排查](docs/windows-troubleshooting.md)。
 
-https://v2.tauri.app/start/prerequisites/
+## 本地开发
 
-League of Legends real-client testing is Windows-first. The browser demo works on macOS, but LCU and Live Client Data need a local League Client/game process.
-
-If you only want to install and try the app on Windows, use the `Windows Quick Install` flow above instead.
-
-## Install
+要求 Node.js 20.19+、npm 10、stable Rust 和对应平台的 Tauri 2 系统依赖。
 
 ```bash
 git clone https://github.com/ZOELIU2333/lol-companion-prototype.git
 cd lol-companion-prototype
-npm install
-```
-
-## Run Browser Demo
-
-```bash
+npm ci
 npm run dev
 ```
 
-Open:
-
-```text
-http://127.0.0.1:5173/
-```
-
-The browser demo uses mock/demo data and static OP.GG cache fallback.
-
-## Run Desktop App
+桌面开发：
 
 ```bash
 npm run tauri:dev
 ```
 
-In the app, open the `诊断` panel to check:
+浏览器 Demo 使用模拟对局，不能访问本机 LCU/Live Client。
 
-- `Desktop Shell`: whether the app is running inside Tauri.
-- `League Client`: whether LCU is connected and which phase is active.
-- `Live Client`: whether `127.0.0.1:2999` is available during a running game.
-- `OP.GG MCP`: whether version/player data requests are reachable.
-
-## Windows Test Flow
-
-1. Start the app with `LOL-Companion-Windows-Portable`, install it with the Windows installer from GitHub Actions, or run `npm run tauri:dev` if you are developing locally.
-
-2. Before opening LOL:
-   - `Desktop Shell` should be normal.
-   - `League Client` should show not connected/demo.
-   - `Live Client` should show unavailable.
-
-3. Open League Client:
-   - `League Client` should become normal.
-   - The diagnostic detail should show the current LCU phase.
-
-4. Enter champ select:
-   - LCU phase should move toward `ChampSelect`.
-   - Player slots should attempt to hydrate from real account data when available.
-
-5. Enter an actual game:
-   - `Live Client` should become normal once `127.0.0.1:2999` is available.
-   - Live recommendations should use game time, gold, level, and item ids.
-
-6. Click a player:
-   - Profile, recent 10 matches, and match details should show `OP.GG`, `Riot`, `Demo`, or `同步中` source indicators.
-
-## Riot API Data
-
-Riot API is optional. OP.GG MCP works without a Riot API key for supported public data paths. For local Riot API testing, copy `.env.example` to `.env.local`:
+## 严格验证
 
 ```bash
-cp .env.example .env.local
+npm run verify
 ```
 
-Then fill:
+该命令依次校验竞技场与游戏目录、149 个前端测试、lint、生产构建和 Rust check。GitHub `Validate` 工作流不可忽略失败；`Arena Data` 每日验证 CommunityDragon 两个语言源，有变化时上传标准化 diff，不直接改仓库。
+
+## 数据更新
 
 ```bash
-RIOT_API_KEY=RGAPI-your-development-key
-VITE_RIOT_DEFAULT_REGION=asia
-VITE_RIOT_DEFAULT_PLATFORM=kr
-VITE_RIOT_ACCOUNT_OVERRIDES={"蓝量不够Q":{"gameName":"Your Riot Name","tagLine":"KR1","region":"asia","platform":"kr"}}
-```
-
-The desktop app uses `RIOT_API_KEY` in the Tauri backend so the key is not exposed to the web UI. `VITE_RIOT_API_KEY` is only for browser-demo fallback and should not be used for production.
-
-## Mock Development
-
-Mock LCU:
-
-```bash
-npm run mock:lcu
-```
-
-Then in another terminal:
-
-```bash
-LEAGUE_CLIENT_LOCKFILE=/tmp/lol-companion-mock-lcu/lockfile npm run tauri:dev
-```
-
-Mock Riot API:
-
-```bash
-npm run mock:riot
-```
-
-Mock Live Client Data:
-
-```bash
-npm run mock:live
-LIVE_CLIENT_DATA_BASE_URL=http://127.0.0.1:30099 npm run tauri:dev
-```
-
-Combined mock loop:
-
-```bash
-RIOT_API_KEY=mock \
-RIOT_API_BASE_URL=http://127.0.0.1:30080 \
-VITE_RIOT_API_BASE_URL=http://127.0.0.1:30080 \
-LEAGUE_CLIENT_LOCKFILE=/tmp/lol-companion-mock-lcu/lockfile \
-npm run tauri:dev
-```
-
-## Data Sources
-
-- LCU lockfile and local LCU HTTPS endpoints for client/session/champ-select state.
-- Live Client Data at `https://127.0.0.1:2999/liveclientdata/allgamedata` during a running game.
-- OP.GG MCP for champion analysis, summoner profile, recent matches, and match details.
-- Riot API as an optional keyed fallback for account, match, ranked, and mastery data.
-- Data Dragon for item/champion/rune icons.
-
-Refresh local OP.GG cache after a live patch:
-
-```bash
-npm run data:opgg:details:import -- --patch 16.11
-npm run data:opgg:import
 npm run data:arena:import
 npm run data:game:import
-npm run test
-```
-
-`data:arena:import` joins the current Chinese and English CommunityDragon Arena catalogs and writes a verified offline snapshot. `data:game:import` resolves the current Data Dragon version and writes compact Chinese champion and item snapshots, including spell text and item recipes. Pass `--version x.y.z` to pin a reproducible Data Dragon import.
-
-See:
-
-- `docs/data-source-matrix.md`
-- `docs/opgg-data-import.md`
-- `docs/plugin-landing-architecture.md`
-
-## Verification
-
-```bash
-npm run test
-npm run lint
-npm run build
-cargo check --manifest-path src-tauri/Cargo.toml
-```
-
-## Useful Scripts
-
-```bash
-npm run dev
-npm run tauri:dev
-npm run test
-npm run lint
-npm run build
 npm run data:arena:check
 npm run data:game:check
-npm run data:opgg:details:check
 ```
 
-## Notes
-
-This is an early prototype. It does not inject into the game renderer or use a DirectX overlay. The first version is a desktop floating window with local client integrations and demo fallbacks.
+验收清单见 [Windows 验收](docs/windows-acceptance.md)。
