@@ -23,17 +23,28 @@ const baseHealth: DesktopHealthSnapshot = {
 }
 
 describe('desktop diagnostics panel', () => {
-  it('offers manual Arena mode when League is not found', () => {
+  it('offers automatic retry and both native League path selectors', async () => {
+    const user = userEvent.setup()
+    const onRetry = vi.fn()
+    const onSelectLeaguePath = vi.fn()
+      .mockResolvedValueOnce('D:\\Riot Games\\League of Legends')
+      .mockResolvedValueOnce('E:\\League\\League of Legends')
     render(<DiagnosticsPanel health={{
       ...baseHealth,
       leagueDiscovery: {
         code: 'league-not-found', status: 'missing', detail: 'League lockfile was not found',
-        recoveryCode: 'manual-arena',
+        recoveryCode: 'select-league-path',
       },
-    }} />)
+    }} onRetry={onRetry} onSelectLeaguePath={onSelectLeaguePath} />)
 
-    expect(screen.getByText('未找到 League，仍可使用手动 Arena 模式')).toBeVisible()
-    expect(screen.getByRole('button', { name: '使用手动模式' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: '重新检测' }))
+    await user.click(screen.getByRole('button', { name: '选择 League 目录' }))
+    expect(await screen.findByText('D:\\Riot Games\\League of Legends')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: '选择 lockfile' }))
+    expect(await screen.findByText('E:\\League\\League of Legends')).toBeVisible()
+    expect(onRetry).toHaveBeenCalledTimes(3)
+    expect(onSelectLeaguePath).toHaveBeenNthCalledWith(1, 'directory')
+    expect(onSelectLeaguePath).toHaveBeenNthCalledWith(2, 'lockfile')
   })
 
   it('explains stale realtime data and unsupported automatic augment capture', () => {
@@ -74,6 +85,11 @@ describe('desktop diagnostics panel', () => {
 
   it('reports diagnostic export success and failure', async () => {
     const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
     const onExport = vi.fn()
       .mockResolvedValueOnce('C:\\Logs\\diagnostics.zip')
       .mockRejectedValueOnce(new Error('failed'))
@@ -81,7 +97,9 @@ describe('desktop diagnostics panel', () => {
 
     const button = screen.getByRole('button', { name: '导出诊断包' })
     await user.click(button)
-    expect(await screen.findByText('诊断包已导出')).toBeVisible()
+    expect(await screen.findByText('C:\\Logs\\diagnostics.zip')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: '复制路径' }))
+    expect(writeText).toHaveBeenCalledWith('C:\\Logs\\diagnostics.zip')
     await user.click(button)
     expect(await screen.findByText('诊断包导出失败')).toBeVisible()
   })

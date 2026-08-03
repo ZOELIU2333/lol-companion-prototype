@@ -32,6 +32,7 @@ export type DesktopRecoveryCode =
   | 'install-webview2'
   | 'open-logs'
   | 'export-diagnostics'
+  | 'select-league-path'
 
 export type DesktopHealthCheck = {
   code: string
@@ -100,6 +101,11 @@ export async function readDesktopHealth(): Promise<DesktopHealthSnapshot | null>
 export async function exportDesktopDiagnostics(): Promise<string> {
   if (!isTauri()) throw new Error('诊断导出仅在桌面客户端可用')
   return invoke<string>('export_diagnostics')
+}
+
+export async function chooseLeagueInstallation(kind: 'directory' | 'lockfile'): Promise<string | null> {
+  if (!isTauri()) return null
+  return invoke<string | null>('choose_league_installation', { kind })
 }
 
 export async function discardRuntimeCache(): Promise<boolean> {

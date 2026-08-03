@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  chooseLeagueInstallation,
   createTauriArenaLcuPort,
   discardRuntimeCache,
   exportDesktopDiagnostics,
@@ -167,5 +168,20 @@ describe('tauri host bridge', () => {
     tauriMocks.invoke.mockRejectedValue(new Error('zip unavailable'))
 
     await expect(exportDesktopDiagnostics()).rejects.toThrow('zip unavailable')
+  })
+
+  it('opens the native League directory picker in Tauri', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockResolvedValue('D:\\Riot Games\\League of Legends')
+
+    await expect(chooseLeagueInstallation('directory')).resolves.toContain('League of Legends')
+    expect(tauriMocks.invoke).toHaveBeenCalledWith('choose_league_installation', { kind: 'directory' })
+  })
+
+  it('does not open a League picker outside Tauri', async () => {
+    tauriMocks.isTauri.mockReturnValue(false)
+
+    await expect(chooseLeagueInstallation('lockfile')).resolves.toBeNull()
+    expect(tauriMocks.invoke).not.toHaveBeenCalled()
   })
 })

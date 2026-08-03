@@ -3,6 +3,7 @@ import { Activity, Minimize2, Pin, RefreshCcw } from 'lucide-react'
 import type { Champion, ConnectionDiagnostic, DiagnosticStatus, GameMode, Match, RecommendationViewModel } from '../types'
 import { ArenaDecisionView } from '../features/arena/ui/ArenaDecisionView'
 import { AugmentPicker } from '../features/arena/ui/AugmentPicker'
+import { DiagnosticsPanel } from '../features/arena/ui/DiagnosticsPanel'
 import type { ArenaDecisionViewModel } from '../features/arena/ui/types'
 import type { DesktopHealthSnapshot } from '../services/tauriHost'
 import { ChampionSummary } from './ChampionSummary'
@@ -31,6 +32,7 @@ type OverlayPanelProps = {
   onCopy: () => void
   onDiscardRuntimeCache: () => Promise<boolean>
   onExportDiagnostics: () => Promise<string>
+  onSelectLeaguePath: (kind: 'directory' | 'lockfile') => Promise<string | null>
   onApplyLoadout: (loadoutName: string) => void
   onApplyRunePage: (pageName: string) => void
   onArenaCandidates: (candidateIds: number[]) => void
@@ -61,6 +63,7 @@ export function OverlayPanel({
   onCopy,
   onDiscardRuntimeCache,
   onExportDiagnostics,
+  onSelectLeaguePath,
   onApplyLoadout,
   onApplyRunePage,
   onArenaCandidates,
@@ -135,7 +138,7 @@ export function OverlayPanel({
       {isDiagnosticsOpen && (
         <div className="diagnostic-panel">
           <button className="diagnostic-refresh" type="button" onClick={onRefreshDiagnostics}>
-            重新检测
+            刷新状态
           </button>
           {diagnostics.map((item) => (
             <div className="diagnostic-row" key={item.id}>
@@ -145,6 +148,16 @@ export function OverlayPanel({
               <p>{item.detail}</p>
             </div>
           ))}
+          {activeMode === 'ranked' && (
+            <DiagnosticsPanel
+              health={desktopHealth}
+              onRetry={onRefreshDiagnostics}
+              onManualMode={() => setIsManualPickerOpen(true)}
+              onDiscardCache={onDiscardRuntimeCache}
+              onExport={onExportDiagnostics}
+              onSelectLeaguePath={onSelectLeaguePath}
+            />
+          )}
         </div>
       )}
 
@@ -178,6 +191,7 @@ export function OverlayPanel({
               onManualMode={() => setIsManualPickerOpen(true)}
               onDiscardCache={onDiscardRuntimeCache}
               onExport={onExportDiagnostics}
+              onSelectLeaguePath={onSelectLeaguePath}
             />
             <details
               className="arena-manual-details"

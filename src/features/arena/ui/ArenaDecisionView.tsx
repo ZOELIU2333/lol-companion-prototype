@@ -12,6 +12,7 @@ type ArenaDecisionViewProps = {
   onManualMode?: () => void
   onDiscardCache?: () => boolean | Promise<boolean>
   onExport?: () => Promise<string>
+  onSelectLeaguePath?: (kind: 'directory' | 'lockfile') => Promise<string | null>
 }
 
 export function ArenaDecisionView({
@@ -21,6 +22,7 @@ export function ArenaDecisionView({
   onManualMode,
   onDiscardCache,
   onExport,
+  onSelectLeaguePath,
 }: ArenaDecisionViewProps) {
   const [expanded, setExpanded] = useState(false)
   const candidates = model.session.candidates.value.slice(0, 3)
@@ -105,6 +107,7 @@ export function ArenaDecisionView({
           onManualMode={onManualMode}
           onDiscardCache={onDiscardCache}
           onExport={onExport}
+          onSelectLeaguePath={onSelectLeaguePath}
         />
       )}
     </div>

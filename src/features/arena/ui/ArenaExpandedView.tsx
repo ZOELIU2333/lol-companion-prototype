@@ -9,6 +9,7 @@ type ArenaExpandedViewProps = {
   onManualMode?: () => void
   onDiscardCache?: () => boolean | Promise<boolean>
   onExport?: () => Promise<string>
+  onSelectLeaguePath?: (kind: 'directory' | 'lockfile') => Promise<string | null>
 }
 
 export function ArenaExpandedView({
@@ -18,6 +19,7 @@ export function ArenaExpandedView({
   onManualMode,
   onDiscardCache,
   onExport,
+  onSelectLeaguePath,
 }: ArenaExpandedViewProps) {
   return (
     <section className="arena-expanded" aria-label="Arena 路线详情">
@@ -57,6 +59,7 @@ export function ArenaExpandedView({
         onManualMode={onManualMode}
         onDiscardCache={onDiscardCache}
         onExport={onExport}
+        onSelectLeaguePath={onSelectLeaguePath}
       />
     </section>
   )

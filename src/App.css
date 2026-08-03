@@ -3105,6 +3105,8 @@ a,
 .desktop-health-item > div { min-width: 0; }
 .desktop-health-item strong { color: #d1d5db; font-size: 0.64rem; }
 .desktop-health-item button,
+.desktop-health-path-actions button,
+.desktop-health-operation-result button,
 .desktop-health-export button {
   display: inline-flex;
   flex: 0 0 auto;
@@ -3124,6 +3126,45 @@ a,
 .desktop-health-export { justify-content: flex-start; }
 .desktop-health-export span { color: #93c5fd; font-size: 0.6rem; }
 .desktop-health-unavailable { margin: 0; color: #64748b; font-size: 0.62rem; }
+
+.desktop-health-path-recovery {
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.48rem;
+  border-radius: 6px;
+  background: #111827;
+}
+
+.desktop-health-path-recovery strong,
+.desktop-health-path-recovery small { display: block; }
+.desktop-health-path-recovery strong { color: #d1d5db; font-size: 0.64rem; }
+.desktop-health-path-recovery small { margin-top: 0.12rem; color: #718096; font-size: 0.57rem; }
+
+.desktop-health-path-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.desktop-health-operation-result {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: #93c5fd;
+  font-size: 0.58rem;
+}
+
+.desktop-health-operation-result code {
+  min-width: 0;
+  overflow: hidden;
+  color: #bfdbfe;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-health-operation-error { margin: 0; color: #fca5a5; font-size: 0.58rem; }
 
 .arena-manual-details {
   color: #94a3b8;

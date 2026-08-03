@@ -14,6 +14,7 @@ import { applyLiveClientSnapshotToMatch, createLiveClientArenaPort, createTauriL
 import { loadOpggChampionDetail } from '../services/opggChampionData'
 import { mockPluginActions } from '../services/pluginActions'
 import {
+  chooseLeagueInstallation,
   createTauriArenaLcuPort,
   createTauriOpggMcpHost,
   discardRuntimeCache,
@@ -383,6 +384,20 @@ export function useCompanionSession() {
     }
   }
 
+  const selectLeagueInstallation = async (kind: 'directory' | 'lockfile') => {
+    try {
+      const path = await chooseLeagueInstallation(kind)
+      if (path) {
+        setDiagnosticRefreshKey((value) => value + 1)
+        setToast('已保存 League 客户端路径')
+      }
+      return path
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : 'League 路径验证失败')
+      throw error
+    }
+  }
+
   const discardInvalidRuntimeCache = async () => {
     try {
       const removed = await discardRuntimeCache()
@@ -483,6 +498,7 @@ export function useCompanionSession() {
     refreshDiagnostics,
     refreshMatch,
     selectScenario,
+    selectLeagueInstallation,
     setArenaCandidates,
     setActivePhase,
     setPlayerFilter,

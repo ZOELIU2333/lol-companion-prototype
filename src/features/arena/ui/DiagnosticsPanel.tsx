@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, CheckCircle2, Download, RotateCcw } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Copy, Download, FileText, FolderOpen, RotateCcw } from 'lucide-react'
 import type { DesktopHealthCheck, DesktopHealthSnapshot } from '../../../services/tauriHost'
 
 type DiagnosticsPanelProps = {
@@ -8,7 +8,13 @@ type DiagnosticsPanelProps = {
   onManualMode?: () => void
   onDiscardCache?: () => boolean | Promise<boolean>
   onExport?: () => Promise<string>
+  onSelectLeaguePath?: (kind: 'directory' | 'lockfile') => Promise<string | null>
 }
+
+type OperationStatus =
+  | { kind: 'idle' }
+  | { kind: 'success'; path: string }
+  | { kind: 'failure'; message: string }
 
 type RecoveryItem = {
   check: DesktopHealthCheck
@@ -23,8 +29,12 @@ export function DiagnosticsPanel({
   onManualMode = () => undefined,
   onDiscardCache = () => false,
   onExport,
+  onSelectLeaguePath,
 }: DiagnosticsPanelProps) {
-  const [exportStatus, setExportStatus] = useState<'idle' | 'success' | 'failure'>('idle')
+  const [selectionStatus, setSelectionStatus] = useState<OperationStatus>({ kind: 'idle' })
+  const [exportStatus, setExportStatus] = useState<OperationStatus>({ kind: 'idle' })
+  const leagueNeedsSelection = health?.leagueDiscovery.status === 'missing'
+    || health?.leagueDiscovery.status === 'degraded'
 
   if (!health) {
     return <p className="desktop-health-unavailable">桌面诊断仅在 Windows 客户端内可用。</p>
@@ -39,14 +49,7 @@ export function DiagnosticsPanel({
       action: () => window.open('https://developer.microsoft.com/microsoft-edge/webview2/', '_blank', 'noopener,noreferrer'),
     })
   }
-  if (health.leagueDiscovery.status === 'missing') {
-    recoveries.push({
-      check: health.leagueDiscovery,
-      message: '未找到 League，仍可使用手动 Arena 模式',
-      actionLabel: '使用手动模式',
-      action: onManualMode,
-    })
-  } else if (!['ready', 'degraded'].includes(health.lcu.status)) {
+  if (!leagueNeedsSelection && health.lcu.status !== 'ready') {
     recoveries.push({
       check: health.lcu,
       message: 'League 客户端暂时无法连接',
@@ -96,15 +99,45 @@ export function DiagnosticsPanel({
 
   const exportDiagnostics = async () => {
     if (!onExport) {
-      setExportStatus('failure')
+      setExportStatus({ kind: 'failure', message: '诊断导出仅在 Windows 客户端内可用' })
       return
     }
     try {
-      await onExport()
-      setExportStatus('success')
-    } catch {
-      setExportStatus('failure')
+      const path = await onExport()
+      setExportStatus({ kind: 'success', path })
+    } catch (error) {
+      void error
+      setExportStatus({
+        kind: 'failure',
+        message: '诊断包导出失败',
+      })
     }
+  }
+
+  const selectLeaguePath = async (kind: 'directory' | 'lockfile') => {
+    if (!onSelectLeaguePath) {
+      setSelectionStatus({ kind: 'failure', message: '路径选择仅在 Windows 客户端内可用' })
+      return
+    }
+    try {
+      const path = await onSelectLeaguePath(kind)
+      if (!path) {
+        setSelectionStatus({ kind: 'idle' })
+        return
+      }
+      setSelectionStatus({ kind: 'success', path })
+      await onRetry()
+    } catch (error) {
+      setSelectionStatus({
+        kind: 'failure',
+        message: error instanceof Error ? error.message : 'League 路径验证失败',
+      })
+    }
+  }
+
+  const copyExportPath = async () => {
+    if (exportStatus.kind !== 'success') return
+    await navigator.clipboard.writeText(exportStatus.path)
   }
 
   return (
@@ -112,9 +145,9 @@ export function DiagnosticsPanel({
       <header>
         <div>
           <h3>Windows 连接诊断</h3>
-          <small>{recoveries.length === 0 ? '全部关键通道正常' : `${recoveries.length} 项需要处理`}</small>
+          <small>{recoveries.length === 0 && !leagueNeedsSelection ? '全部关键通道正常' : `${recoveries.length + Number(leagueNeedsSelection)} 项需要处理`}</small>
         </div>
-        {recoveries.length === 0 ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+        {recoveries.length === 0 && !leagueNeedsSelection ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
       </header>
 
       {recoveries.map((item) => (
@@ -126,12 +159,45 @@ export function DiagnosticsPanel({
         </article>
       ))}
 
+      {leagueNeedsSelection && (
+        <article className="desktop-health-path-recovery">
+          <div>
+            <strong>未能自动连接 League 客户端</strong>
+            <small>{health.leagueDiscovery.detail}</small>
+          </div>
+          <div className="desktop-health-path-actions">
+            <button type="button" onClick={() => void onRetry()}>
+              <RotateCcw size={13} />重新检测
+            </button>
+            <button type="button" onClick={() => void selectLeaguePath('directory')}>
+              <FolderOpen size={13} />选择 League 目录
+            </button>
+            <button type="button" onClick={() => void selectLeaguePath('lockfile')}>
+              <FileText size={13} />选择 lockfile
+            </button>
+          </div>
+          {selectionStatus.kind === 'success' && (
+            <p className="desktop-health-operation-result">
+              已保存：<code>{selectionStatus.path}</code>
+            </p>
+          )}
+          {selectionStatus.kind === 'failure' && (
+            <p className="desktop-health-operation-error">{selectionStatus.message}</p>
+          )}
+        </article>
+      )}
+
       <div className="desktop-health-export">
         <button type="button" onClick={() => void exportDiagnostics()}>
           <Download size={14} />导出诊断包
         </button>
-        {exportStatus === 'success' && <span>诊断包已导出</span>}
-        {exportStatus === 'failure' && <span>诊断包导出失败</span>}
+        {exportStatus.kind === 'success' && (
+          <div className="desktop-health-operation-result">
+            <code>{exportStatus.path}</code>
+            <button type="button" onClick={() => void copyExportPath()}><Copy size={13} />复制路径</button>
+          </div>
+        )}
+        {exportStatus.kind === 'failure' && <span>{exportStatus.message}</span>}
       </div>
     </section>
   )

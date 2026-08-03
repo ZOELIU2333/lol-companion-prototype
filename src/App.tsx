@@ -35,6 +35,7 @@ function App() {
           onRefreshDiagnostics={session.refreshDiagnostics}
           onRefresh={session.refreshMatch}
           onScenarioChange={session.selectScenario}
+          onSelectLeaguePath={session.selectLeagueInstallation}
           onSimulateSend={session.simulateSend}
           onToggleAlwaysOnTop={session.toggleAlwaysOnTop}
           onToggleCompact={session.toggleCompact}
