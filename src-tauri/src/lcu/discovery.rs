@@ -7,6 +7,8 @@ use std::{
 
 use super::lockfile::parse as parse_lockfile;
 
+pub mod config;
+
 #[cfg(target_os = "windows")]
 mod windows;
 
@@ -45,6 +47,7 @@ pub struct DiscoveryReport {
 
 #[derive(Debug, Default)]
 pub struct DiscoveryEnvironment {
+    saved_lockfile: Option<PathBuf>,
     variables: HashMap<String, String>,
     process_roots: Vec<PathBuf>,
     registry_roots: Vec<PathBuf>,
@@ -63,6 +66,7 @@ impl DiscoveryEnvironment {
         .filter_map(|key| env::var(key).ok().map(|value| (key.to_string(), value)))
         .collect();
         Self {
+            saved_lockfile: config::load_saved_lockfile(),
             variables,
             process_roots: discover_process_roots(),
             registry_roots: discover_registry_roots(),
@@ -78,6 +82,12 @@ impl DiscoveryEnvironment {
     #[cfg(test)]
     pub fn with_var(mut self, key: &str, value: &str) -> Self {
         self.variables.insert(key.to_string(), value.to_string());
+        self
+    }
+
+    #[cfg(test)]
+    pub fn with_saved_lockfile(mut self, path: &str) -> Self {
+        self.saved_lockfile = Some(PathBuf::from(path));
         self
     }
 
@@ -117,6 +127,9 @@ fn sourced_candidate_lockfile_paths(
     environment: &DiscoveryEnvironment,
 ) -> Vec<(DiscoverySource, PathBuf)> {
     let mut paths = Vec::new();
+    if let Some(saved_path) = &environment.saved_lockfile {
+        paths.push((DiscoverySource::Saved, saved_path.clone()));
+    }
     if let Some(override_path) = environment.variables.get("LEAGUE_CLIENT_LOCKFILE") {
         paths.push((DiscoverySource::Environment, PathBuf::from(override_path)));
     }
@@ -276,6 +289,20 @@ mod tests {
         assert_eq!(
             candidate_lockfile_paths(&env)[0],
             PathBuf::from(r"D:\Riot\League of Legends\lockfile")
+        );
+    }
+
+    #[test]
+    fn saved_lockfile_precedes_environment_and_automatic_sources() {
+        let env = DiscoveryEnvironment::for_test()
+            .with_saved_lockfile(r"E:\Riot\League of Legends\lockfile")
+            .with_var(
+                "LEAGUE_CLIENT_LOCKFILE",
+                r"D:\Riot\League of Legends\lockfile",
+            );
+        assert_eq!(
+            candidate_lockfile_paths(&env)[0],
+            PathBuf::from(r"E:\Riot\League of Legends\lockfile")
         );
     }
 

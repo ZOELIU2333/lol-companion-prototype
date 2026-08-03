@@ -9,6 +9,7 @@ use diagnostics::{
     health::{discard_runtime_cache, get_desktop_health},
 };
 use lcu::client::{read_arena_lcu_session, read_lcu_session};
+use lcu::discovery::config::choose_league_installation;
 use live_client::read_live_client_snapshot;
 
 fn is_allowed_riot_api_url(raw_url: &str) -> bool {
@@ -123,6 +124,7 @@ fn set_overlay_compact(window: tauri::Window, enabled: bool) -> Result<(), Strin
 pub fn run() -> Result<(), String> {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
+            choose_league_installation,
             discard_runtime_cache,
             export_diagnostics,
             get_desktop_health,
