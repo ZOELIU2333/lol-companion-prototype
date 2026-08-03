@@ -7,6 +7,9 @@ use std::{
 
 use super::lockfile::parse as parse_lockfile;
 
+#[cfg(target_os = "windows")]
+mod windows;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DiscoverySource {
     Saved,
@@ -232,25 +235,7 @@ pub fn read_lockfile_contents() -> Option<String> {
 
 #[cfg(target_os = "windows")]
 fn discover_process_roots() -> Vec<PathBuf> {
-    use std::process::Command;
-    let output = Command::new("wmic")
-        .args([
-            "process",
-            "where",
-            "name='LeagueClientUx.exe'",
-            "get",
-            "ExecutablePath",
-            "/value",
-        ])
-        .output();
-    let Ok(output) = output else {
-        return Vec::new();
-    };
-    String::from_utf8_lossy(&output.stdout)
-        .lines()
-        .filter_map(|line| line.strip_prefix("ExecutablePath="))
-        .filter_map(|path| PathBuf::from(path.trim()).parent().map(PathBuf::from))
-        .collect()
+    windows::process_install_roots()
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -260,32 +245,7 @@ fn discover_process_roots() -> Vec<PathBuf> {
 
 #[cfg(target_os = "windows")]
 fn discover_registry_roots() -> Vec<PathBuf> {
-    use std::process::Command;
-    let keys = [
-        r"HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\Riot Game league_of_legends.live",
-        r"HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\Riot Game league_of_legends.live",
-    ];
-    keys.into_iter()
-        .filter_map(|key| {
-            Command::new("reg")
-                .args(["query", key, "/v", "InstallLocation"])
-                .output()
-                .ok()
-        })
-        .flat_map(|output| {
-            String::from_utf8_lossy(&output.stdout)
-                .lines()
-                .map(str::to_string)
-                .collect::<Vec<_>>()
-        })
-        .filter_map(|line| {
-            line.split("REG_SZ")
-                .nth(1)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(PathBuf::from)
-        })
-        .collect()
+    windows::registry_install_roots()
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -358,5 +318,13 @@ mod tests {
         assert_eq!(report.probes[0].status, ProbeStatus::Missing);
         assert_eq!(report.probes[1].status, ProbeStatus::Valid);
         fs::remove_dir_all(root).expect("remove discovery fixture");
+    }
+
+    #[test]
+    fn native_windows_discovery_does_not_spawn_console_commands() {
+        let source = include_str!("discovery/windows.rs");
+        assert!(!source.contains("Command::new"));
+        assert!(!source.contains("wmic"));
+        assert!(!source.contains("reg.exe"));
     }
 }
