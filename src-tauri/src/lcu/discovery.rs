@@ -1,4 +1,44 @@
-use std::{collections::HashMap, env, fs, path::PathBuf};
+use std::{
+    collections::HashMap,
+    env, fs,
+    path::PathBuf,
+    time::{SystemTime, UNIX_EPOCH},
+};
+
+use super::lockfile::parse as parse_lockfile;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DiscoverySource {
+    Saved,
+    Environment,
+    Process,
+    Registry,
+    Common,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProbeStatus {
+    Missing,
+    NotFile,
+    Unreadable,
+    InvalidFormat,
+    Valid,
+}
+
+#[derive(Debug, Clone)]
+pub struct CandidateProbe {
+    pub source: DiscoverySource,
+    pub path: PathBuf,
+    pub status: ProbeStatus,
+}
+
+#[derive(Debug, Clone)]
+pub struct DiscoveryReport {
+    pub correlation_id: u128,
+    pub selected_path: Option<PathBuf>,
+    pub selected_source: Option<DiscoverySource>,
+    pub probes: Vec<CandidateProbe>,
+}
 
 #[derive(Debug, Default)]
 pub struct DiscoveryEnvironment {
@@ -70,48 +110,120 @@ fn lockfile_under(root: PathBuf) -> PathBuf {
     }
 }
 
-pub fn candidate_lockfile_paths(environment: &DiscoveryEnvironment) -> Vec<PathBuf> {
+fn sourced_candidate_lockfile_paths(
+    environment: &DiscoveryEnvironment,
+) -> Vec<(DiscoverySource, PathBuf)> {
     let mut paths = Vec::new();
     if let Some(override_path) = environment.variables.get("LEAGUE_CLIENT_LOCKFILE") {
-        paths.push(PathBuf::from(override_path));
+        paths.push((DiscoverySource::Environment, PathBuf::from(override_path)));
     }
     paths.extend(
         environment
             .process_roots
             .iter()
             .cloned()
-            .map(lockfile_under),
+            .map(lockfile_under)
+            .map(|path| (DiscoverySource::Process, path)),
     );
     paths.extend(
         environment
             .registry_roots
             .iter()
             .cloned()
-            .map(lockfile_under),
+            .map(lockfile_under)
+            .map(|path| (DiscoverySource::Registry, path)),
     );
-    paths.extend(environment.common_roots.iter().cloned().map(lockfile_under));
-    paths.push(PathBuf::from(r"C:\Riot Games\League of Legends\lockfile"));
+    paths.extend(
+        environment
+            .common_roots
+            .iter()
+            .cloned()
+            .map(lockfile_under)
+            .map(|path| (DiscoverySource::Common, path)),
+    );
+    paths.push((
+        DiscoverySource::Common,
+        PathBuf::from(r"C:\Riot Games\League of Legends\lockfile"),
+    ));
     for key in ["ProgramFiles", "ProgramFiles(x86)"] {
         if let Some(root) = environment.variables.get(key) {
-            paths.push(PathBuf::from(root).join(r"Riot Games\League of Legends\lockfile"));
+            paths.push((
+                DiscoverySource::Common,
+                PathBuf::from(root).join(r"Riot Games\League of Legends\lockfile"),
+            ));
         }
     }
     if let Some(drive) = environment.variables.get("SystemDrive") {
-        paths.push(PathBuf::from(drive).join(r"Riot Games\League of Legends\lockfile"));
+        paths.push((
+            DiscoverySource::Common,
+            PathBuf::from(drive).join(r"Riot Games\League of Legends\lockfile"),
+        ));
     }
     let mut unique = Vec::new();
-    for path in paths {
-        if !unique.contains(&path) {
-            unique.push(path);
+    for candidate in paths {
+        if !unique
+            .iter()
+            .any(|(_, path): &(DiscoverySource, PathBuf)| path == &candidate.1)
+        {
+            unique.push(candidate);
         }
     }
     unique
 }
 
-pub fn find_lockfile_path() -> Option<PathBuf> {
-    candidate_lockfile_paths(&DiscoveryEnvironment::current())
+pub fn candidate_lockfile_paths(environment: &DiscoveryEnvironment) -> Vec<PathBuf> {
+    sourced_candidate_lockfile_paths(environment)
         .into_iter()
-        .find(|path| path.is_file())
+        .map(|(_, path)| path)
+        .collect()
+}
+
+fn probe_path(path: &PathBuf) -> ProbeStatus {
+    if !path.exists() {
+        return ProbeStatus::Missing;
+    }
+    if !path.is_file() {
+        return ProbeStatus::NotFile;
+    }
+    match fs::read_to_string(path) {
+        Ok(raw) if parse_lockfile(&raw).is_ok() => ProbeStatus::Valid,
+        Ok(_) => ProbeStatus::InvalidFormat,
+        Err(_) => ProbeStatus::Unreadable,
+    }
+}
+
+fn discover_with_environment(environment: &DiscoveryEnvironment) -> DiscoveryReport {
+    let mut report = DiscoveryReport {
+        correlation_id: SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos(),
+        selected_path: None,
+        selected_source: None,
+        probes: Vec::new(),
+    };
+    for (source, path) in sourced_candidate_lockfile_paths(environment) {
+        let status = probe_path(&path);
+        report.probes.push(CandidateProbe {
+            source,
+            path: path.clone(),
+            status,
+        });
+        if status == ProbeStatus::Valid {
+            report.selected_path = Some(path);
+            report.selected_source = Some(source);
+            break;
+        }
+    }
+    report
+}
+
+pub fn discover_lockfile() -> DiscoveryReport {
+    discover_with_environment(&DiscoveryEnvironment::current())
+}
+
+pub fn find_lockfile_path() -> Option<PathBuf> {
+    discover_lockfile().selected_path
 }
 
 pub fn read_lockfile_contents() -> Option<String> {
@@ -189,8 +301,11 @@ fn discover_common_roots() -> Vec<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::{candidate_lockfile_paths, DiscoveryEnvironment};
-    use std::path::PathBuf;
+    use super::{
+        candidate_lockfile_paths, discover_with_environment, DiscoveryEnvironment, DiscoverySource,
+        ProbeStatus,
+    };
+    use std::{fs, path::PathBuf};
 
     #[test]
     fn custom_lockfile_path_is_first() {
@@ -215,5 +330,33 @@ mod tests {
         assert!(paths.contains(&PathBuf::from(r"E:\Games\League of Legends\lockfile")));
         assert!(paths.contains(&PathBuf::from(r"F:\Riot\League of Legends\lockfile")));
         assert!(paths.contains(&PathBuf::from(r"G:\Riot Games\League of Legends\lockfile")));
+    }
+
+    #[test]
+    fn report_distinguishes_missing_and_selected_candidates() {
+        let root = std::env::temp_dir().join(format!(
+            "lol-companion-discovery-report-{}",
+            std::process::id()
+        ));
+        let league = root.join("League of Legends");
+        fs::create_dir_all(&league).expect("create League directory");
+        fs::write(
+            league.join("lockfile"),
+            "LeagueClient:1234:54321:secret:https",
+        )
+        .expect("write lockfile");
+
+        let environment = DiscoveryEnvironment::for_test()
+            .with_var(
+                "LEAGUE_CLIENT_LOCKFILE",
+                root.join("missing").to_string_lossy().as_ref(),
+            )
+            .with_process_root(league.to_string_lossy().as_ref());
+        let report = discover_with_environment(&environment);
+
+        assert_eq!(report.selected_source, Some(DiscoverySource::Process));
+        assert_eq!(report.probes[0].status, ProbeStatus::Missing);
+        assert_eq!(report.probes[1].status, ProbeStatus::Valid);
+        fs::remove_dir_all(root).expect("remove discovery fixture");
     }
 }

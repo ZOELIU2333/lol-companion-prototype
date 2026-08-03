@@ -1,15 +1,11 @@
-use super::discovery::read_lockfile_contents;
+use super::{
+    discovery::read_lockfile_contents,
+    lockfile::{parse as parse_lockfile, LcuLockfile},
+};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::time::Duration;
-
-#[derive(Debug, Clone)]
-struct LcuLockfile {
-    password: String,
-    port: u16,
-    protocol: String,
-}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -136,25 +132,8 @@ enum LcuValueResponse {
     Error,
 }
 
-fn parse_lockfile(raw: &str) -> Option<LcuLockfile> {
-    let parts: Vec<&str> = raw.trim().split(':').collect();
-    if parts.len() != 5 {
-        return None;
-    }
-    let port = parts[2].parse::<u16>().ok()?;
-    let protocol = parts[4].to_string();
-    if parts[3].is_empty() || !matches!(protocol.as_str(), "http" | "https") {
-        return None;
-    }
-    Some(LcuLockfile {
-        password: parts[3].to_string(),
-        port,
-        protocol,
-    })
-}
-
 fn read_lockfile() -> Option<LcuLockfile> {
-    read_lockfile_contents().and_then(|raw| parse_lockfile(&raw))
+    read_lockfile_contents().and_then(|raw| parse_lockfile(&raw).ok())
 }
 
 pub fn map_queue_to_mode(queue: Option<&str>) -> Option<String> {
@@ -190,11 +169,13 @@ async fn request_lcu_json<T: for<'de> Deserialize<'de>>(
 ) -> Option<T> {
     let url = format!(
         "{}://127.0.0.1:{}{}",
-        lockfile.protocol, lockfile.port, path
+        lockfile.protocol(),
+        lockfile.port(),
+        path
     );
     client
         .get(url)
-        .basic_auth("riot", Some(&lockfile.password))
+        .basic_auth("riot", Some(lockfile.password()))
         .send()
         .await
         .ok()?
@@ -210,11 +191,13 @@ async fn request_lcu_value(
 ) -> LcuValueResponse {
     let url = format!(
         "{}://127.0.0.1:{}{}",
-        lockfile.protocol, lockfile.port, path
+        lockfile.protocol(),
+        lockfile.port(),
+        path
     );
     let response = match client
         .get(url)
-        .basic_auth("riot", Some(&lockfile.password))
+        .basic_auth("riot", Some(lockfile.password()))
         .send()
         .await
     {
@@ -500,8 +483,8 @@ mod tests {
 
     #[test]
     fn rejects_a_malformed_lockfile() {
-        assert!(parse_lockfile("LeagueClient:bad").is_none());
-        assert!(parse_lockfile("LeagueClient:1:bad:secret:https").is_none());
+        assert!(parse_lockfile("LeagueClient:bad").is_err());
+        assert!(parse_lockfile("LeagueClient:1:bad:secret:https").is_err());
     }
 
     #[test]
