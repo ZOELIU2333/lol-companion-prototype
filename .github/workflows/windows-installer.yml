@@ -21,6 +21,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Reject console-based League discovery
+        shell: bash
+        run: |
+          if rg 'Command::new\("(wmic|reg)' src-tauri/src/lcu; then
+            echo "League discovery must use native Windows APIs."
+            exit 1
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

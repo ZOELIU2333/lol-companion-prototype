@@ -26,10 +26,19 @@ Windows 10/11 的较新版本通常已包含 WebView2。离线电脑应先在另
 
 应用依次检查：
 
-1. `LEAGUE_CLIENT_LOCKFILE` 指定路径。
-2. 正在运行的 `LeagueClientUx.exe` 路径。
-3. Riot 卸载注册表位置。
-4. 常见盘符和 `Program Files` 路径。
+1. 上次由你选择并已验证的路径。
+2. `LEAGUE_CLIENT_LOCKFILE` 指定路径。
+3. 正在运行的 `LeagueClientUx.exe` 路径。
+4. Riot 卸载注册表位置。
+5. 常见盘符和 `Program Files` 路径。
+
+进程与注册表检查使用 Windows 原生 API，不会运行 `wmic`、`reg.exe` 或弹出 Terminal 窗口。请按下面的顺序恢复：
+
+1. 打开 League Client，登录并等待客户端首页完全出现。
+2. 在 LOL Companion 的“诊断”中点击“重新检测”。
+3. 如果仍显示未找到，点击“选择 League 目录”，选择其中包含 `lockfile` 的 `League of Legends` 目录；也可以直接点击“选择 lockfile”。
+4. 等待最多十秒，确认 League Client 与 LCU 状态变为正常。
+5. 如果仍未连接，点击“导出诊断包”，按界面显示的 ZIP 路径找到文件并提供给开发者。
 
 League 安装在特殊目录时，可在启动前设置：
 
@@ -38,7 +47,7 @@ $env:LEAGUE_CLIENT_LOCKFILE = "D:\Games\Riot Games\League of Legends\lockfile"
 Start-Process .\LOL-Companion-Portable.exe
 ```
 
-没有 League 或客户端未启动时，海克斯组合与离线目录仍可使用；在诊断面板选择“使用手动模式”，再用图标选三个候选。
+选择成功后，路径会保存在 `%LOCALAPPDATA%\LOL Companion\league-client.json`，以后启动时会优先复用；保存内容只有路径，不包含 lockfile 密码。没有 League 或客户端未启动时，海克斯组合与离线目录仍可使用，再用图标手动选择三个候选即可。
 
 ## LCU 已发现但连接失败
 
@@ -70,10 +79,11 @@ Start-Process .\LOL-Companion-Portable.exe
 
 ## 导出诊断
 
-展开“路线详情” → “Windows 连接诊断” → “导出诊断包”。ZIP 默认写到日志目录的上一级，内容限制为：
+排位模式可直接打开顶部“诊断”；竞技场模式也可从“路线详情”进入“Windows 连接诊断”，然后点击“导出诊断包”。ZIP 默认写到日志目录的上一级，导出成功后界面会显示完整路径并提供“复制路径”，内容限制为：
 
 - `diagnostics-manifest.json`
 - `logs/lol-companion.*.log`
 
 导出过程会再次脱敏 LCU 密码、Riot API Key、`X-Riot-Token`、`Authorization` 和常见 JSON 密钥。
 
+日志中的客户端发现记录只包含候选来源、结果分类、HTTP 状态码和脱敏后的路径，不包含 lockfile 原文、密码、请求头或 LCU 响应正文。
