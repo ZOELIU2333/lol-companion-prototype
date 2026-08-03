@@ -8,6 +8,7 @@ use std::{
 use super::lockfile::parse as parse_lockfile;
 
 pub mod config;
+pub mod telemetry;
 
 #[cfg(target_os = "windows")]
 mod windows;
@@ -235,7 +236,9 @@ fn discover_with_environment(environment: &DiscoveryEnvironment) -> DiscoveryRep
 }
 
 pub fn discover_lockfile() -> DiscoveryReport {
-    discover_with_environment(&DiscoveryEnvironment::current())
+    let report = discover_with_environment(&DiscoveryEnvironment::current());
+    telemetry::record_report(&report);
+    report
 }
 
 pub fn find_lockfile_path() -> Option<PathBuf> {

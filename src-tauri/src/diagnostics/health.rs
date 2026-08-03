@@ -8,8 +8,10 @@ use serde::Serialize;
 
 use crate::{
     lcu::{
-        client::{read_arena_lcu_session, read_lcu_session, CandidateCapability},
-        discovery::find_lockfile_path,
+        client::{
+            read_arena_lcu_session_from_path, read_lcu_session_from_path, CandidateCapability,
+        },
+        discovery::{discover_lockfile, telemetry::safe_path, DiscoveryReport, ProbeStatus},
     },
     live_client::{last_success_age_seconds, read_live_client_snapshot},
 };
@@ -77,8 +79,66 @@ fn recovery(mut health: HealthCheck, code: &str) -> HealthCheck {
 }
 
 fn with_path(mut health: HealthCheck, path: &Path) -> HealthCheck {
-    health.safe_path = Some(path.to_string_lossy().into_owned());
+    health.safe_path = Some(safe_path(path));
     health
+}
+
+fn league_health(report: &DiscoveryReport) -> HealthCheck {
+    if let Some(path) = report.selected_path.as_deref() {
+        return with_path(
+            check("league-found", HealthStatus::Ready, "已找到 League 客户端"),
+            path.parent().unwrap_or(path),
+        );
+    }
+    let has_invalid_candidate = report.probes.iter().any(|probe| {
+        matches!(
+            probe.status,
+            ProbeStatus::NotFile | ProbeStatus::Unreadable | ProbeStatus::InvalidFormat
+        )
+    });
+    if has_invalid_candidate {
+        recovery(
+            check(
+                "league-invalid",
+                HealthStatus::Degraded,
+                "找到了 League 路径，但 lockfile 尚不可用",
+            ),
+            "select-league-path",
+        )
+    } else {
+        recovery(
+            check(
+                "league-not-found",
+                HealthStatus::Missing,
+                "未找到 League 安装或 lockfile",
+            ),
+            "select-league-path",
+        )
+    }
+}
+
+fn lcu_health(report: &DiscoveryReport, session_ready: bool) -> HealthCheck {
+    if session_ready {
+        check("lcu-ready", HealthStatus::Ready, "LCU 本地接口可用")
+    } else if report.selected_path.is_some() {
+        recovery(
+            check(
+                "lcu-unreachable",
+                HealthStatus::Degraded,
+                "已找到 League，但 LCU 暂时不可连接",
+            ),
+            "retry",
+        )
+    } else {
+        recovery(
+            check(
+                "lcu-missing",
+                HealthStatus::Missing,
+                "等待 League 客户端启动或手动选择路径",
+            ),
+            "select-league-path",
+        )
+    }
 }
 
 fn catalog_health() -> HealthCheck {
@@ -157,48 +217,16 @@ fn runtime_cache_health(path: Option<&Path>) -> HealthCheck {
 
 #[tauri::command]
 pub async fn get_desktop_health() -> DesktopHealthSnapshot {
-    let lockfile = find_lockfile_path();
+    let discovery_report = discover_lockfile();
+    let lockfile_path = discovery_report.selected_path.clone();
     let (lcu_session, arena_session, live_snapshot) = tokio::join!(
-        read_lcu_session(),
-        read_arena_lcu_session(),
+        read_lcu_session_from_path(lockfile_path.as_deref()),
+        read_arena_lcu_session_from_path(lockfile_path.as_deref()),
         read_live_client_snapshot()
     );
 
-    let league_discovery = match lockfile.as_deref() {
-        Some(path) => with_path(
-            check("league-found", HealthStatus::Ready, "已找到 League 客户端"),
-            path.parent().unwrap_or(path),
-        ),
-        None => recovery(
-            check(
-                "league-not-found",
-                HealthStatus::Missing,
-                "未找到 League 安装或 lockfile",
-            ),
-            "manual-arena",
-        ),
-    };
-    let lcu = if lcu_session.is_some() {
-        check("lcu-ready", HealthStatus::Ready, "LCU 本地接口可用")
-    } else if lockfile.is_some() {
-        recovery(
-            check(
-                "lcu-unreachable",
-                HealthStatus::Unavailable,
-                "已找到 League，但 LCU 暂时不可连接",
-            ),
-            "retry",
-        )
-    } else {
-        recovery(
-            check(
-                "lcu-missing",
-                HealthStatus::Unavailable,
-                "等待 League 客户端启动",
-            ),
-            "manual-arena",
-        )
-    };
+    let league_discovery = league_health(&discovery_report);
+    let lcu = lcu_health(&discovery_report, lcu_session.is_some());
     let live_client = if live_snapshot.is_some() {
         check(
             "live-client-ready",
@@ -313,7 +341,9 @@ pub fn discard_runtime_cache() -> Result<bool, String> {
 mod tests {
     use std::fs;
 
-    use super::{catalog_health, runtime_cache_health, HealthStatus};
+    use crate::lcu::discovery::{CandidateProbe, DiscoveryReport, DiscoverySource, ProbeStatus};
+
+    use super::{catalog_health, league_health, runtime_cache_health, HealthStatus};
 
     #[test]
     fn bundled_catalog_is_valid() {
@@ -331,5 +361,23 @@ mod tests {
         assert!(matches!(health.status, HealthStatus::Degraded));
         assert!(!health.detail.contains("secret"));
         fs::remove_file(path).expect("remove cache");
+    }
+
+    #[test]
+    fn invalid_candidates_are_degraded_not_missing() {
+        let report = DiscoveryReport {
+            correlation_id: 1,
+            selected_path: None,
+            selected_source: None,
+            probes: vec![CandidateProbe {
+                source: DiscoverySource::Saved,
+                path: "C:/Riot Games/League of Legends/lockfile".into(),
+                status: ProbeStatus::InvalidFormat,
+            }],
+        };
+        assert!(matches!(
+            league_health(&report).status,
+            HealthStatus::Degraded
+        ));
     }
 }

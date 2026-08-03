@@ -1,11 +1,16 @@
 use super::{
-    discovery::read_lockfile_contents,
+    discovery::discover_lockfile,
     lockfile::{parse as parse_lockfile, LcuLockfile},
 };
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::time::Duration;
+use std::{
+    fs,
+    path::Path,
+    sync::{Mutex, OnceLock},
+    time::Duration,
+};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -132,8 +137,49 @@ enum LcuValueResponse {
     Error,
 }
 
-fn read_lockfile() -> Option<LcuLockfile> {
-    read_lockfile_contents().and_then(|raw| parse_lockfile(&raw).ok())
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LcuOutcome {
+    NoLockfile,
+    ParseError,
+    ConnectError,
+    HttpError(u16),
+    Ready,
+}
+
+static LAST_LCU_OUTCOME: OnceLock<Mutex<Option<LcuOutcome>>> = OnceLock::new();
+
+fn record_lcu_outcome(outcome: LcuOutcome) {
+    let mut previous = LAST_LCU_OUTCOME
+        .get_or_init(|| Mutex::new(None))
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if previous.as_ref() == Some(&outcome) {
+        return;
+    }
+    *previous = Some(outcome);
+    match outcome {
+        LcuOutcome::NoLockfile => tracing::info!(outcome = "no-lockfile", "LCU state changed"),
+        LcuOutcome::ParseError => tracing::warn!(outcome = "parse-error", "LCU state changed"),
+        LcuOutcome::ConnectError => {
+            tracing::warn!(outcome = "connect-error", "LCU state changed")
+        }
+        LcuOutcome::HttpError(status) => {
+            tracing::warn!(outcome = "http-error", status, "LCU state changed")
+        }
+        LcuOutcome::Ready => tracing::info!(outcome = "ready", "LCU state changed"),
+    }
+}
+
+fn read_lockfile_from_path(path: Option<&Path>) -> Result<LcuLockfile, LcuOutcome> {
+    let path = path.ok_or(LcuOutcome::NoLockfile)?;
+    let raw = fs::read_to_string(path).map_err(|_| LcuOutcome::NoLockfile)?;
+    parse_lockfile(&raw).map_err(|_| LcuOutcome::ParseError)
+}
+
+#[derive(Debug, Clone, Copy)]
+enum LcuRequestError {
+    Connect,
+    Http(u16),
 }
 
 pub fn map_queue_to_mode(queue: Option<&str>) -> Option<String> {
@@ -162,26 +208,39 @@ fn map_position_to_role(position: Option<&str>) -> Option<String> {
     }
 }
 
-async fn request_lcu_json<T: for<'de> Deserialize<'de>>(
+async fn request_lcu_json_result<T: for<'de> Deserialize<'de>>(
     client: &reqwest::Client,
     lockfile: &LcuLockfile,
     path: &str,
-) -> Option<T> {
+) -> Result<T, LcuRequestError> {
     let url = format!(
         "{}://127.0.0.1:{}{}",
         lockfile.protocol(),
         lockfile.port(),
         path
     );
-    client
+    let response = client
         .get(url)
         .basic_auth("riot", Some(lockfile.password()))
         .send()
         .await
-        .ok()?
+        .map_err(|_| LcuRequestError::Connect)?;
+    let status = response.status();
+    if !status.is_success() {
+        return Err(LcuRequestError::Http(status.as_u16()));
+    }
+    response
         .json()
         .await
-        .ok()
+        .map_err(|_| LcuRequestError::Http(status.as_u16()))
+}
+
+async fn request_lcu_json<T: for<'de> Deserialize<'de>>(
+    client: &reqwest::Client,
+    lockfile: &LcuLockfile,
+    path: &str,
+) -> Option<T> {
+    request_lcu_json_result(client, lockfile, path).await.ok()
 }
 
 async fn request_lcu_value(
@@ -356,14 +415,47 @@ async fn read_champ_select_players(
 
 #[tauri::command]
 pub async fn read_lcu_session() -> Option<LcuSessionPayload> {
-    let lockfile = read_lockfile()?;
+    let report = discover_lockfile();
+    read_lcu_session_from_path(report.selected_path.as_deref()).await
+}
+
+pub(crate) async fn read_lcu_session_from_path(
+    lockfile_path: Option<&Path>,
+) -> Option<LcuSessionPayload> {
+    let lockfile = match read_lockfile_from_path(lockfile_path) {
+        Ok(lockfile) => lockfile,
+        Err(outcome) => {
+            record_lcu_outcome(outcome);
+            return None;
+        }
+    };
     let client = reqwest::Client::builder()
         .timeout(Duration::from_millis(1400))
         .danger_accept_invalid_certs(true)
         .build()
-        .ok()?;
-    let phase =
-        request_lcu_json::<String>(&client, &lockfile, "/lol-gameflow/v1/gameflow-phase").await?;
+        .map_err(|_| LcuOutcome::ConnectError)
+        .ok();
+    let Some(client) = client else {
+        record_lcu_outcome(LcuOutcome::ConnectError);
+        return None;
+    };
+    let phase = match request_lcu_json_result::<String>(
+        &client,
+        &lockfile,
+        "/lol-gameflow/v1/gameflow-phase",
+    )
+    .await
+    {
+        Ok(phase) => phase,
+        Err(LcuRequestError::Connect) => {
+            record_lcu_outcome(LcuOutcome::ConnectError);
+            return None;
+        }
+        Err(LcuRequestError::Http(status)) => {
+            record_lcu_outcome(LcuOutcome::HttpError(status));
+            return None;
+        }
+    };
     let gameflow =
         request_lcu_json::<GameflowSession>(&client, &lockfile, "/lol-gameflow/v1/session").await;
     let current_summoner = request_lcu_json::<CurrentSummoner>(
@@ -383,14 +475,16 @@ pub async fn read_lcu_session() -> Option<LcuSessionPayload> {
     } else {
         Vec::new()
     };
-    Some(LcuSessionPayload {
+    let payload = LcuSessionPayload {
         phase,
         mode: map_queue_to_mode(queue_text),
         local_summoner_name: current_summoner
             .and_then(|summoner| summoner.display_name.or(summoner.game_name)),
         players,
         source: "lcu".to_string(),
-    })
+    };
+    record_lcu_outcome(LcuOutcome::Ready);
+    Some(payload)
 }
 
 fn champion_from_champ_select(session: &ChampSelectSession) -> Option<u16> {
@@ -406,7 +500,14 @@ fn champion_from_champ_select(session: &ChampSelectSession) -> Option<u16> {
 
 #[tauri::command]
 pub async fn read_arena_lcu_session() -> Option<ArenaLcuSnapshot> {
-    let lockfile = read_lockfile()?;
+    let report = discover_lockfile();
+    read_arena_lcu_session_from_path(report.selected_path.as_deref()).await
+}
+
+pub(crate) async fn read_arena_lcu_session_from_path(
+    lockfile_path: Option<&Path>,
+) -> Option<ArenaLcuSnapshot> {
+    let lockfile = read_lockfile_from_path(lockfile_path).ok()?;
     let client = reqwest::Client::builder()
         .timeout(Duration::from_millis(1400))
         .danger_accept_invalid_certs(true)
