@@ -230,6 +230,15 @@ jobs:
           cp "$installer" release-assets/LOL-Companion-Windows-Setup.exe
           sha256sum release-assets/LOL-Companion-Windows-Setup.exe > release-assets/SHA256SUMS.txt
 
+      - name: Upload installer to this Actions run
+        uses: actions/upload-artifact@v4
+        with:
+          name: LOL-Companion-Windows-Installer
+          path: |
+            release-assets/LOL-Companion-Windows-Setup.exe
+            release-assets/SHA256SUMS.txt
+          if-no-files-found: error
+
       - name: Publish GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
