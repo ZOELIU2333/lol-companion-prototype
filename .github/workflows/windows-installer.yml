@@ -2,6 +2,11 @@ name: Windows Installer
 
 on:
   workflow_dispatch:
+    inputs:
+      promote_run_id:
+        description: "Existing successful Windows Installer run to publish as a prerelease"
+        required: false
+        type: string
   push:
     branches:
       - main
@@ -13,6 +18,7 @@ permissions:
 
 jobs:
   build-windows-x64:
+    if: inputs.promote_run_id == ''
     name: Verify and build Windows x64
     runs-on: windows-2025
     timeout-minutes: 40
@@ -195,3 +201,47 @@ jobs:
           name: LOL-Companion-Windows-Diagnostics
           path: artifacts/diagnostics
           if-no-files-found: warn
+
+  publish-prerelease:
+    if: inputs.promote_run_id != ''
+    name: Publish direct-download prerelease
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+      - name: Download verified installer artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.promote_run_id }}
+        run: gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name LOL-Companion-Windows-Installer --dir release-source
+
+      - name: Stage stable direct-download files
+        shell: bash
+        run: |
+          installer="$(find release-source -type f -name '*-setup.exe' -print -quit)"
+          if [ -z "$installer" ]; then
+            echo "Verified NSIS installer was not found in the selected run."
+            exit 1
+          fi
+          mkdir -p release-assets
+          cp "$installer" release-assets/LOL-Companion-Windows-Setup.exe
+          sha256sum release-assets/LOL-Companion-Windows-Setup.exe > release-assets/SHA256SUMS.txt
+
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: v0.1.1-beta.1
+        shell: bash
+        run: |
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "LOL Companion v0.1.1 Beta 1" \
+              --notes "Windows beta build with silent native League discovery, saved manual path recovery, and redacted diagnostics." \
+              --prerelease
+          fi
+          gh release upload "$RELEASE_TAG" release-assets/* --repo "$GITHUB_REPOSITORY" --clobber
