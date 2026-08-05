@@ -147,6 +147,14 @@ fn set_overlay_compact(window: tauri::Window, enabled: bool) -> Result<(), Strin
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), String> {
     tauri::Builder::default()
+        .on_page_load(|webview, payload| {
+            tracing::info!(
+                label = webview.label(),
+                event = ?payload.event(),
+                url = %payload.url(),
+                "webview page load"
+            );
+        })
         .invoke_handler(tauri::generate_handler![
             choose_league_installation,
             discard_runtime_cache,
