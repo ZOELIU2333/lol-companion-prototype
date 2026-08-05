@@ -12,6 +12,30 @@ use lcu::client::{read_arena_lcu_session, read_lcu_session};
 use lcu::discovery::config::choose_league_installation;
 use live_client::read_live_client_snapshot;
 
+#[tauri::command]
+fn report_frontend_status(stage: String, detail: Option<String>) {
+    let safe_stage = match stage.as_str() {
+        "html-loaded"
+        | "module-error"
+        | "unhandled-rejection"
+        | "frontend-timeout"
+        | "frontend-ready" => stage,
+        _ => "unknown".to_owned(),
+    };
+    let safe_detail = diagnostics::redact::redact(
+        &detail
+            .unwrap_or_default()
+            .chars()
+            .take(500)
+            .collect::<String>(),
+    );
+    if safe_stage == "frontend-ready" || safe_stage == "html-loaded" {
+        tracing::info!(stage = %safe_stage, detail = %safe_detail, "frontend status changed");
+    } else {
+        tracing::warn!(stage = %safe_stage, detail = %safe_detail, "frontend status changed");
+    }
+}
+
 fn is_allowed_riot_api_url(raw_url: &str) -> bool {
     let Ok(url) = reqwest::Url::parse(raw_url) else {
         return false;
@@ -129,6 +153,7 @@ pub fn run() -> Result<(), String> {
             export_diagnostics,
             get_desktop_health,
             opgg_mcp_call,
+            report_frontend_status,
             read_arena_lcu_session,
             read_lcu_session,
             read_live_client_snapshot,
