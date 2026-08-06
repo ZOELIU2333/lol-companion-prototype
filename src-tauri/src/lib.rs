@@ -17,6 +17,7 @@ fn report_frontend_status(stage: String, detail: Option<String>) {
     let safe_stage = match stage.as_str() {
         "html-loaded"
         | "module-error"
+        | "react-render-error"
         | "unhandled-rejection"
         | "frontend-timeout"
         | "frontend-ready" => stage,

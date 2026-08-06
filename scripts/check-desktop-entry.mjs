@@ -10,4 +10,8 @@ if (!html.includes('boot-fallback') || !html.includes('html-loaded')) {
   throw new Error('Desktop entry is missing the pre-module boot diagnostics')
 }
 
+if (!html.includes('event.colno') || !html.includes('event.error.stack')) {
+  throw new Error('Desktop entry is missing actionable module error details')
+}
+
 console.log('Checked desktop entry: relative assets and boot diagnostics are present')

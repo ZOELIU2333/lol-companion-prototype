@@ -30,7 +30,9 @@
 
         window.__LOL_COMPANION_BOOT__ = { ready: false, report: report }
         window.addEventListener('error', function (event) {
-          report('module-error', [event.message, event.filename, event.lineno].filter(Boolean).join(' | '))
+          var location = [event.filename, event.lineno, event.colno].filter(Boolean).join(':')
+          var stack = event.error && event.error.stack ? event.error.stack : ''
+          report('module-error', [event.message, location, stack].filter(Boolean).join(' | '))
         })
         window.addEventListener('unhandledrejection', function (event) {
           report('unhandled-rejection', event.reason && event.reason.message ? event.reason.message : String(event.reason))
