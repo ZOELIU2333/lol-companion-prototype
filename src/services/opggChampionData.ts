@@ -1,6 +1,7 @@
 import type { Champion } from '../types'
 import type { OpggChampionDetail, OpggItemSet, OpggRuneSet } from '../data/opggKrHighEloDetails'
 import type { OpggMcpHost } from './opggMcpAdapter'
+import { isOpggChampionDetail } from './opggChampionDetailValidation'
 
 const championNameMap: Record<string, string> = {
   ahri: 'AHRI',
@@ -186,20 +187,33 @@ export function getRuntimeOpggChampionDetailLabel(championKey: string) {
 }
 
 export function registerRuntimeOpggChampionDetail(detail: OpggChampionDetail, label = runtimeLabel) {
+  if (!isOpggChampionDetail(detail)) return false
+
   runtimeDetails.set(detail.championKey, detail)
   runtimeLabels.set(detail.championKey, label)
   persistDetail(detail)
+  return true
 }
 
 function readPersistedDetail(championKey: string) {
   if (typeof window === 'undefined' || !window.localStorage) return null
 
+  const key = `${storagePrefix}${championKey}`
   try {
-    const raw = window.localStorage.getItem(`${storagePrefix}${championKey}`)
-    return raw ? JSON.parse(raw) as OpggChampionDetail : null
+    const raw = window.localStorage.getItem(key)
+    if (!raw) return null
+    const parsed: unknown = JSON.parse(raw)
+    if (isOpggChampionDetail(parsed) && parsed.championKey === championKey) return parsed
   } catch {
-    return null
+    // Invalid cache is removed below.
   }
+
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    // Best-effort cleanup. The bundled fallback remains authoritative.
+  }
+  return null
 }
 
 function persistDetail(detail: OpggChampionDetail) {
@@ -254,6 +268,5 @@ export async function loadOpggChampionDetail(host: OpggMcpHost | null, champion:
     position,
   }
 
-  registerRuntimeOpggChampionDetail(detail)
-  return detail
+  return registerRuntimeOpggChampionDetail(detail) ? detail : null
 }

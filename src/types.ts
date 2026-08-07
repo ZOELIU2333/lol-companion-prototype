@@ -1,4 +1,4 @@
-export type GameMode = 'ranked' | 'augment' | 'arena'
+export type GameMode = 'ranked' | 'arena'
 export type InfoPhase = 'pregame' | 'live'
 export type TeamSide = 'ally' | 'enemy'
 export type PlayerFilter = 'ally' | 'enemy'
@@ -170,8 +170,6 @@ export type Augment = {
   name: string
   tier: 'silver' | 'gold' | 'prismatic'
   tags: string[]
-  currentValue: number
-  scalingValue: number
   note: string
 }
 
@@ -301,7 +299,6 @@ export type RunePageRecommendation = {
 
 export type AugmentRecommendation = Augment & {
   score: number
-  probability: number
   dataSourceLabel: string
   scoreLabel: string
   scoreReason: string
@@ -311,9 +308,12 @@ export type AugmentRecommendation = Augment & {
   selectedSynergyScore: number
   conflictNote?: string
   futurePotential: string
+  components: ArenaScoreComponent[]
+  evidence: EvidenceRecord[]
+  missingNodes: string[]
+  risk: string
   futureCombos: {
     name: string
-    probability: number
     reason: string
   }[]
 }
@@ -356,3 +356,5 @@ export type RecommendationViewModel = {
     }
   }
 }
+import type { EvidenceRecord } from './features/arena/graph/types'
+import type { ArenaScoreComponent } from './features/arena/recommendation/types'

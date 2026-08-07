@@ -1,4 +1,6 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import type { ArenaSessionPort } from '../features/arena/session/ports'
+import type { ArenaObservation, PartialArenaSession } from '../features/arena/session/types'
 import type { Match } from '../types'
 
 export type LiveClientSnapshot = {
@@ -13,7 +15,55 @@ export type LiveClientSnapshot = {
 }
 
 export type LiveClientDataHost = {
-  readSnapshot: () => Promise<LiveClientSnapshot | null>
+  readSnapshot: (signal?: AbortSignal) => Promise<LiveClientSnapshot | null>
+}
+
+function liveObservation<T>(value: T, observedAt: number): ArenaObservation<T> {
+  return { value, observedAt, source: 'live-client', state: 'live' }
+}
+
+export function createLiveClientArenaPort(
+  host: LiveClientDataHost,
+  championKeysByName: Map<string, number>,
+  now: () => number = () => Date.now(),
+): ArenaSessionPort {
+  return {
+    id: 'live-client-data',
+    fields: ['mode', 'champion', 'level', 'gold', 'items', 'gameTime', 'candidates'],
+    async read(signal) {
+      const snapshot = await host.readSnapshot(signal)
+      if (!snapshot) {
+        return {
+          capabilities: {
+            mode: 'unavailable', champion: 'unavailable', level: 'unavailable', gold: 'unavailable',
+            items: 'unavailable', gameTime: 'unavailable', candidates: 'unsupported',
+          },
+        }
+      }
+      const observedAt = now()
+      const championKey = snapshot.championName
+        ? championKeysByName.get(snapshot.championName.toLowerCase())
+        : undefined
+      const arenaMode = /arena|cherry/i.test(snapshot.gameMode ?? '')
+      const partial: PartialArenaSession = {
+        gameTimeSeconds: liveObservation(snapshot.gameTime, observedAt),
+        itemIds: liveObservation(snapshot.currentItemIds, observedAt),
+        candidates: { value: [], observedAt, source: 'live-client', state: 'unsupported' },
+        capabilities: {
+          gameTime: 'available', items: 'available', candidates: 'unsupported',
+          mode: arenaMode ? 'available' : 'unavailable',
+          champion: championKey ? 'available' : 'unavailable',
+          level: snapshot.level === null || snapshot.level === undefined ? 'unavailable' : 'available',
+          gold: snapshot.currentGold === null || snapshot.currentGold === undefined ? 'unavailable' : 'available',
+        },
+      }
+      if (arenaMode) partial.mode = liveObservation('arena', observedAt)
+      if (championKey) partial.championKey = liveObservation(championKey, observedAt)
+      if (snapshot.level !== null && snapshot.level !== undefined) partial.level = liveObservation(snapshot.level, observedAt)
+      if (snapshot.currentGold !== null && snapshot.currentGold !== undefined) partial.gold = liveObservation(snapshot.currentGold, observedAt)
+      return partial
+    },
+  }
 }
 
 function normalizeLiveClientSnapshot(payload: LiveClientSnapshot | null): LiveClientSnapshot | null {

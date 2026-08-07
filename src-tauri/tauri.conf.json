@@ -30,7 +30,13 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis"],
+    "publisher": "ZOELIU2333",
+    "shortDescription": "Windows-first League of Legends Arena decision companion",
+    "resources": {
+      "../public/data/arena/*.json": "data/arena/",
+      "../public/data/game/*.json": "data/game/"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

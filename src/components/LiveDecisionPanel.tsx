@@ -9,7 +9,7 @@ type LiveDecisionPanelProps = {
 }
 
 export function LiveDecisionPanel({ activeMode, match, recommendations }: LiveDecisionPanelProps) {
-  if (activeMode === 'augment') {
+  if (activeMode === 'arena') {
     return (
       <section className="panel-section live-panel augment-live-panel">
         <div className="section-title">

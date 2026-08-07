@@ -22,7 +22,7 @@ describe('companion data source', () => {
     const dataSource = createCompanionDataSource(
       createLcuStub({
         phase: 'ChampSelect',
-      mode: 'augment',
+      mode: 'arena',
       localSummonerName: 'DemoSummoner',
       players: [
         {
@@ -42,7 +42,7 @@ describe('companion data source', () => {
 
     await expect(dataSource.detectSession()).resolves.toMatchObject({
       matchId: 'augment-ahri-002',
-      mode: 'augment',
+      mode: 'arena',
       phase: 'ChampSelect',
       players: [
         {
@@ -90,7 +90,7 @@ describe('companion data source', () => {
   })
 
   it('keeps player intel available for the augment stage board', () => {
-    const augmentMatch = mockCompanionDataSource.listMatches().find((match) => match.mode === 'augment')
+    const augmentMatch = mockCompanionDataSource.listMatches().find((match) => match.mode === 'arena')
 
     expect(augmentMatch?.players).toHaveLength(10)
     expect(augmentMatch?.players.some((player) => player.team === 'ally')).toBe(true)

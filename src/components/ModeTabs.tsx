@@ -2,10 +2,10 @@ import type { GameMode } from '../types'
 
 const labels = {
   ranked: '匹配/排位',
-  augment: '海克斯',
+  arena: '竞技场',
 } satisfies Partial<Record<GameMode, string>>
 
-const visibleModes = ['ranked', 'augment'] as const
+const visibleModes = ['ranked', 'arena'] as const
 
 type ModeTabsProps = {
   activeMode: GameMode

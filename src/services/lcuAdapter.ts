@@ -13,7 +13,7 @@ export type LcuGamePhase =
 
 export type LcuSessionSnapshot = {
   phase: LcuGamePhase
-  mode: Exclude<GameMode, 'arena'> | null
+  mode: GameMode | null
   localSummonerName?: string
   players?: LcuPlayerSnapshot[]
 }
@@ -86,11 +86,11 @@ export const unavailableLcuAdapter: LcuAdapter = {
   },
 }
 
-export function mapLcuQueueToMode(queueDescription?: string): Exclude<GameMode, 'arena'> | null {
+export function mapLcuQueueToMode(queueDescription?: string): GameMode | null {
   const normalized = queueDescription?.toLowerCase() ?? ''
 
   if (normalized.includes('arena') || normalized.includes('海克斯')) {
-    return 'augment'
+    return 'arena'
   }
 
   if (normalized.includes('rank') || normalized.includes('normal') || normalized.includes('匹配') || normalized.includes('排位')) {

@@ -1,10 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
+import { DesktopRoot } from './app/DesktopRoot'
 
-createRoot(document.getElementById('root')!).render(
+const root = document.getElementById('root')
+if (!root) throw new Error('React root element is missing')
+
+createRoot(root).render(
   <StrictMode>
-    <App />
+    <DesktopRoot />
   </StrictMode>,
 )

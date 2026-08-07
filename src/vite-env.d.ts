@@ -11,3 +11,10 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+interface Window {
+  __LOL_COMPANION_BOOT__?: {
+    ready: boolean
+    report: (stage: string, detail?: string) => void
+  }
+}

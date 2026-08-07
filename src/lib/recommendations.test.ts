@@ -35,7 +35,7 @@ describe('recommendation rules', () => {
   })
 
   it('uses previously selected augments when ranking hex candidates', () => {
-    const augmentMatch = mockMatches.find((candidate) => candidate.mode === 'augment')!
+    const augmentMatch = mockMatches.find((candidate) => candidate.mode === 'arena')!
     const augmentChampion = augmentMatch.champions.find((candidate) => candidate.id === augmentMatch.currentChampionId)!
     const ranked = rankAugments(augmentMatch, augmentChampion)
 
@@ -44,8 +44,8 @@ describe('recommendation rules', () => {
   })
 
   it('creates an augment-aware item icon plan for live hex recommendations', () => {
-    const augmentMatch = mockMatches.find((candidate) => candidate.mode === 'augment')!
-    const recommendations = createRecommendations(augmentMatch, 'augment')
+    const augmentMatch = mockMatches.find((candidate) => candidate.mode === 'arena')!
+    const recommendations = createRecommendations(augmentMatch, 'arena')
 
     expect(recommendations.live.augmentContext.itemPlan.items.length).toBeGreaterThan(0)
     expect(recommendations.live.augmentContext.itemPlan.score).toBeGreaterThan(0)

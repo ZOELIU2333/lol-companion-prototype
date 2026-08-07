@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-02T16:21:27.251Z",
+  "count": 225,
+  "contentHash": "sha256:09b7b7609261f619defaa6621afbb71fe03aa998218fcfa769c5473876dad69e",
+  "sources": {
+    "zhCn": "https://raw.communitydragon.org/latest/cdragon/arena/zh_cn.json",
+    "enUs": "https://raw.communitydragon.org/latest/cdragon/arena/en_us.json"
+  }
+}

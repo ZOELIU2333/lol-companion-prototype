@@ -34,7 +34,7 @@ function createAugmentItemPlan(match: Match, bestAugment?: AugmentRecommendation
   return {
     id: `${chain.id}-${bestAugment?.id ?? 'pending'}`,
     label: chain.label,
-    score: Math.min(99, (bestAugment?.probability ?? 72) + (match.liveState.selectedAugments.length > 1 ? 4 : 0)),
+    score: Math.min(99, (bestAugment?.score ?? 72) + (match.liveState.selectedAugments.length > 1 ? 4 : 0)),
     items,
   }
 }
@@ -123,7 +123,7 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
   const selectedProfiles = match.liveState.selectedAugments.map(getSelectedAugmentProfile)
   const selectedTags = Array.from(new Set(selectedProfiles.flatMap((profile) => profile.tags)))
   const selectedPlans = Array.from(new Set(selectedProfiles.map((profile) => profile.plan)))
-  const augmentDataSourceLabel = '本地规则推理 · 待接入版本聚合数据'
+  const augmentDataSourceLabel = '机制规则推理 · 不展示虚构胜率'
 
   return match.augmentCandidates
     .map((augment) => {
@@ -142,20 +142,18 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
         directSelectedMatches.length === 0
           ? 6
           : 0
-      const score = Math.min(
-        99,
-        Math.round(
-          augment.currentValue * 0.48 +
-            augment.scalingValue * 0.26 +
-            tagMatches * 6 +
-            selectedSynergyScore -
-            conflictPenalty,
-        ),
-      )
-      const probability = Math.min(
-        96,
-        Math.round(score * 0.68 + tagMatches * 5 + selectedSynergyScore * 0.6 + augment.scalingValue * 0.1),
-      )
+      const tierValue = augment.tier === 'prismatic' ? 18 : augment.tier === 'gold' ? 14 : 10
+      const componentInput = [
+        { key: 'championFit' as const, label: '英雄契合', raw: tagMatches, points: tagMatches * 12, reason: `命中 ${tagMatches} 个英雄机制标签` },
+        { key: 'selectedSynergy' as const, label: '已选协同', raw: selectedSynergyScore, points: selectedSynergyScore, reason: `已选强化协同 ${selectedSynergyScore} 分` },
+        { key: 'immediateValue' as const, label: '即时收益', raw: tierValue, points: tierValue, reason: `${augment.tier} 基础机制价值` },
+        { key: 'completionDistance' as const, label: '成型距离', raw: 0, points: 0, reason: '等待装备路线计算' },
+        { key: 'contextValue' as const, label: '对局价值', raw: bridgeMatches.length, points: bridgeMatches.length * 8, reason: `形成 ${bridgeMatches.length} 个机制桥接` },
+        { key: 'evidenceValue' as const, label: '证据强度', raw: 0, points: 0, reason: '当前仅使用本地规则，不冒充统计结论' },
+        { key: 'novelty' as const, label: '路线新颖度', raw: 0, points: 0, reason: '由三路线规划器另行计算' },
+        { key: 'riskPenalty' as const, label: '风险扣分', raw: conflictPenalty, points: -conflictPenalty, reason: `构筑冲突扣除 ${conflictPenalty} 分` },
+      ]
+      const score = componentInput.reduce((sum, component) => sum + component.points, 0)
       const comboTags = augment.tags.filter((tag) => champion.tags.includes(tag))
       const selectedComboTags = Array.from(new Set([...directSelectedMatches, ...bridgeMatches]))
       const selectedSynergy =
@@ -165,7 +163,6 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
       const futureCombos = [
         {
           name: selectedPlans[0] ?? (augment.tags.includes('poke') ? '远程消耗链' : augment.tags.includes('mobility') ? '位移爆发链' : '稳定成长链'),
-          probability: Math.min(94, probability + Math.round(selectedSynergyScore * 0.35) + 3),
           reason: augment.tags.includes('poke')
             ? '后续拿冷却、法术命中、技能增伤时会继续放大消耗收益。'
             : augment.tags.includes('mobility')
@@ -174,7 +171,6 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
         },
         {
           name: augment.tags.includes('defense') ? '容错防守链' : '输出转防守链',
-          probability: Math.max(38, probability - 14),
           reason: '如果后续对手爆发过高，补护盾、韧性或复活类强化可以修正容错。',
         },
       ]
@@ -182,7 +178,6 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
       return {
         ...augment,
         score,
-        probability,
         dataSourceLabel: augmentDataSourceLabel,
         scoreLabel: '路线潜力',
         scoreReason:
@@ -199,9 +194,13 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
         selectedSynergyScore,
         conflictNote: conflictPenalty > 0 ? '当前已选强化偏进攻节奏，这个选择会牺牲一部分构筑连续性。' : undefined,
         futurePotential:
-          augment.scalingValue >= 85
+          selectedSynergyScore >= 24 || augment.tags.length >= 3
             ? '后续组合上限高，适合作为构筑核心。'
             : '后续组合稳定，但更像补强而不是核心。',
+        components: componentInput,
+        evidence: [{ kind: 'theoretical' as const, claim: '基于英雄与已选强化标签的本地机制推理。' }],
+        missingNodes: selectedComboTags.length > 0 ? [] : ['与已选强化相连的机制节点'],
+        risk: conflictPenalty > 0 ? '会牺牲当前构筑连续性' : '未发现直接标签冲突',
         futureCombos,
       }
     })
@@ -256,7 +255,7 @@ export function createRecommendations(match: Match, mode: GameMode): Recommendat
       nextTwoMinutes: [
         match.liveState.immediateAction,
         match.enemyComposition.crowdControl >= 70 ? '团前不要先交位移，等锤石/蔚第一波控制失败再反打。' : '先推中线，再提前落位资源区。',
-        mode === 'augment' ? '装备链跟随已选强化调整，先看图标路线，不走固定模板。' : '保持当前核心路线，暂不需要强行变装。',
+        mode === 'arena' ? '装备链跟随已选强化调整，先看图标路线，不走固定模板。' : '保持当前核心路线，暂不需要强行变装。',
       ],
       augmentContext: {
         selected: match.liveState.selectedAugments,
@@ -264,7 +263,7 @@ export function createRecommendations(match: Match, mode: GameMode): Recommendat
         reason: bestAugment
           ? `${bestAugment.name} 与已选强化协同 ${bestAugment.selectedSynergyScore} 分。${bestAugment.selectedSynergy}`
           : '等待下一轮候选海克斯出现。',
-        comboScore: bestAugment?.probability ?? 0,
+        comboScore: bestAugment?.score ?? 0,
         itemPlan: augmentItemPlan,
       },
     },
