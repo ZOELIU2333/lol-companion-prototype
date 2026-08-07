@@ -115,6 +115,18 @@ describe('live client data bridge', () => {
     expect(match.liveState.currentSituation).toContain('Ezreal')
   })
 
+  it('maps the live champion when it exists in the current scenario', () => {
+    const match = applyLiveClientSnapshotToMatch(mockMatches[0], {
+      gameTime: 126.9,
+      gameMode: 'CLASSIC',
+      championName: 'Ahri',
+      currentItemIds: [],
+      source: 'live-client-data',
+    })
+
+    expect(match.currentChampionId).toBe('ahri')
+  })
+
   it('projects automatic fields into an Arena session port', async () => {
     const port = createLiveClientArenaPort({
       read: async () => ({

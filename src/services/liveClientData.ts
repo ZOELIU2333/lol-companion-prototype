@@ -177,6 +177,11 @@ function inferNextObjective(minute: number, current: string) {
 export function applyLiveClientSnapshotToMatch(match: Match, snapshot: LiveClientSnapshot | null): Match {
   if (!snapshot) return match
 
+  const liveChampion = snapshot.championName
+    ? match.champions.find((candidate) =>
+      candidate.id.toLowerCase() === snapshot.championName?.toLowerCase()
+      || candidate.name.toLowerCase() === snapshot.championName?.toLowerCase())
+    : undefined
   const minute = Math.max(0, Math.floor(snapshot.gameTime / 60))
   const currentGold = snapshot.currentGold ?? match.liveState.goldOnHand
   const itemLabels = snapshot.currentItemIds.length > 0
@@ -187,6 +192,7 @@ export function applyLiveClientSnapshotToMatch(match: Match, snapshot: LiveClien
 
   return {
     ...match,
+    currentChampionId: liveChampion?.id ?? match.currentChampionId,
     timer: `${minute.toString().padStart(2, '0')}:${Math.floor(snapshot.gameTime % 60).toString().padStart(2, '0')}`,
     liveState: {
       ...match.liveState,
