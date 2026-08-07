@@ -13,7 +13,7 @@ use crate::{
         },
         discovery::{discover_lockfile, telemetry::safe_path, DiscoveryReport, ProbeStatus},
     },
-    live_client::{last_success_age_seconds, read_live_client_snapshot},
+    live_client::{read_live_client_snapshot, LiveClientReadingPayload, LiveClientReadingState},
 };
 
 use super::configured_log_dir;
@@ -147,6 +147,40 @@ fn lcu_health(report: &DiscoveryReport, session_ready: bool) -> HealthCheck {
     }
 }
 
+fn live_client_health(reading: &LiveClientReadingPayload) -> HealthCheck {
+    match reading.state {
+        LiveClientReadingState::Fresh => check(
+            "live-client-ready",
+            HealthStatus::Ready,
+            "Live Client 实时接口可用",
+        ),
+        LiveClientReadingState::Reconnecting => {
+            let mut health = recovery(
+                check(
+                    "live-client-reconnecting",
+                    HealthStatus::Stale,
+                    "Live Client 正在重连，暂时保留最近快照",
+                ),
+                "retry",
+            );
+            health.age_seconds = reading.age_seconds;
+            health
+        }
+        LiveClientReadingState::Unavailable => {
+            let mut health = recovery(
+                check(
+                    "live-client-waiting",
+                    HealthStatus::Unavailable,
+                    "尚未进入游戏或 2999 接口不可用",
+                ),
+                "retry",
+            );
+            health.age_seconds = reading.age_seconds;
+            health
+        }
+    }
+}
+
 fn catalog_health() -> HealthCheck {
     let raw = include_str!("../../../public/data/arena/manifest.json");
     match serde_json::from_str::<serde_json::Value>(raw) {
@@ -225,7 +259,7 @@ fn runtime_cache_health(path: Option<&Path>) -> HealthCheck {
 pub async fn get_desktop_health() -> DesktopHealthSnapshot {
     let discovery_report = discover_lockfile();
     let lockfile_path = discovery_report.selected_path.clone();
-    let (lcu_session, arena_session, live_snapshot) = tokio::join!(
+    let (lcu_session, arena_session, live_reading) = tokio::join!(
         read_lcu_session_from_path(lockfile_path.as_deref()),
         read_arena_lcu_session_from_path(lockfile_path.as_deref()),
         read_live_client_snapshot()
@@ -233,33 +267,7 @@ pub async fn get_desktop_health() -> DesktopHealthSnapshot {
 
     let league_discovery = league_health(&discovery_report);
     let lcu = lcu_health(&discovery_report, lcu_session.is_some());
-    let live_client = if live_snapshot.is_some() {
-        check(
-            "live-client-ready",
-            HealthStatus::Ready,
-            "Live Client 实时接口可用",
-        )
-    } else if let Some(age) = last_success_age_seconds() {
-        let mut health = recovery(
-            check(
-                "live-client-stale",
-                HealthStatus::Stale,
-                "最近一次实时快照已经过期",
-            ),
-            "retry",
-        );
-        health.age_seconds = Some(age);
-        health
-    } else {
-        recovery(
-            check(
-                "live-client-waiting",
-                HealthStatus::Unavailable,
-                "尚未进入游戏或 2999 接口不可用",
-            ),
-            "retry",
-        )
-    };
+    let live_client = live_client_health(&live_reading);
     let augment_capability = match arena_session
         .as_ref()
         .map(|session| session.candidate_capability())
@@ -347,11 +355,16 @@ pub fn discard_runtime_cache() -> Result<bool, String> {
 mod tests {
     use std::fs;
 
-    use crate::lcu::discovery::{
-        CandidateProbe, DiscoveryReport, DiscoverySource, LockfileParseError, ProbeStatus,
+    use crate::{
+        lcu::discovery::{
+            CandidateProbe, DiscoveryReport, DiscoverySource, LockfileParseError, ProbeStatus,
+        },
+        live_client::{LiveClientFailureKind, LiveClientReadingPayload, LiveClientReadingState},
     };
 
-    use super::{catalog_health, league_health, runtime_cache_health, HealthStatus};
+    use super::{
+        catalog_health, league_health, live_client_health, runtime_cache_health, HealthStatus,
+    };
 
     #[test]
     fn bundled_catalog_is_valid() {
@@ -388,5 +401,20 @@ mod tests {
         assert!(matches!(health.status, HealthStatus::Degraded));
         assert!(health.detail.contains("协议无效"));
         assert!(!health.detail.contains("secret"));
+    }
+
+    #[test]
+    fn reconnecting_live_client_is_stale_with_age() {
+        let reading = LiveClientReadingPayload {
+            state: LiveClientReadingState::Reconnecting,
+            snapshot: None,
+            age_seconds: Some(6),
+            failure_kind: Some(LiveClientFailureKind::Timeout),
+        };
+        let health = live_client_health(&reading);
+
+        assert!(matches!(health.status, HealthStatus::Stale));
+        assert_eq!(health.code, "live-client-reconnecting");
+        assert_eq!(health.age_seconds, Some(6));
     }
 }
