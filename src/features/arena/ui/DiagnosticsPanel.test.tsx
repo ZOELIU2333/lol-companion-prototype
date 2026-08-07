@@ -47,11 +47,11 @@ describe('desktop diagnostics panel', () => {
     expect(onSelectLeaguePath).toHaveBeenNthCalledWith(2, 'lockfile')
   })
 
-  it('explains stale realtime data and unsupported automatic augment capture', () => {
+  it('explains reconnecting realtime data and unsupported automatic augment capture', () => {
     render(<DiagnosticsPanel health={{
       ...baseHealth,
       liveClient: {
-        code: 'live-client-stale', status: 'stale', detail: 'snapshot stale', ageSeconds: 18,
+        code: 'live-client-reconnecting', status: 'stale', detail: '暂时保留最近快照', ageSeconds: 6,
         recoveryCode: 'retry',
       },
       augmentCapability: {
@@ -60,8 +60,24 @@ describe('desktop diagnostics panel', () => {
       },
     }} />)
 
-    expect(screen.getByText('实时数据已过期 18 秒')).toBeVisible()
+    expect(screen.getByText(/Live Client 正在重连/)).toBeVisible()
+    expect(screen.getByText(/6 秒前/)).toBeVisible()
     expect(screen.getByText('自动候选不可用，请改用三个图标手动选择')).toBeVisible()
+  })
+
+  it('shows only the safe lockfile parse category', () => {
+    render(<DiagnosticsPanel health={{
+      ...baseHealth,
+      leagueDiscovery: {
+        code: 'league-invalid',
+        status: 'degraded',
+        detail: '找到了 League 路径，但 lockfile 无法解析（协议无效）',
+        recoveryCode: 'select-league-path',
+      },
+    }} />)
+
+    expect(screen.getByText(/lockfile 无法解析/)).toBeVisible()
+    expect(document.body.textContent).not.toContain('fixture-password')
   })
 
   it('shows cache and WebView2 recovery actions', () => {

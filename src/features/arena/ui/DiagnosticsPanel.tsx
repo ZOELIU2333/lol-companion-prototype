@@ -60,7 +60,9 @@ export function DiagnosticsPanel({
   if (health.liveClient.status === 'stale') {
     recoveries.push({
       check: health.liveClient,
-      message: `实时数据已过期 ${health.liveClient.ageSeconds ?? 0} 秒`,
+      message: health.liveClient.ageSeconds === null || health.liveClient.ageSeconds === undefined
+        ? 'Live Client 正在重连'
+        : `Live Client 正在重连，最近数据为 ${health.liveClient.ageSeconds} 秒前`,
       actionLabel: '重新检测',
       action: onRetry,
     })
