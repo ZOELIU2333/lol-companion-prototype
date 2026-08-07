@@ -27,6 +27,10 @@ export type LiveClientDataHost = {
   read: (signal?: AbortSignal) => Promise<LiveClientReading>
 }
 
+export function isArenaGameMode(gameMode: string | null | undefined): boolean {
+  return /arena|cherry|kiwi/i.test(gameMode ?? '')
+}
+
 function liveObservation<T>(
   value: T,
   observedAt: number,
@@ -59,7 +63,7 @@ export function createLiveClientArenaPort(
       const championKey = snapshot.championName
         ? championKeysByName.get(snapshot.championName.toLowerCase())
         : undefined
-      const arenaMode = /arena|cherry/i.test(snapshot.gameMode ?? '')
+      const arenaMode = isArenaGameMode(snapshot.gameMode)
       const partial: PartialArenaSession = {
         gameTimeSeconds: liveObservation(snapshot.gameTime, observedAt, observationState),
         itemIds: liveObservation(snapshot.currentItemIds, observedAt, observationState),

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockMatches } from '../data/mockMatches'
-import { applyLiveClientSnapshotToMatch, createLiveClientArenaPort, createTauriLiveClientDataHost } from './liveClientData'
+import { applyLiveClientSnapshotToMatch, createLiveClientArenaPort, createTauriLiveClientDataHost, isArenaGameMode } from './liveClientData'
 
 const tauriMocks = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -153,6 +153,29 @@ describe('live client data bridge', () => {
       itemIds: { value: [1055, 2003] },
       gameTimeSeconds: { value: 126.9 },
       capabilities: { candidates: 'unsupported' },
+    })
+  })
+
+  it('recognizes the current KIWI Arena mode and preserves large item ids', async () => {
+    expect(isArenaGameMode('KIWI')).toBe(true)
+    const port = createLiveClientArenaPort({
+      read: async () => ({
+        state: 'fresh',
+        snapshot: {
+          gameTime: 914.2,
+          gameMode: 'KIWI',
+          championName: 'Ahri',
+          currentItemIds: [126697],
+          source: 'live-client-data',
+        },
+        ageSeconds: 0,
+        failureKind: null,
+      }),
+    }, new Map([['ahri', 103]]), () => 200)
+
+    await expect(port.read(new AbortController().signal)).resolves.toMatchObject({
+      mode: { value: 'arena' },
+      itemIds: { value: [126697] },
     })
   })
 })
