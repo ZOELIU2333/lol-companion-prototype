@@ -32,7 +32,7 @@ pub struct LiveClientSnapshotPayload {
     pub champion_name: Option<String>,
     pub level: Option<u16>,
     pub current_gold: Option<u32>,
-    pub current_item_ids: Vec<u16>,
+    pub current_item_ids: Vec<u32>,
     pub source: String,
 }
 
@@ -168,7 +168,7 @@ struct LiveClientPlayer {
 #[serde(rename_all = "camelCase")]
 struct LiveClientItem {
     #[serde(rename = "itemID")]
-    item_id: Option<u16>,
+    item_id: Option<u32>,
 }
 
 fn live_client_data_base_url() -> String {
@@ -371,6 +371,23 @@ mod tests {
         assert_eq!(snapshot.current_item_ids, vec![4629]);
         assert_eq!(snapshot.champion_name.as_deref(), Some("Ahri"));
         assert_eq!(snapshot.level, Some(9));
+    }
+
+    #[test]
+    fn parses_kiwi_item_ids_larger_than_u16() {
+        let snapshot = parse_live_client_snapshot(json!({
+            "activePlayer": { "summonerName": "[REDACTED]", "level": 16, "currentGold": 1911.0 },
+            "allPlayers": [{
+                "summonerName": "[REDACTED]",
+                "championName": "Ahri",
+                "items": [{ "itemID": 126697 }]
+            }],
+            "gameData": { "gameMode": "KIWI", "gameTime": 914.2 }
+        }))
+        .expect("KIWI snapshot");
+
+        assert_eq!(snapshot.game_mode.as_deref(), Some("KIWI"));
+        assert_eq!(snapshot.current_item_ids, vec![126697]);
     }
 
     #[test]

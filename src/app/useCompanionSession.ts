@@ -14,6 +14,7 @@ import {
   applyLiveClientSnapshotToMatch,
   createLiveClientArenaPort,
   createTauriLiveClientDataHost,
+  isArenaGameMode,
   type LiveClientReading,
 } from '../services/liveClientData'
 import { loadOpggChampionDetail } from '../services/opggChampionData'
@@ -310,7 +311,7 @@ export function useCompanionSession() {
         if (!isStale) {
           setLiveReading(reading)
           if (lcuStateRef.current !== 'ready' && reading.state === 'fresh' && reading.snapshot) {
-            const inferredMode: GameMode = /arena|cherry/i.test(reading.snapshot.gameMode ?? '')
+            const inferredMode: GameMode = isArenaGameMode(reading.snapshot.gameMode)
               ? 'arena'
               : 'ranked'
             setActiveMode(inferredMode)
