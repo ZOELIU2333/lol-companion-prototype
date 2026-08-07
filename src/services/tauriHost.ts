@@ -105,7 +105,13 @@ export async function exportDesktopDiagnostics(): Promise<string> {
 
 export async function chooseLeagueInstallation(kind: 'directory' | 'lockfile'): Promise<string | null> {
   if (!isTauri()) return null
-  return invoke<string | null>('choose_league_installation', { kind })
+  try {
+    return await invoke<string | null>('choose_league_installation', { kind })
+  } catch (error) {
+    if (error instanceof Error) throw error
+    if (typeof error === 'string' && error.trim()) throw new Error(error)
+    throw new Error('League 路径验证失败')
+  }
 }
 
 export async function discardRuntimeCache(): Promise<boolean> {

@@ -255,7 +255,8 @@ git commit -m "fix: explain League validation and fallback status"
 - [ ] **Step 1: Run the complete local gate**
 
 ```bash
-npm run check:data
+npm run data:arena:check
+npm run data:game:check
 npm test -- --run
 npm run lint
 npm run build

@@ -7,8 +7,11 @@ use std::{
     ptr::{null, null_mut},
 };
 
+use windows_sys::Wdk::System::Threading::{
+    NtQueryInformationProcess, ProcessCommandLineInformation,
+};
 use windows_sys::Win32::{
-    Foundation::{CloseHandle, ERROR_SUCCESS, HANDLE, INVALID_HANDLE_VALUE},
+    Foundation::{CloseHandle, ERROR_SUCCESS, HANDLE, INVALID_HANDLE_VALUE, UNICODE_STRING},
     System::{
         Diagnostics::ToolHelp::{
             CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
@@ -21,6 +24,16 @@ use windows_sys::Win32::{
         Threading::{OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION},
     },
 };
+
+use super::{process_arguments, ProcessArgumentsError};
+use crate::lcu::credentials::LcuCredentials;
+
+const MAX_COMMAND_LINE_BYTES: u32 = 64 * 1024;
+
+pub(crate) struct LeagueProcessCandidate {
+    pub(crate) pid: u32,
+    pub(crate) install_root: PathBuf,
+}
 
 struct OwnedHandle(HANDLE);
 
@@ -78,7 +91,7 @@ fn query_process_image_path(process_id: u32) -> Option<PathBuf> {
     Some(PathBuf::from(OsString::from_wide(&buffer)))
 }
 
-pub(crate) fn process_install_roots() -> Vec<PathBuf> {
+pub(crate) fn process_candidates() -> Vec<LeagueProcessCandidate> {
     let Some(snapshot) =
         OwnedHandle::new(unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) })
     else {
@@ -88,7 +101,7 @@ pub(crate) fn process_install_roots() -> Vec<PathBuf> {
         dwSize: size_of::<PROCESSENTRY32W>() as u32,
         ..unsafe { std::mem::zeroed() }
     };
-    let mut roots = Vec::new();
+    let mut candidates = Vec::new();
     let mut has_entry = unsafe { Process32FirstW(snapshot.0, &mut entry) } != 0;
     while has_entry {
         let executable_name = wide_slice_to_string(&entry.szExeFile);
@@ -96,14 +109,74 @@ pub(crate) fn process_install_roots() -> Vec<PathBuf> {
             if let Some(root) = query_process_image_path(entry.th32ProcessID)
                 .and_then(|path| path.parent().map(PathBuf::from))
             {
-                if !roots.contains(&root) {
-                    roots.push(root);
+                if !candidates
+                    .iter()
+                    .any(|candidate: &LeagueProcessCandidate| candidate.pid == entry.th32ProcessID)
+                {
+                    candidates.push(LeagueProcessCandidate {
+                        pid: entry.th32ProcessID,
+                        install_root: root,
+                    });
                 }
             }
         }
         has_entry = unsafe { Process32NextW(snapshot.0, &mut entry) } != 0;
     }
-    roots
+    candidates
+}
+
+pub(crate) fn read_process_credentials(
+    process_id: u32,
+) -> Result<LcuCredentials, ProcessArgumentsError> {
+    let handle =
+        OwnedHandle::new(unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, process_id) })
+            .ok_or(ProcessArgumentsError::ArgumentsUnavailable)?;
+    let mut required = 0u32;
+    unsafe {
+        NtQueryInformationProcess(
+            handle.0,
+            ProcessCommandLineInformation,
+            null_mut(),
+            0,
+            &mut required,
+        );
+    }
+    if required < size_of::<UNICODE_STRING>() as u32 || required > MAX_COMMAND_LINE_BYTES {
+        return Err(ProcessArgumentsError::ArgumentsUnavailable);
+    }
+    let mut buffer = vec![0u8; required as usize];
+    let status = unsafe {
+        NtQueryInformationProcess(
+            handle.0,
+            ProcessCommandLineInformation,
+            buffer.as_mut_ptr().cast(),
+            required,
+            &mut required,
+        )
+    };
+    if status < 0 {
+        return Err(ProcessArgumentsError::ArgumentsUnavailable);
+    }
+    let value = unsafe { buffer.as_ptr().cast::<UNICODE_STRING>().read_unaligned() };
+    let byte_length = usize::from(value.Length);
+    if byte_length == 0 || byte_length % 2 != 0 {
+        return Err(ProcessArgumentsError::ArgumentsUnavailable);
+    }
+    let allocation_start = buffer.as_ptr() as usize;
+    let allocation_end = allocation_start
+        .checked_add(buffer.len())
+        .ok_or(ProcessArgumentsError::ArgumentsUnavailable)?;
+    let string_start = value.Buffer as usize;
+    let string_end = string_start
+        .checked_add(byte_length)
+        .ok_or(ProcessArgumentsError::ArgumentsUnavailable)?;
+    if string_start < allocation_start || string_end > allocation_end {
+        return Err(ProcessArgumentsError::ArgumentsUnavailable);
+    }
+    let units = unsafe { std::slice::from_raw_parts(value.Buffer, byte_length / 2) };
+    let command_line =
+        String::from_utf16(units).map_err(|_| ProcessArgumentsError::ArgumentsUnavailable)?;
+    process_arguments::parse(&command_line, process_id)
 }
 
 fn expand_percent_variables(value: &str) -> String {

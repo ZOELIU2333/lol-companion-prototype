@@ -19,6 +19,8 @@
 - [ ] 登录 League Client 并停留首页后，LOL Companion 在十秒内从未连接变为正常。
 - [ ] 自动发现失败时，“选择 League 目录”和“选择 lockfile”均可验证并保存路径。
 - [ ] 含 BOM/NUL 或认证字段分隔符的 WeGame lockfile 可通过验证，界面和日志不暴露认证字段。
+- [ ] WeGame 邻接 lockfile 字段数量不标准时，应用可自动回退到运行中 `LeagueClientUx.exe` 的原生进程参数，并在十秒内使 League Client 与 LCU 变为正常。
+- [ ] 原生进程参数回退不要求管理员权限；诊断只显示 `ProcessArguments:Valid` 或安全失败分类，不包含完整命令行和认证字段。
 - [ ] 保存路径后退出并重新启动 LOL Companion，无需再次选择即可连接。
 - [ ] 连续运行五分钟并保持自动检测，期间没有 Terminal、cmd、PowerShell、`wmic` 或 `reg.exe` 窗口弹出。
 - [ ] 进入竞技场后自动更新英雄、等级、金币、装备和游戏时间。
@@ -52,6 +54,7 @@
 - [ ] 诊断 ZIP 仅包含批准的日志和 manifest 文件。
 - [ ] ZIP 与日志中不存在 LCU 密码、Riot API Key、`X-Riot-Token` 或 `Authorization` 值。
 - [ ] ZIP 与日志中不存在 raw lockfile、LCU 响应正文或未脱敏的 Windows 用户名。
+- [ ] ZIP 与日志中不存在 `--remoting-auth-token` 的值、完整进程命令行或派生的 Basic Authorization 值。
 - [ ] 导出成功显示 ZIP 的实际完整路径并可复制；不可写目录时显示导出失败。
 - [ ] 启动崩溃时原生错误框包含日志目录或恢复说明。
 

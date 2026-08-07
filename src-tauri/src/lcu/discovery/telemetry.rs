@@ -43,6 +43,7 @@ fn report_key(report: &DiscoveryReport) -> String {
                 probe
                     .parse_error
                     .map(|error| format!("({error:?})"))
+                    .or_else(|| probe.process_error.map(|error| format!("({error:?})")))
                     .unwrap_or_default()
             )
         })
@@ -77,6 +78,7 @@ pub fn record_report(report: &DiscoveryReport) {
                 probe
                     .parse_error
                     .map(|error| format!("({error:?})"))
+                    .or_else(|| probe.process_error.map(|error| format!("({error:?})")))
                     .unwrap_or_default()
             )
         })

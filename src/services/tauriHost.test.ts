@@ -184,4 +184,13 @@ describe('tauri host bridge', () => {
     await expect(chooseLeagueInstallation('lockfile')).resolves.toBeNull()
     expect(tauriMocks.invoke).not.toHaveBeenCalled()
   })
+
+  it('preserves a safe string error from League validation', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockRejectedValue('所选 lockfile 无法解析（字段数量不正确）')
+
+    await expect(chooseLeagueInstallation('lockfile')).rejects.toThrow(
+      '所选 lockfile 无法解析（字段数量不正确）',
+    )
+  })
 })

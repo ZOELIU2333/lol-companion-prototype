@@ -1,39 +1,4 @@
-pub(crate) struct LcuLockfile {
-    pid: u32,
-    port: u16,
-    password: String,
-    protocol: String,
-}
-
-impl LcuLockfile {
-    pub(crate) fn pid(&self) -> u32 {
-        self.pid
-    }
-
-    pub(crate) fn port(&self) -> u16 {
-        self.port
-    }
-
-    pub(crate) fn password(&self) -> &str {
-        &self.password
-    }
-
-    pub(crate) fn protocol(&self) -> &str {
-        &self.protocol
-    }
-}
-
-impl std::fmt::Debug for LcuLockfile {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter
-            .debug_struct("LcuLockfile")
-            .field("pid", &self.pid)
-            .field("port", &self.port)
-            .field("password", &"[REDACTED]")
-            .field("protocol", &self.protocol)
-            .finish()
-    }
-}
+use super::credentials::{CredentialValidationError, LcuCredentials};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub(crate) enum LockfileParseError {
@@ -49,7 +14,7 @@ pub(crate) enum LockfileParseError {
     InvalidProtocol,
 }
 
-pub(crate) fn parse(raw: &str) -> Result<LcuLockfile, LockfileParseError> {
+pub(crate) fn parse(raw: &str) -> Result<LcuCredentials, LockfileParseError> {
     let normalized = raw
         .trim_start_matches('\u{feff}')
         .trim_end_matches(|character| matches!(character, '\0' | '\r' | '\n'));
@@ -72,18 +37,12 @@ pub(crate) fn parse(raw: &str) -> Result<LcuLockfile, LockfileParseError> {
         .copied()
         .unwrap_or_default()
         .to_ascii_lowercase();
-    if !matches!(protocol.as_str(), "http" | "https") {
-        return Err(LockfileParseError::InvalidProtocol);
-    }
     let password = parts[3..parts.len() - 1].join(":");
-    if password.is_empty() {
-        return Err(LockfileParseError::EmptyPassword);
-    }
-    Ok(LcuLockfile {
-        pid,
-        port,
-        password,
-        protocol,
+    LcuCredentials::try_new(pid, port, password, protocol).map_err(|error| match error {
+        CredentialValidationError::InvalidPid => LockfileParseError::InvalidPid,
+        CredentialValidationError::InvalidPort => LockfileParseError::InvalidPort,
+        CredentialValidationError::EmptyPassword => LockfileParseError::EmptyPassword,
+        CredentialValidationError::InvalidProtocol => LockfileParseError::InvalidProtocol,
     })
 }
 

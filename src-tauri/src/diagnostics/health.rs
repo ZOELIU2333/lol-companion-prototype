@@ -9,7 +9,8 @@ use serde::Serialize;
 use crate::{
     lcu::{
         client::{
-            read_arena_lcu_session_from_path, read_lcu_session_from_path, CandidateCapability,
+            read_arena_lcu_session_from_credentials, read_lcu_session_from_credentials,
+            CandidateCapability,
         },
         discovery::{discover_lockfile, telemetry::safe_path, DiscoveryReport, ProbeStatus},
     },
@@ -84,6 +85,13 @@ fn with_path(mut health: HealthCheck, path: &Path) -> HealthCheck {
 }
 
 fn league_health(report: &DiscoveryReport) -> HealthCheck {
+    if report.selected_credentials.is_some() && report.selected_path.is_none() {
+        return check(
+            "league-process-arguments",
+            HealthStatus::Ready,
+            "已通过运行中的 League 客户端建立安全连接",
+        );
+    }
     if let Some(path) = report.selected_path.as_deref() {
         return with_path(
             check("league-found", HealthStatus::Ready, "已找到 League 客户端"),
@@ -102,6 +110,13 @@ fn league_health(report: &DiscoveryReport) -> HealthCheck {
             .iter()
             .find_map(|probe| probe.parse_error)
             .map(|error| format!("（{error}）"))
+            .or_else(|| {
+                report
+                    .probes
+                    .iter()
+                    .find_map(|probe| probe.process_error)
+                    .map(|error| format!("（{error}）"))
+            })
             .unwrap_or_default();
         recovery(
             check(
@@ -126,7 +141,7 @@ fn league_health(report: &DiscoveryReport) -> HealthCheck {
 fn lcu_health(report: &DiscoveryReport, session_ready: bool) -> HealthCheck {
     if session_ready {
         check("lcu-ready", HealthStatus::Ready, "LCU 本地接口可用")
-    } else if report.selected_path.is_some() {
+    } else if report.selected_credentials.is_some() {
         recovery(
             check(
                 "lcu-unreachable",
@@ -258,10 +273,10 @@ fn runtime_cache_health(path: Option<&Path>) -> HealthCheck {
 #[tauri::command]
 pub async fn get_desktop_health() -> DesktopHealthSnapshot {
     let discovery_report = discover_lockfile();
-    let lockfile_path = discovery_report.selected_path.clone();
+    let credentials = discovery_report.selected_credentials.clone();
     let (lcu_session, arena_session, live_reading) = tokio::join!(
-        read_lcu_session_from_path(lockfile_path.as_deref()),
-        read_arena_lcu_session_from_path(lockfile_path.as_deref()),
+        read_lcu_session_from_credentials(credentials.as_ref()),
+        read_arena_lcu_session_from_credentials(credentials.as_ref()),
         read_live_client_snapshot()
     );
 
@@ -390,11 +405,13 @@ mod tests {
             correlation_id: 1,
             selected_path: None,
             selected_source: None,
+            selected_credentials: None,
             probes: vec![CandidateProbe {
                 source: DiscoverySource::Saved,
                 path: "C:/Riot Games/League of Legends/lockfile".into(),
                 status: ProbeStatus::InvalidFormat,
                 parse_error: Some(LockfileParseError::InvalidProtocol),
+                process_error: None,
             }],
         };
         let health = league_health(&report);
