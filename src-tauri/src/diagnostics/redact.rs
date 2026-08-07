@@ -21,14 +21,20 @@ fn patterns() -> &'static [Regex] {
 }
 
 fn redact_lockfile_line(line: &str) -> String {
-    let mut fields = line.split(':').collect::<Vec<_>>();
-    let looks_like_lockfile = fields.len() == 5
+    let normalized = line
+        .trim_start_matches('\u{feff}')
+        .trim_end_matches(|character| matches!(character, '\0' | '\r'));
+    let fields = normalized.split(':').collect::<Vec<_>>();
+    let protocol = fields.last().copied().unwrap_or_default();
+    let looks_like_lockfile = fields.len() >= 5
         && fields[1].parse::<u32>().is_ok()
         && fields[2].parse::<u16>().is_ok()
-        && matches!(fields[4], "http" | "https");
+        && matches!(protocol, "http" | "https");
     if looks_like_lockfile {
-        fields[3] = REDACTED;
-        return fields.join(":");
+        return format!(
+            "{}:{}:{}:{REDACTED}:{protocol}",
+            fields[0], fields[1], fields[2]
+        );
     }
     line.to_owned()
 }
@@ -83,5 +89,14 @@ mod tests {
         assert!(!safe.contains("json-secret"));
         assert!(!safe.contains("RGAPI-json"));
         assert!(safe.contains("InProgress"));
+    }
+
+    #[test]
+    fn removes_lockfile_password_containing_colons() {
+        let safe = redact("LeagueClientUx:1234:5678:token:with:colons:https");
+        assert!(!safe.contains("token"));
+        assert!(!safe.contains("with"));
+        assert!(!safe.contains("colons"));
+        assert_eq!(safe, "LeagueClientUx:1234:5678:[REDACTED]:https");
     }
 }

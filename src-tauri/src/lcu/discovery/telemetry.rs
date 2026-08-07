@@ -35,7 +35,17 @@ fn report_key(report: &DiscoveryReport) -> String {
     let probes = report
         .probes
         .iter()
-        .map(|probe| format!("{:?}:{:?}", probe.source, probe.status))
+        .map(|probe| {
+            format!(
+                "{:?}:{:?}{}",
+                probe.source,
+                probe.status,
+                probe
+                    .parse_error
+                    .map(|error| format!("({error:?})"))
+                    .unwrap_or_default()
+            )
+        })
         .collect::<Vec<_>>()
         .join(",");
     format!("{:?}|{probes}", report.selected_source)
@@ -59,7 +69,17 @@ pub fn record_report(report: &DiscoveryReport) {
     let probes = report
         .probes
         .iter()
-        .map(|probe| format!("{:?}:{:?}", probe.source, probe.status))
+        .map(|probe| {
+            format!(
+                "{:?}:{:?}{}",
+                probe.source,
+                probe.status,
+                probe
+                    .parse_error
+                    .map(|error| format!("({error:?})"))
+                    .unwrap_or_default()
+            )
+        })
         .collect::<Vec<_>>();
     tracing::info!(
         correlation_id = report.correlation_id,

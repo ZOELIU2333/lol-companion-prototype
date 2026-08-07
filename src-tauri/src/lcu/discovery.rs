@@ -6,6 +6,7 @@ use std::{
 };
 
 use super::lockfile::parse as parse_lockfile;
+pub(crate) use super::lockfile::LockfileParseError;
 
 pub mod config;
 pub mod telemetry;
@@ -36,6 +37,7 @@ pub struct CandidateProbe {
     pub source: DiscoverySource,
     pub path: PathBuf,
     pub status: ProbeStatus,
+    pub parse_error: Option<LockfileParseError>,
 }
 
 #[derive(Debug, Clone)]
@@ -195,17 +197,19 @@ pub fn candidate_lockfile_paths(environment: &DiscoveryEnvironment) -> Vec<PathB
         .collect()
 }
 
-fn probe_path(path: &PathBuf) -> ProbeStatus {
+fn probe_path(path: &PathBuf) -> (ProbeStatus, Option<LockfileParseError>) {
     if !path.exists() {
-        return ProbeStatus::Missing;
+        return (ProbeStatus::Missing, None);
     }
     if !path.is_file() {
-        return ProbeStatus::NotFile;
+        return (ProbeStatus::NotFile, None);
     }
     match fs::read_to_string(path) {
-        Ok(raw) if parse_lockfile(&raw).is_ok() => ProbeStatus::Valid,
-        Ok(_) => ProbeStatus::InvalidFormat,
-        Err(_) => ProbeStatus::Unreadable,
+        Ok(raw) => match parse_lockfile(&raw) {
+            Ok(_) => (ProbeStatus::Valid, None),
+            Err(error) => (ProbeStatus::InvalidFormat, Some(error)),
+        },
+        Err(_) => (ProbeStatus::Unreadable, None),
     }
 }
 
@@ -220,11 +224,12 @@ fn discover_with_environment(environment: &DiscoveryEnvironment) -> DiscoveryRep
         probes: Vec::new(),
     };
     for (source, path) in sourced_candidate_lockfile_paths(environment) {
-        let status = probe_path(&path);
+        let (status, parse_error) = probe_path(&path);
         report.probes.push(CandidateProbe {
             source,
             path: path.clone(),
             status,
+            parse_error,
         });
         if status == ProbeStatus::Valid {
             report.selected_path = Some(path);
@@ -281,6 +286,7 @@ mod tests {
         candidate_lockfile_paths, discover_with_environment, DiscoveryEnvironment, DiscoverySource,
         ProbeStatus,
     };
+    use crate::lcu::lockfile::LockfileParseError;
     use std::{fs, path::PathBuf};
 
     #[test]
@@ -348,6 +354,30 @@ mod tests {
         assert_eq!(report.probes[0].status, ProbeStatus::Missing);
         assert_eq!(report.probes[1].status, ProbeStatus::Valid);
         fs::remove_dir_all(root).expect("remove discovery fixture");
+    }
+
+    #[test]
+    fn report_carries_only_safe_invalid_format_category() {
+        let root = std::env::temp_dir().join(format!(
+            "lol-companion-invalid-discovery-report-{}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&root).expect("create invalid discovery fixture");
+        let lockfile = root.join("lockfile");
+        fs::write(&lockfile, "LeagueClient:1:54321:secret:ftp").expect("write invalid lockfile");
+
+        let environment = DiscoveryEnvironment::for_test().with_var(
+            "LEAGUE_CLIENT_LOCKFILE",
+            lockfile.to_string_lossy().as_ref(),
+        );
+        let report = discover_with_environment(&environment);
+
+        assert_eq!(report.probes[0].status, ProbeStatus::InvalidFormat);
+        assert_eq!(
+            report.probes[0].parse_error,
+            Some(LockfileParseError::InvalidProtocol)
+        );
+        fs::remove_dir_all(root).expect("remove invalid discovery fixture");
     }
 
     #[test]

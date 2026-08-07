@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::diagnostics::configured_log_dir;
 
-use super::super::lockfile::parse as parse_lockfile;
+use super::super::lockfile::{parse as parse_lockfile, LockfileParseError};
 
 const CONFIG_FILE_NAME: &str = "league-client.json";
 const CONFIG_VERSION: u8 = 1;
@@ -19,8 +19,8 @@ pub enum SelectionError {
     InvalidSelection,
     #[error("所选 lockfile 无法读取")]
     Unreadable,
-    #[error("所选 lockfile 格式无效；请先启动英雄联盟客户端后重试")]
-    InvalidLockfile,
+    #[error("所选 lockfile 无法解析（{category}）；请先启动英雄联盟客户端后重试")]
+    InvalidLockfile { category: &'static str },
     #[error("无法保存 League 客户端路径: {0}")]
     Persist(#[from] io::Error),
     #[error("诊断目录尚未初始化")]
@@ -50,7 +50,15 @@ pub fn validate_selection(path: &Path) -> Result<PathBuf, SelectionError> {
         return Err(SelectionError::InvalidSelection);
     };
     let raw = fs::read_to_string(&lockfile_path).map_err(|_| SelectionError::Unreadable)?;
-    parse_lockfile(&raw).map_err(|_| SelectionError::InvalidLockfile)?;
+    parse_lockfile(&raw).map_err(|error| SelectionError::InvalidLockfile {
+        category: match error {
+            LockfileParseError::FieldCount => "字段数量不正确",
+            LockfileParseError::InvalidPid => "进程编号无效",
+            LockfileParseError::InvalidPort => "端口无效",
+            LockfileParseError::EmptyPassword => "认证字段为空",
+            LockfileParseError::InvalidProtocol => "协议无效",
+        },
+    })?;
     Ok(lockfile_path)
 }
 
@@ -216,10 +224,9 @@ mod tests {
 
         let lockfile = root.join("lockfile");
         fs::write(&lockfile, "invalid").expect("write invalid lockfile");
-        assert!(matches!(
-            validate_selection(&lockfile),
-            Err(SelectionError::InvalidLockfile)
-        ));
+        let error = validate_selection(&lockfile).expect_err("reject invalid lockfile");
+        assert!(matches!(error, SelectionError::InvalidLockfile { .. }));
+        assert!(error.to_string().contains("字段数量不正确"));
         fs::remove_dir_all(root).expect("remove invalid config fixture");
     }
 }

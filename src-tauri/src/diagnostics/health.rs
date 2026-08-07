@@ -97,11 +97,17 @@ fn league_health(report: &DiscoveryReport) -> HealthCheck {
         )
     });
     if has_invalid_candidate {
+        let parse_detail = report
+            .probes
+            .iter()
+            .find_map(|probe| probe.parse_error)
+            .map(|error| format!("（{error}）"))
+            .unwrap_or_default();
         recovery(
             check(
                 "league-invalid",
                 HealthStatus::Degraded,
-                "找到了 League 路径，但 lockfile 尚不可用",
+                format!("找到了 League 路径，但 lockfile 无法解析{parse_detail}"),
             ),
             "select-league-path",
         )
@@ -341,7 +347,9 @@ pub fn discard_runtime_cache() -> Result<bool, String> {
 mod tests {
     use std::fs;
 
-    use crate::lcu::discovery::{CandidateProbe, DiscoveryReport, DiscoverySource, ProbeStatus};
+    use crate::lcu::discovery::{
+        CandidateProbe, DiscoveryReport, DiscoverySource, LockfileParseError, ProbeStatus,
+    };
 
     use super::{catalog_health, league_health, runtime_cache_health, HealthStatus};
 
@@ -373,11 +381,12 @@ mod tests {
                 source: DiscoverySource::Saved,
                 path: "C:/Riot Games/League of Legends/lockfile".into(),
                 status: ProbeStatus::InvalidFormat,
+                parse_error: Some(LockfileParseError::InvalidProtocol),
             }],
         };
-        assert!(matches!(
-            league_health(&report).status,
-            HealthStatus::Degraded
-        ));
+        let health = league_health(&report);
+        assert!(matches!(health.status, HealthStatus::Degraded));
+        assert!(health.detail.contains("协议无效"));
+        assert!(!health.detail.contains("secret"));
     }
 }
