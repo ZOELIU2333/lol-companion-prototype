@@ -291,8 +291,8 @@ export function useCompanionSession() {
     let timer: number | undefined
     const readSnapshot = async () => {
       try {
-        const snapshot = await liveClientDataHost.readSnapshot()
-        if (!isStale) setLiveSnapshot(snapshot)
+        const reading = await liveClientDataHost.read()
+        if (!isStale) setLiveSnapshot(reading.snapshot)
       } catch {
         if (!isStale) setLiveSnapshot(null)
       } finally {
