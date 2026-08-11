@@ -171,7 +171,11 @@ enum LcuRequestError {
 
 pub fn map_queue_to_mode(queue: Option<&str>) -> Option<String> {
     let raw = queue.unwrap_or_default().to_lowercase();
-    if raw.contains("arena") || raw.contains("cherry") || raw.contains("海克斯") {
+    if raw.contains("arena")
+        || raw.contains("cherry")
+        || raw.contains("kiwi")
+        || raw.contains("海克斯")
+    {
         return Some("arena".to_string());
     }
     if raw.contains("rank")
@@ -576,6 +580,8 @@ mod tests {
     #[test]
     fn maps_arena_queues_to_the_canonical_mode() {
         assert_eq!(map_queue_to_mode(Some("Arena")), Some("arena".to_string()));
+        assert_eq!(map_queue_to_mode(Some("CHERRY")), Some("arena".to_string()));
+        assert_eq!(map_queue_to_mode(Some("KIWI")), Some("arena".to_string()));
         assert_eq!(
             map_queue_to_mode(Some("Ranked Solo")),
             Some("ranked".to_string())

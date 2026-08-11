@@ -89,7 +89,12 @@ export const unavailableLcuAdapter: LcuAdapter = {
 export function mapLcuQueueToMode(queueDescription?: string): GameMode | null {
   const normalized = queueDescription?.toLowerCase() ?? ''
 
-  if (normalized.includes('arena') || normalized.includes('海克斯')) {
+  if (
+    normalized.includes('arena')
+    || normalized.includes('cherry')
+    || normalized.includes('kiwi')
+    || normalized.includes('海克斯')
+  ) {
     return 'arena'
   }
 
