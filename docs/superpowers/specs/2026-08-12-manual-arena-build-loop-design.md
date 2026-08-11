@@ -2,7 +2,7 @@
 
 ## Goal
 
-Make manual augment input the reliable primary workflow for Arena recommendations. A player can search and record previously selected augments, enter the current three candidates, compare them, confirm the chosen candidate, and immediately receive combined augment and item routes. Automatic augment discovery remains an optional future source and can never erase newer manual facts.
+Make manual augment input the reliable primary workflow for Arena recommendations. A player can search and record previously selected augments, enter the current three candidates, compare them, confirm the chosen candidate, and immediately receive combined augment and item routes. Before the match starts, the same Arena page also evaluates the real teammate when the League Client exposes an identity. Automatic augment discovery remains an optional future source and can never erase newer manual facts.
 
 ## Product Outcome
 
@@ -13,6 +13,21 @@ The live Arena page must remain useful when the client exposes no augment fields
 3. Given the champion, selected augments, owned items, and current gold, what should the player buy now and complete next?
 
 Item advice must exist before any augment is entered. Candidate comparison enriches item advice but cannot be a prerequisite for it.
+
+## Pregame Teammate Rating
+
+The League Client champ-select session is the authority for pregame participants. The adapter marks the local player explicitly from `localPlayerCellId`; the Arena UI evaluates only other real allied participants and never substitutes a mock player identity or mock performance metrics.
+
+When a teammate Riot ID or PUUID is available, the application loads public OP.GG data first and uses a configured Riot API route as a fallback. It derives a compact teammate card from real recent matches and profile data. Arena-mode matches have the highest weight, current-champion evidence has the next weight, and general public profile evidence is only a fallback. The card displays one of four outcomes:
+
+- `上等马`: strong, sufficiently sampled recent evidence;
+- `中等马`: ordinary or mixed, sufficiently sampled evidence;
+- `下等马`: weak evidence, shown only with a sufficient sample;
+- `情报不足`: hidden identity, failed source, or too little evidence to classify safely.
+
+The rating is a match-context estimate, not a permanent judgment of the player. It shows a 0–100 fit score only when real evidence exists, a `高 / 中 / 低` confidence label, the real sample count, and two or three short reasons such as Arena form, current-champion familiarity, or volatility. It does not invent party history, win rate, mastery, or a numerical score from the existing mock match templates.
+
+Pregame loading starts during Arena `ChampSelect`; it is not gated by Live Client state because port 2999 is expected to be unavailable before the match. Once the match begins, the teammate card may remain as the last verified pregame snapshot while the augment-and-item workflow takes priority.
 
 ## Manual Input Model
 
@@ -92,10 +107,11 @@ Corrupt, unknown-version, or unknown-ID storage is discarded safely. Automatic A
 
 The compact Arena page keeps a short vertical reading order:
 
-1. `已选海克斯` icon row with search/add, undo, and reset.
-2. `本轮三个候选` fixed slots with search and ranked recommendation once complete.
-3. `组合方向` showing stable, ceiling, and off-meta routes with concise mechanism chains.
-4. `装备路线` showing immediate purchase, first completed item, and later item.
+1. During champ select only, `本局队友` with rating, confidence, sample, and reasons.
+2. `已选海克斯` icon row with search/add, undo, and reset.
+3. `本轮三个候选` fixed slots with search and ranked recommendation once complete.
+4. `组合方向` showing stable, ceiling, and off-meta routes with concise mechanism chains.
+5. `装备路线` showing immediate purchase, first completed item, and later item.
 
 The existing hidden details control is replaced by visible primary actions. Manual input must not be buried under diagnostics or a collapsed disclosure. Search closes after a selection and restores keyboard focus to the relevant slot or add button.
 
@@ -108,6 +124,9 @@ The existing hidden details control is replaced by visible primary actions. Manu
 - Unknown saved augment ID: discard that ID, retain other valid IDs, and persist the repaired state.
 - Live Client temporarily reconnecting: retain manual input and last real item/gold snapshot with the existing stale label.
 - Item/gold unavailable: show a champion-and-selected-augment completed-item direction, labeling immediate purchase as waiting for live data.
+- Teammate identity unavailable: show `情报不足 · 客户端未公开队友身份`; never fill the card from a mock player slot.
+- Public profile unavailable or fewer than three usable matches: show `情报不足` with the source state instead of assigning `下等马`.
+- Pregame OP.GG/Riot request fails: keep manual Arena controls usable and retry on the next real participant/session change without repeating toasts.
 
 ## Testing and Acceptance
 
@@ -124,4 +143,6 @@ Recommendation tests prove:
 
 UI tests cover search by Chinese and English names, icon results, keyboard focus, three fixed slots, duplicate states, `我选了这个`, undo, reset confirmation, persisted restore, compact reading order, and equipment visibility without candidates.
 
-The implementation is accepted after all frontend tests, Rust tests, lint, catalog checks, production build, and Windows x64 Actions checks pass. Windows acceptance must confirm that a player can manually enter three candidates, choose one, see it in selected history, and receive updated combination and equipment routes without restarting the application.
+Pregame tests prove that the local player is excluded, an identified allied participant begins public-data loading during `ChampSelect` while Live Client is unavailable, sufficient real samples produce the correct tier and reasons, insufficient samples stay `情报不足`, and no mock score appears under a real player name.
+
+The implementation is accepted after all frontend tests, Rust tests, lint, catalog checks, production build, and Windows x64 Actions checks pass. Windows acceptance must confirm that champ select shows either a real-evidence teammate tier or an honest `情报不足` state, and that a player can manually enter three candidates, choose one, see it in selected history, and receive updated combination and equipment routes without restarting the application.
