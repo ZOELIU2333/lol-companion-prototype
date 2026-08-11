@@ -33,9 +33,9 @@ describe('connection evidence presentation', () => {
       .toEqual({ status: 'reconnecting', label: '实时数据重连中 · 6 秒前', isDetected: true })
   })
 
-  it('uses Demo only when both real sources are unavailable', () => {
+  it('shows a waiting state when both real sources are unavailable', () => {
     expect(deriveConnectionPresentation({ lcuState: 'unavailable', lcuPhase: null, live: unavailable }))
-      .toEqual({ status: 'demo', label: 'Demo 模式 · 未连接客户端', isDetected: false })
+      .toEqual({ status: 'offline', label: '未连接客户端 · 等待进入游戏', isDetected: false })
   })
 
   it('recognizes a match phase from LCU without Live Client', () => {

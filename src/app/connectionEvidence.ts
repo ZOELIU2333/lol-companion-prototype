@@ -2,7 +2,7 @@ import type { LcuGamePhase } from '../services/lcuAdapter'
 import type { LiveClientReading } from '../services/liveClientData'
 
 export type LcuEvidenceState = 'detecting' | 'ready' | 'unavailable'
-export type ConnectionStatus = 'detecting' | 'demo' | 'client' | 'match' | 'reconnecting'
+export type ConnectionStatus = 'detecting' | 'offline' | 'client' | 'match' | 'reconnecting'
 export type ConnectionPresentation = {
   status: ConnectionStatus
   label: string
@@ -41,5 +41,5 @@ export function deriveConnectionPresentation(input: {
     return { status: 'detecting', label: '检测客户端中', isDetected: false }
   }
 
-  return { status: 'demo', label: 'Demo 模式 · 未连接客户端', isDetected: false }
+  return { status: 'offline', label: '未连接客户端 · 等待进入游戏', isDetected: false }
 }

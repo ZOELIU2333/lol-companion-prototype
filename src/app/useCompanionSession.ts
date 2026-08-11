@@ -14,7 +14,6 @@ import {
   applyLiveClientSnapshotToMatch,
   createLiveClientArenaPort,
   createTauriLiveClientDataHost,
-  isArenaGameMode,
   type LiveClientReading,
 } from '../services/liveClientData'
 import { loadOpggChampionDetail } from '../services/opggChampionData'
@@ -38,6 +37,11 @@ import {
   deriveConnectionPresentation,
   type LcuEvidenceState,
 } from './connectionEvidence'
+import {
+  deriveLiveSessionState,
+  hasUsableLiveSnapshot,
+  resolveAuthoritativeMode,
+} from './liveSessionAuthority'
 
 const companionDataSource = createCompanionDataSource(tauriLcuAdapter)
 const pluginActions = mockPluginActions
@@ -109,7 +113,8 @@ export function useCompanionSession() {
   const [arenaGameData, setArenaGameData] = useState<CurrentGameData | null>(null)
   const [arenaSession, setArenaSession] = useState<ArenaSession>(() => createEmptyArenaSession())
   const arenaSessionRef = useRef(arenaSession)
-  const lcuStateRef = useRef(lcuState)
+  const liveReadingRef = useRef(liveReading)
+  const activeModeRef = useRef(activeMode)
   const isDesktopShell = useMemo(() => isRunningInTauri(), [])
   const liveClientDataHost = useMemo(() => createTauriLiveClientDataHost(), [])
   const opggMcpHost = useMemo(() => createTauriOpggMcpHost(), [])
@@ -123,6 +128,7 @@ export function useCompanionSession() {
   const matches = useMemo(() => companionDataSource.listMatches(), [])
   const availableMatches = matches
   const liveSnapshot = liveReading.snapshot
+  const liveSessionState = deriveLiveSessionState(liveReading)
   const connectionPresentation = useMemo(
     () => deriveConnectionPresentation({ lcuState, lcuPhase, live: liveReading }),
     [lcuPhase, lcuState, liveReading],
@@ -163,8 +169,12 @@ export function useCompanionSession() {
   }, [arenaSession])
 
   useEffect(() => {
-    lcuStateRef.current = lcuState
-  }, [lcuState])
+    liveReadingRef.current = liveReading
+  }, [liveReading])
+
+  useEffect(() => {
+    activeModeRef.current = activeMode
+  }, [activeMode])
 
   useEffect(() => {
     let isStale = false
@@ -264,16 +274,28 @@ export function useCompanionSession() {
         if (isStale || !session) return
 
         if (session.source === 'lcu') {
-          const detectedIndex = availableMatches.findIndex((candidate) => candidate.id === session.matchId)
-          if (detectedIndex >= 0) {
-            setMatchIndex(detectedIndex)
+          if (!hasUsableLiveSnapshot(liveReadingRef.current)) {
+            const detectedIndex = availableMatches.findIndex((candidate) => candidate.id === session.matchId)
+            if (detectedIndex >= 0) {
+              setMatchIndex(detectedIndex)
+            }
           }
 
-          setActiveMode(session.mode)
-          setActivePhase(session.mode === 'arena' ? 'live' : 'pregame')
+          const nextMode = resolveAuthoritativeMode({
+            live: liveReadingRef.current,
+            lcuMode: session.mode,
+            fallbackMode: activeModeRef.current,
+          })
+          activeModeRef.current = nextMode
+          setActiveMode(nextMode)
+          setActivePhase(nextMode === 'arena' ? 'live' : 'pregame')
           setLcuState('ready')
           setLcuPhase(session.phase ?? null)
-          setLcuPlayers(session.players ?? [])
+          if ((session.players?.length ?? 0) > 0) {
+            setLcuPlayers(session.players ?? [])
+          } else if (!session.phase || ['None', 'Lobby', 'EndOfGame'].includes(session.phase)) {
+            setLcuPlayers([])
+          }
         } else {
           setLcuState('unavailable')
           setLcuPhase(null)
@@ -309,11 +331,15 @@ export function useCompanionSession() {
       try {
         const reading = await liveClientDataHost.read()
         if (!isStale) {
+          liveReadingRef.current = reading
           setLiveReading(reading)
-          if (lcuStateRef.current !== 'ready' && reading.state === 'fresh' && reading.snapshot) {
-            const inferredMode: GameMode = isArenaGameMode(reading.snapshot.gameMode)
-              ? 'arena'
-              : 'ranked'
+          if (hasUsableLiveSnapshot(reading)) {
+            const inferredMode = resolveAuthoritativeMode({
+              live: reading,
+              lcuMode: null,
+              fallbackMode: activeModeRef.current,
+            })
+            activeModeRef.current = inferredMode
             setActiveMode(inferredMode)
             setActivePhase(inferredMode === 'arena' ? 'live' : 'pregame')
 
@@ -382,25 +408,6 @@ export function useCompanionSession() {
     }
   }, [activeMode, champion, diagnosticRefreshKey, opggMcpHost])
 
-  const resetForMatch = (nextMode: GameMode) => {
-    setActiveMode(nextMode)
-    setPlayerFilter('ally')
-    setActivePhase(nextMode === 'arena' ? 'live' : 'pregame')
-    setLcuPlayers([])
-  }
-
-  const refreshMatch = () => {
-    if (availableMatches.length === 0 || !match) return
-
-    const currentVisibleIndex = availableMatches.findIndex((candidate) => candidate.id === match.id)
-    const nextMatch = availableMatches[(currentVisibleIndex + 1) % availableMatches.length]
-    const nextIndex = availableMatches.findIndex((candidate) => candidate.id === nextMatch.id)
-
-    setMatchIndex(nextIndex)
-    resetForMatch(nextMatch.mode)
-    setToast('已刷新一组 Demo 对局')
-  }
-
   const refreshDiagnostics = () => {
     setDiagnosticRefreshKey((value) => value + 1)
     setToast('已刷新连接诊断')
@@ -441,16 +448,6 @@ export function useCompanionSession() {
       setToast('缓存清理失败')
       return false
     }
-  }
-
-  const selectScenario = (matchId: string) => {
-    const nextIndex = availableMatches.findIndex((candidate) => candidate.id === matchId)
-    if (nextIndex < 0) return
-
-    const nextMatch = availableMatches[nextIndex]
-    setMatchIndex(nextIndex)
-    resetForMatch(nextMatch.mode)
-    setToast('已切换 Demo 场景')
   }
 
   const setArenaCandidates = (candidateIds: number[]) => {
@@ -510,7 +507,6 @@ export function useCompanionSession() {
     arenaDecisionModel,
     applyLoadout,
     applyRunePage,
-    availableMatches,
     brief,
     champion,
     connectionStatus: connectionPresentation.status,
@@ -525,12 +521,12 @@ export function useCompanionSession() {
     isChampionDataSyncing,
     isCompact,
     isDetected: connectionPresentation.isDetected,
+    hasRealPlayerIntel: lcuPlayers.length > 0,
+    liveSessionState,
     match,
     playerFilter,
     recommendations,
     refreshDiagnostics,
-    refreshMatch,
-    selectScenario,
     selectLeagueInstallation,
     setArenaCandidates,
     setActivePhase,

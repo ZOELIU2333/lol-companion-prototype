@@ -1,9 +1,18 @@
-import { isArenaGameMode, type LiveClientReading } from '../services/liveClientData'
+import {
+  isArenaGameMode,
+  type LiveClientReading,
+  type LiveClientSnapshot,
+} from '../services/liveClientData'
 import type { GameMode } from '../types'
 
 export type LiveSessionState = 'waiting' | 'live' | 'reconnecting'
 
-export function hasUsableLiveSnapshot(reading: LiveClientReading): boolean {
+type UsableLiveClientReading = LiveClientReading & {
+  state: 'fresh' | 'reconnecting'
+  snapshot: LiveClientSnapshot
+}
+
+export function hasUsableLiveSnapshot(reading: LiveClientReading): reading is UsableLiveClientReading {
   return Boolean(reading.snapshot && (reading.state === 'fresh' || reading.state === 'reconnecting'))
 }
 

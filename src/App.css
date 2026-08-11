@@ -12,6 +12,10 @@
     linear-gradient(135deg, #07111f 0%, #0b1020 48%, #121827 100%);
 }
 
+.waiting-shell {
+  align-content: center;
+}
+
 .game-stage {
   position: relative;
   order: 3;
@@ -927,8 +931,6 @@ a,
 .player-detail-backdrop *,
 .stage-player,
 .stage-player *,
-.demo-scenario,
-.demo-scenario *,
 .rune-page-card,
 .rune-page-card *,
 .build-loadout-card,
@@ -1110,11 +1112,18 @@ a,
   color: #fbbf24;
 }
 
-.demo-scenario {
+.session-waiting {
   order: 4;
   display: grid;
-  gap: 0.35rem;
-  margin: 0.85rem 0.9rem;
+  justify-items: center;
+  gap: 0.65rem;
+  margin: 1rem 0.9rem;
+  padding: 2.4rem 1.2rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.58);
+  color: #cbd5e1;
+  text-align: center;
 }
 
 .phase-tabs,
@@ -1123,20 +1132,21 @@ a,
   margin-left: 0.9rem;
 }
 
-.demo-scenario span {
-  color: #94a3b8;
-  font-size: 0.72rem;
-  font-weight: 800;
+.session-waiting h2,
+.session-waiting p {
+  margin: 0;
 }
 
-.demo-scenario select {
-  width: 100%;
-  min-height: 2.15rem;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 7px;
-  background: rgba(15, 23, 42, 0.84);
-  color: #e5edf7;
-  padding: 0 0.65rem;
+.session-waiting strong {
+  color: #7dd3fc;
+}
+
+.stage-intel-unavailable {
+  position: relative;
+  z-index: 1;
+  margin: 1.2rem 0;
+  color: #94a3b8;
+  text-align: center;
 }
 
 .dot {

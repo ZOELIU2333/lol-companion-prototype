@@ -6,9 +6,10 @@ import { AugmentPicker } from '../features/arena/ui/AugmentPicker'
 import { DiagnosticsPanel } from '../features/arena/ui/DiagnosticsPanel'
 import type { ArenaDecisionViewModel } from '../features/arena/ui/types'
 import type { DesktopHealthSnapshot } from '../services/tauriHost'
+import type { LiveSessionState } from '../app/liveSessionAuthority'
 import { ChampionSummary } from './ChampionSummary'
 import { ChatBriefPanel } from './ChatBriefPanel'
-import { DemoScenarioSwitcher } from './DemoScenarioSwitcher'
+import { SessionWaitingView } from './SessionWaitingView'
 import type { InfoPhase } from '../types'
 import { getRecommendationSourceDisplay } from '../services/recommendationMeta'
 
@@ -25,8 +26,8 @@ type OverlayPanelProps = {
   isChampionDataSyncing: boolean
   isCompact: boolean
   isDetected: boolean
+  liveSessionState: LiveSessionState
   match: Match
-  matches: Match[]
   recommendations: RecommendationViewModel
   onRefreshDiagnostics: () => void
   onCopy: () => void
@@ -38,8 +39,6 @@ type OverlayPanelProps = {
   onArenaCandidates: (candidateIds: number[]) => void
   onToggleAlwaysOnTop: () => void
   onToggleCompact: () => void
-  onRefresh: () => void
-  onScenarioChange: (matchId: string) => void
   onSimulateSend: () => void
 }
 
@@ -56,8 +55,8 @@ export function OverlayPanel({
   isChampionDataSyncing,
   isCompact,
   isDetected,
+  liveSessionState,
   match,
-  matches,
   recommendations,
   onRefreshDiagnostics,
   onCopy,
@@ -69,8 +68,6 @@ export function OverlayPanel({
   onArenaCandidates,
   onToggleAlwaysOnTop,
   onToggleCompact,
-  onRefresh,
-  onScenarioChange,
   onSimulateSend,
 }: OverlayPanelProps) {
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false)
@@ -110,7 +107,7 @@ export function OverlayPanel({
           >
             <Minimize2 size={16} />
           </button>
-          <button className="icon-button" type="button" onClick={onRefresh} aria-label="刷新情报" title="刷新情报">
+          <button className="icon-button" type="button" onClick={onRefreshDiagnostics} aria-label="刷新连接状态" title="刷新连接状态">
             <RefreshCcw size={17} />
           </button>
         </div>
@@ -161,9 +158,11 @@ export function OverlayPanel({
         </div>
       )}
 
-      <DemoScenarioSwitcher matches={matches} selectedMatchId={match.id} onSelect={onScenarioChange} />
+      {liveSessionState === 'waiting' && (
+        <SessionWaitingView connectionStatusLabel={connectionStatusLabel} />
+      )}
 
-      {activeMode === 'ranked' && activePhase === 'pregame' && (
+      {liveSessionState !== 'waiting' && activeMode === 'ranked' && activePhase === 'pregame' && (
         <>
           <div className="recommendation-source-line" title={sourceDisplay.title}>
             <span>数据来源：{sourceDisplay.label}</span>
@@ -181,7 +180,7 @@ export function OverlayPanel({
         </>
       )}
 
-      {activeMode === 'arena' && (
+      {liveSessionState !== 'waiting' && activeMode === 'arena' && (
         arenaDecisionModel ? (
           <>
             <ArenaDecisionView

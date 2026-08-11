@@ -9,7 +9,14 @@ function App() {
 
   return (
     <>
-      <GameShell activeMode={session.activeMode} champion={session.champion} match={session.match}>
+      <GameShell
+        activeMode={session.activeMode}
+        champion={session.champion}
+        hasRealPlayerIntel={session.hasRealPlayerIntel}
+        key={session.liveSessionState}
+        liveSessionState={session.liveSessionState}
+        match={session.match}
+      >
         <OverlayPanel
           activeMode={session.activeMode}
           activePhase={session.effectivePhase}
@@ -23,8 +30,8 @@ function App() {
           isChampionDataSyncing={session.isChampionDataSyncing}
           isCompact={session.isCompact}
           isDetected={session.isDetected}
+          liveSessionState={session.liveSessionState}
           match={session.match}
-          matches={session.availableMatches}
           recommendations={session.recommendations}
           onApplyLoadout={session.applyLoadout}
           onApplyRunePage={session.applyRunePage}
@@ -33,8 +40,6 @@ function App() {
           onDiscardRuntimeCache={session.discardInvalidRuntimeCache}
           onExportDiagnostics={session.exportDiagnostics}
           onRefreshDiagnostics={session.refreshDiagnostics}
-          onRefresh={session.refreshMatch}
-          onScenarioChange={session.selectScenario}
           onSelectLeaguePath={session.selectLeagueInstallation}
           onSimulateSend={session.simulateSend}
           onToggleAlwaysOnTop={session.toggleAlwaysOnTop}
