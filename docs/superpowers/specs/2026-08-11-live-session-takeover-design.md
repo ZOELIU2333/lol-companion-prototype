@@ -34,6 +34,8 @@ Arena mode recognition is shared semantically across both application layers:
 
 When a Live Client champion matches an existing internal recommendation template, that template supplies catalog and recommendation fields that the endpoint does not provide. The UI must describe this as live data with local recommendations, never as a Demo match.
 
+Mock player profiles must never appear as live player intelligence. The ranked player board renders only when LCU has supplied real participant identities; otherwise the live page shows that player information is temporarily unavailable.
+
 ## UI Changes
 
 The `DemoScenarioSwitcher` is removed from the production overlay and its refresh and selection handlers are removed from the production session API. User-facing toasts that mention refreshing or switching Demo scenarios are removed.
@@ -58,6 +60,7 @@ Automated coverage must prove:
 - A fresh `KIWI` Live Client snapshot switches the page to Arena even while LCU is ready.
 - LCU polling cannot overwrite an active real Arena mode with a ranked or unknown provisional mode.
 - Waiting renders without the Demo selector or match recommendations.
+- Ranked live rendering never exposes mock player profiles when LCU participant identities are unavailable.
 - Live and reconnecting states retain real-session rendering as intended.
 - Expired or unavailable Live Client data returns the page to Waiting.
 - No production UI copy contains "Demo 场景", "刷新 Demo", or "切换 Demo".

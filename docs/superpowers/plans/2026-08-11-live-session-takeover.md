@@ -15,6 +15,7 @@
 - LCU may provide provisional client context but cannot overwrite a usable Live Client snapshot.
 - `KIWI`, `CHERRY`, and `ARENA` must all map to Arena in TypeScript and Rust.
 - Mock matches may remain as internal templates and test fixtures but cannot be selected or presented as the current production match.
+- The ranked player board may render only when LCU supplied real participant identities; mock player profiles must remain hidden.
 - No production UI copy may contain `Demo 场景`, `刷新 Demo`, or `切换 Demo`.
 - Do not add dependencies or redesign the recommendation engine in this change.
 
@@ -29,7 +30,7 @@
 - Modify `src-tauri/src/lcu/client.rs`: recognize the same aliases in the Rust LCU boundary and test them.
 - Create `src/components/SessionWaitingView.tsx` and `src/components/SessionWaitingView.test.tsx`: focused waiting UI with connection guidance.
 - Modify `src/components/OverlayPanel.tsx`: render waiting versus real match content from the explicit session state and remove Demo controls.
-- Modify `src/components/GameShell.tsx`: suppress simulated match stage content while waiting.
+- Modify `src/components/GameShell.tsx`: suppress simulated match stage content while waiting and hide player intelligence without real LCU participants.
 - Modify `src/App.tsx`: pass the session state and remove obsolete Demo callbacks and match lists.
 - Modify `src/App.css`: replace Demo selector styles with waiting-state styles.
 - Delete `src/components/DemoScenarioSwitcher.tsx`: remove the production selector entirely.
@@ -175,6 +176,7 @@ git commit -m "fix: prioritize current Arena live sessions"
 **Interfaces:**
 - Consumes: `deriveLiveSessionState`, `hasUsableLiveSnapshot`, and `resolveAuthoritativeMode` from Task 1.
 - Produces: hook result property `liveSessionState: LiveSessionState`.
+- Produces: hook result property `hasRealPlayerIntel: boolean` derived from non-empty LCU participant data.
 - Removes: `availableMatches`, `refreshMatch`, and `selectScenario` from the hook result.
 
 - [ ] **Step 1: Strengthen the priority regression test**
@@ -242,7 +244,7 @@ if (hasUsableLiveSnapshot(reading)) {
 }
 ```
 
-Remove the `lcuStateRef.current !== 'ready'` gate. Keep `matchIndex` only as an internal recommendation-template selector. Remove `resetForMatch`, `refreshMatch`, and `selectScenario`, then stop returning their public values. Return `liveSessionState`.
+Remove the `lcuStateRef.current !== 'ready'` gate. Keep `matchIndex` only as an internal recommendation-template selector. Remove `resetForMatch`, `refreshMatch`, and `selectScenario`, then stop returning their public values. Return `liveSessionState` and `hasRealPlayerIntel: lcuPlayers.length > 0`.
 
 - [ ] **Step 4: Run TypeScript tests and static checks**
 
@@ -279,6 +281,7 @@ Do not create a partial commit if `App.tsx` still depends on removed properties.
 - Consumes: `LiveSessionState` and `liveSessionState` from Tasks 1-2.
 - Produces: `SessionWaitingView({ connectionStatusLabel }: { connectionStatusLabel: string })`.
 - Adds: `liveSessionState: LiveSessionState` to `OverlayPanelProps` and `GameShellProps`.
+- Adds: `hasRealPlayerIntel: boolean` to `GameShellProps`.
 - Removes: `matches`, `onRefresh`, and `onScenarioChange` from `OverlayPanelProps`.
 
 - [ ] **Step 1: Write the failing waiting-view test**
@@ -356,9 +359,9 @@ In `OverlayPanel`, remove the `DemoScenarioSwitcher` import, `matches`, `onRefre
 
 Add `liveSessionState !== 'waiting'` to the existing ranked recommendation condition and to the existing Arena decision condition. This preserves both current content blocks byte-for-byte while preventing either one from rendering without a usable real snapshot.
 
-In `GameShell`, add `liveSessionState` and render `.game-stage` only when `liveSessionState !== 'waiting'`. Add `waiting-shell` to the main class list while waiting. Close any selected player detail if the state changes to waiting.
+In `GameShell`, add `liveSessionState` and `hasRealPlayerIntel`. Render `.game-stage` only when `liveSessionState !== 'waiting'`. Render the player teams only when `hasRealPlayerIntel` is true; otherwise show `玩家信息暂不可用` instead of hydrating or displaying mock player profiles. Add `waiting-shell` to the main class list while waiting. Close any selected player detail if the state changes to waiting or real player intelligence becomes unavailable.
 
-In `App.tsx`, pass `liveSessionState` to both components and remove `matches`, `onRefresh`, and `onScenarioChange`. Delete `DemoScenarioSwitcher.tsx`. Remove `.demo-scenario` CSS and add:
+In `App.tsx`, pass `liveSessionState` to both components, pass `hasRealPlayerIntel` to `GameShell`, and remove `matches`, `onRefresh`, and `onScenarioChange`. Delete `DemoScenarioSwitcher.tsx`. Remove `.demo-scenario` CSS and add:
 
 ```css
 .waiting-shell {
