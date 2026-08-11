@@ -27,6 +27,18 @@ describe('Arena session fusion', () => {
     expect(merged.capabilities.candidates).toBe('unsupported')
   })
 
+  it('keeps touched manual facts when a newer automatic source reports values', () => {
+    const manual = mergeArenaSession(createEmptyArenaSession(), {
+      candidates: observation([27, 65, 135], 100, 'manual'),
+    })
+    const merged = mergeArenaSession(manual, {
+      candidates: observation([9, 10, 11], 200, 'lcu'),
+    })
+
+    expect(merged.candidates.value).toEqual([27, 65, 135])
+    expect(merged.candidates.source).toBe('manual')
+  })
+
   it('clears round candidates but keeps selected augments', () => {
     const roundOne = mergeArenaSession(createEmptyArenaSession(), {
       round: observation(1, 100, 'lcu'),
@@ -40,7 +52,7 @@ describe('Arena session fusion', () => {
   })
 
   it('accepts newer valid automatic values and rejects older observations', () => {
-    const current = mergeArenaSession(createEmptyArenaSession(), { gold: observation(1200, 200) })
+    const current = mergeArenaSession(createEmptyArenaSession(), { gold: observation(1200, 200, 'lcu') })
     const automatic = mergeArenaSession(current, { gold: observation(1680, 300, 'live-client') })
     const staleArrival = mergeArenaSession(automatic, { gold: observation(900, 250, 'live-client') })
 

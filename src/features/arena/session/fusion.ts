@@ -39,6 +39,7 @@ function valid<T>(observation: ArenaObservation<T>) {
 
 function newerValid<T>(current: ArenaObservation<T>, incoming?: ArenaObservation<T>) {
   if (!incoming || !valid(incoming)) return current
+  if (valid(current) && current.source === 'manual' && incoming.source !== 'manual') return current
   if (!valid(current) || incoming.observedAt >= current.observedAt) return incoming
   return current
 }
