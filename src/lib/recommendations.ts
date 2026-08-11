@@ -119,13 +119,17 @@ export function createBuildRecommendation(match: Match, champion: Champion): Bui
   }
 }
 
-export function rankAugments(match: Match, champion: Champion): AugmentRecommendation[] {
-  const selectedProfiles = match.liveState.selectedAugments.map(getSelectedAugmentProfile)
+export function rankAugments(
+  augmentCandidates: Match['augmentCandidates'],
+  selectedAugments: string[],
+  champion: Champion,
+): AugmentRecommendation[] {
+  const selectedProfiles = selectedAugments.map(getSelectedAugmentProfile)
   const selectedTags = Array.from(new Set(selectedProfiles.flatMap((profile) => profile.tags)))
   const selectedPlans = Array.from(new Set(selectedProfiles.map((profile) => profile.plan)))
   const augmentDataSourceLabel = '机制规则推理 · 不展示虚构胜率'
 
-  return match.augmentCandidates
+  return augmentCandidates
     .map((augment) => {
       const tagMatches = augment.tags.filter((tag) => champion.tags.includes(tag)).length
       const directSelectedMatches = augment.tags.filter((tag) => selectedTags.includes(tag))
@@ -158,8 +162,8 @@ export function rankAugments(match: Match, champion: Champion): AugmentRecommend
       const selectedComboTags = Array.from(new Set([...directSelectedMatches, ...bridgeMatches]))
       const selectedSynergy =
         selectedComboTags.length > 0
-          ? `承接已选 ${match.liveState.selectedAugments.join('、')} 的 ${selectedPlans.join('/')}，关联标签：${selectedComboTags.join(' / ')}。`
-          : `和已选 ${match.liveState.selectedAugments.join('、') || '暂无'} 没有强协同，更像独立补强。`
+          ? `承接已选 ${selectedAugments.join('、')} 的 ${selectedPlans.join('/')}，关联标签：${selectedComboTags.join(' / ')}。`
+          : `和已选 ${selectedAugments.join('、') || '暂无'} 没有强协同，更像独立补强。`
       const futureCombos = [
         {
           name: selectedPlans[0] ?? (augment.tags.includes('poke') ? '远程消耗链' : augment.tags.includes('mobility') ? '位移爆发链' : '稳定成长链'),
@@ -239,10 +243,9 @@ export function createRecommendations(match: Match, mode: GameMode): Recommendat
   const champion = match.champions.find((candidate) => candidate.id === match.currentChampionId) ?? match.champions[0]
   const build = createBuildRecommendation(match, champion)
   const runes = createRuneRecommendations(champion)
-  const augments = rankAugments(match, champion)
+  const augments: AugmentRecommendation[] = []
   const nextItem = build.situationalItems[0] ?? build.coreItems[Math.min(1, build.coreItems.length - 1)]
-  const bestAugment = augments[0]
-  const augmentItemPlan = createAugmentItemPlan(match, bestAugment)
+  const augmentItemPlan = createAugmentItemPlan(match)
 
   return {
     build,
@@ -259,11 +262,9 @@ export function createRecommendations(match: Match, mode: GameMode): Recommendat
       ],
       augmentContext: {
         selected: match.liveState.selectedAugments,
-        bestCandidate: bestAugment?.name ?? '暂无候选',
-        reason: bestAugment
-          ? `${bestAugment.name} 与已选强化协同 ${bestAugment.selectedSynergyScore} 分。${bestAugment.selectedSynergy}`
-          : '等待下一轮候选海克斯出现。',
-        comboScore: bestAugment?.score ?? 0,
+        bestCandidate: '请手动录入候选',
+        reason: '竞技场候选与组合统一由实时手动构筑面板计算。',
+        comboScore: 0,
         itemPlan: augmentItemPlan,
       },
     },
