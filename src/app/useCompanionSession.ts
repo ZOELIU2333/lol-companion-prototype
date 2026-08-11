@@ -12,6 +12,7 @@ import {
 } from '../features/arena/session/manualPersistence'
 import type { ArenaSession } from '../features/arena/session/types'
 import { createArenaDecisionModel } from '../features/arena/ui/createDecisionModel'
+import { useArenaTeammateRating } from '../features/arena/teammate/useArenaTeammateRating'
 import { buildChatBrief } from '../lib/chatBrief'
 import { createRecommendations } from '../lib/recommendations'
 import { applyLcuPlayersToMatch, createCompanionDataSource } from '../services/companionDataSource'
@@ -38,6 +39,7 @@ import {
 } from '../services/tauriHost'
 import type { ConnectionDiagnostic, DiagnosticStatus, GameMode, InfoPhase, PlayerFilter } from '../types'
 import type { LcuGamePhase, LcuPlayerSnapshot } from '../services/lcuAdapter'
+import { createTauriRiotApiHost } from '../services/tauriRiotHost'
 import {
   deriveConnectionPresentation,
   type LcuEvidenceState,
@@ -107,6 +109,7 @@ export function useCompanionSession() {
   const [playerFilter, setPlayerFilter] = useState<PlayerFilter>('ally')
   const [lcuPhase, setLcuPhase] = useState<LcuGamePhase | null>(null)
   const [lcuPlayers, setLcuPlayers] = useState<LcuPlayerSnapshot[]>([])
+  const [localSummonerName, setLocalSummonerName] = useState<string>()
   const [liveReading, setLiveReading] = useState<LiveClientReading>(() => unavailableLiveReading())
   const [recommendationDataVersion, setRecommendationDataVersion] = useState(0)
   const [diagnosticRefreshKey, setDiagnosticRefreshKey] = useState(0)
@@ -124,6 +127,7 @@ export function useCompanionSession() {
   const isDesktopShell = useMemo(() => isRunningInTauri(), [])
   const liveClientDataHost = useMemo(() => createTauriLiveClientDataHost(), [])
   const opggMcpHost = useMemo(() => createTauriOpggMcpHost(), [])
+  const riotApiHost = useMemo(() => createTauriRiotApiHost(), [])
   const manualArenaStore = useMemo(
     () => arenaCatalog
       ? createManualArenaSessionStore(new Set(arenaCatalog.catalog.augments.map((augment) => augment.id)))
@@ -168,6 +172,15 @@ export function useCompanionSession() {
       : null,
     [activeMode, arenaCatalog, arenaGameData, arenaSession, champion],
   )
+  const arenaTeammateState = useArenaTeammateRating({
+    mode: activeMode,
+    lcuPhase,
+    players: lcuPlayers,
+    localSummonerName,
+    championNames: arenaGameData?.champions,
+    opggHost: opggMcpHost,
+    riotHost: riotApiHost,
+  })
   const arenaCandidateSlots = useMemo<readonly [number | null, number | null, number | null]>(() => {
     if (manualArenaStore?.read().candidates) return manualArenaStore.getCandidateSlots()
     return [
@@ -333,6 +346,7 @@ export function useCompanionSession() {
           setActivePhase(nextMode === 'arena' ? 'live' : 'pregame')
           setLcuState('ready')
           setLcuPhase(session.phase ?? null)
+          setLocalSummonerName(session.localSummonerName)
           if ((session.players?.length ?? 0) > 0) {
             setLcuPlayers(session.players ?? [])
           } else if (!session.phase || ['None', 'Lobby', 'EndOfGame'].includes(session.phase)) {
@@ -341,12 +355,14 @@ export function useCompanionSession() {
         } else {
           setLcuState('unavailable')
           setLcuPhase(null)
+          setLocalSummonerName(undefined)
           setLcuPlayers([])
         }
       } catch {
         if (!isStale) {
           setLcuState('unavailable')
           setLcuPhase(null)
+          setLocalSummonerName(undefined)
           setLcuPlayers([])
         }
       } finally {
@@ -607,6 +623,7 @@ export function useCompanionSession() {
     activePhase,
     arenaDecisionModel,
     arenaCandidateSlots,
+    arenaTeammateState,
     arenaSelectedAugmentIds: arenaSession.selectedAugments.value,
     applyLoadout,
     applyRunePage,
@@ -627,6 +644,7 @@ export function useCompanionSession() {
     isDetected: connectionPresentation.isDetected,
     hasRealPlayerIntel: lcuPlayers.length > 0,
     liveSessionState,
+    lcuPhase,
     match,
     playerFilter,
     recommendations,

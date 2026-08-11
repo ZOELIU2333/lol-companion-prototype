@@ -23,6 +23,7 @@ function App() {
           arenaDecisionModel={session.arenaDecisionModel}
           arenaCandidateSlots={session.arenaCandidateSlots}
           arenaSelectedAugmentIds={session.arenaSelectedAugmentIds}
+          arenaTeammateState={session.arenaTeammateState}
           brief={session.brief}
           champion={session.champion}
           connectionStatusLabel={session.connectionStatusLabel}
@@ -33,6 +34,7 @@ function App() {
           isCompact={session.isCompact}
           isDetected={session.isDetected}
           liveSessionState={session.liveSessionState}
+          lcuPhase={session.lcuPhase}
           match={session.match}
           recommendations={session.recommendations}
           onApplyLoadout={session.applyLoadout}

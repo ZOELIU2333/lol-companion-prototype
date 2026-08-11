@@ -20,6 +20,7 @@ export type LcuSessionSnapshot = {
 
 export type LcuPlayerSnapshot = {
   id: string
+  isLocalPlayer: boolean
   team: TeamSide
   role?: string
   championId?: number
@@ -126,6 +127,7 @@ async function readChampSelectPlayers(
 ): Promise<LcuPlayerSnapshot[]> {
   const champSelect = await request<LcuChampSelectSession>('/lol-champ-select/v1/session')
   if (!champSelect) return []
+  const localPlayerCellId = champSelect.localPlayerCellId
 
   const participants = [
     ...(champSelect.myTeam ?? []).map((player) => ({ ...player, team: 'ally' as const })),
@@ -146,6 +148,7 @@ async function readChampSelectPlayers(
 
     return {
       id: `${player.team}-${player.cellId ?? player.summonerId ?? index}`,
+      isLocalPlayer: localPlayerCellId !== undefined && player.cellId === localPlayerCellId,
       team: player.team,
       role: mapLcuPositionToRole(player.assignedPosition),
       championId: player.championId && player.championId > 0 ? player.championId : undefined,

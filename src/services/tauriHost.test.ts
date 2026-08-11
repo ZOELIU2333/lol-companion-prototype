@@ -44,6 +44,7 @@ describe('tauri host bridge', () => {
       players: [
         {
           id: 'ally-3',
+          isLocalPlayer: false,
           team: 'ally',
           role: '下路',
           summonerName: 'Live ADC',
@@ -65,6 +66,7 @@ describe('tauri host bridge', () => {
       players: [
         {
           id: 'ally-3',
+          isLocalPlayer: false,
           team: 'ally',
           role: '下路',
           summonerName: 'Live ADC',

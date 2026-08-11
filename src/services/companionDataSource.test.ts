@@ -27,6 +27,7 @@ describe('companion data source', () => {
       players: [
         {
           id: 'ally-3',
+          isLocalPlayer: false,
           team: 'ally',
           role: '下路',
           summonerName: 'Live ADC',
@@ -44,9 +45,11 @@ describe('companion data source', () => {
       matchId: 'augment-ahri-002',
       mode: 'arena',
       phase: 'ChampSelect',
+      localSummonerName: 'DemoSummoner',
       players: [
         {
           id: 'ally-3',
+          isLocalPlayer: false,
           team: 'ally',
           role: '下路',
           summonerName: 'Live ADC',
@@ -66,6 +69,7 @@ describe('companion data source', () => {
     const hydrated = applyLcuPlayersToMatch(match, [
       {
         id: 'ally-3',
+        isLocalPlayer: false,
         team: 'ally',
         role: '下路',
         summonerName: 'Live ADC',

@@ -81,6 +81,7 @@ describe('lcu adapter boundary', () => {
 
         if (options.path === '/lol-champ-select/v1/session') {
           return {
+            localPlayerCellId: 3,
             myTeam: [
               {
                 assignedPosition: 'bottom',
@@ -130,6 +131,7 @@ describe('lcu adapter boundary', () => {
       players: [
         {
           id: 'ally-3',
+          isLocalPlayer: true,
           team: 'ally',
           role: '下路',
           championId: 81,
@@ -143,6 +145,7 @@ describe('lcu adapter boundary', () => {
         },
         {
           id: 'enemy-8',
+          isLocalPlayer: false,
           team: 'enemy',
           role: '辅助',
           championId: 412,

@@ -1,4 +1,4 @@
-import type { PlayerIntel, PlayerMatchDetail, PlayerRecentMatch } from '../types'
+import type { PlayerIntel, PlayerMatchDetail, PlayerRecentMatch, PlayerRiotAccount } from '../types'
 import { createOpggMcpAdapter, type OpggMcpHost, type OpggMcpPlayerProfile, type OpggMcpRiotAccount } from './opggMcpAdapter'
 
 const cachePrefix = 'lol-companion:opgg-player:'
@@ -73,7 +73,10 @@ function writeCache<T>(key: string, value: T) {
 }
 
 export function getOpggAccountForPlayer(player: PlayerIntel): OpggMcpRiotAccount | null {
-  const account = player.riotAccount
+  return getOpggAccount(player.riotAccount ?? null)
+}
+
+export function getOpggAccount(account: PlayerRiotAccount | null): OpggMcpRiotAccount | null {
   if (!account?.gameName || !account.tagLine) return null
 
   return {
@@ -83,8 +86,11 @@ export function getOpggAccountForPlayer(player: PlayerIntel): OpggMcpRiotAccount
   }
 }
 
-export async function loadOpggPlayerProfile(host: OpggMcpHost | null, player: PlayerIntel): Promise<OpggMcpPlayerProfile | null> {
-  const account = getOpggAccountForPlayer(player)
+export async function loadOpggPlayerProfileForAccount(
+  host: OpggMcpHost | null,
+  riotAccount: PlayerRiotAccount | null,
+): Promise<OpggMcpPlayerProfile | null> {
+  const account = getOpggAccount(riotAccount)
   if (!account) return null
   const cacheKey = `profile:${normalizeAccountKey(account)}`
   const cached = readCache<OpggMcpPlayerProfile>(cacheKey)
@@ -96,8 +102,12 @@ export async function loadOpggPlayerProfile(host: OpggMcpHost | null, player: Pl
   return profile
 }
 
-export async function loadOpggRecentMatches(host: OpggMcpHost | null, player: PlayerIntel, limit = 10): Promise<PlayerRecentMatch[]> {
-  const account = getOpggAccountForPlayer(player)
+export async function loadOpggRecentMatchesForAccount(
+  host: OpggMcpHost | null,
+  riotAccount: PlayerRiotAccount | null,
+  limit = 10,
+): Promise<PlayerRecentMatch[]> {
+  const account = getOpggAccount(riotAccount)
   if (!account) return []
   const cacheKey = `history:${normalizeAccountKey(account)}:${limit}`
   const cached = readCache<PlayerRecentMatch[]>(cacheKey)
@@ -107,6 +117,14 @@ export async function loadOpggRecentMatches(host: OpggMcpHost | null, player: Pl
   const history = await createOpggMcpAdapter(host).getRecentMatches(account, limit)
   if (history.length > 0) writeCache(cacheKey, history)
   return history
+}
+
+export async function loadOpggPlayerProfile(host: OpggMcpHost | null, player: PlayerIntel): Promise<OpggMcpPlayerProfile | null> {
+  return loadOpggPlayerProfileForAccount(host, player.riotAccount ?? null)
+}
+
+export async function loadOpggRecentMatches(host: OpggMcpHost | null, player: PlayerIntel, limit = 10): Promise<PlayerRecentMatch[]> {
+  return loadOpggRecentMatchesForAccount(host, player.riotAccount ?? null, limit)
 }
 
 export async function loadOpggMatchDetail(

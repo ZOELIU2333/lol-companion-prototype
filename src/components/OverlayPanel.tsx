@@ -3,6 +3,8 @@ import { Activity, Minimize2, Pin, RefreshCcw } from 'lucide-react'
 import type { Champion, ConnectionDiagnostic, DiagnosticStatus, GameMode, Match, RecommendationViewModel } from '../types'
 import { ArenaDecisionView } from '../features/arena/ui/ArenaDecisionView'
 import { ArenaManualControls } from '../features/arena/ui/ArenaManualControls'
+import { ArenaTeammateCard } from '../features/arena/teammate/ArenaTeammateCard'
+import type { ArenaTeammateState } from '../features/arena/teammate/useArenaTeammateRating'
 import { DiagnosticsPanel } from '../features/arena/ui/DiagnosticsPanel'
 import type { ArenaDecisionViewModel } from '../features/arena/ui/types'
 import type { DesktopHealthSnapshot } from '../services/tauriHost'
@@ -11,6 +13,7 @@ import { ChampionSummary } from './ChampionSummary'
 import { ChatBriefPanel } from './ChatBriefPanel'
 import { SessionWaitingView } from './SessionWaitingView'
 import type { InfoPhase } from '../types'
+import type { LcuGamePhase } from '../services/lcuAdapter'
 import { getRecommendationSourceDisplay } from '../services/recommendationMeta'
 
 type OverlayPanelProps = {
@@ -19,6 +22,7 @@ type OverlayPanelProps = {
   arenaDecisionModel: ArenaDecisionViewModel | null
   arenaCandidateSlots: readonly [number | null, number | null, number | null]
   arenaSelectedAugmentIds: number[]
+  arenaTeammateState: ArenaTeammateState
   brief: string
   champion: Champion
   connectionStatusLabel: string
@@ -29,6 +33,7 @@ type OverlayPanelProps = {
   isCompact: boolean
   isDetected: boolean
   liveSessionState: LiveSessionState
+  lcuPhase: LcuGamePhase | null
   match: Match
   recommendations: RecommendationViewModel
   onRefreshDiagnostics: () => void
@@ -55,6 +60,7 @@ export function OverlayPanel({
   arenaDecisionModel,
   arenaCandidateSlots,
   arenaSelectedAugmentIds,
+  arenaTeammateState,
   brief,
   champion,
   connectionStatusLabel,
@@ -65,6 +71,7 @@ export function OverlayPanel({
   isCompact,
   isDetected,
   liveSessionState,
+  lcuPhase,
   match,
   recommendations,
   onRefreshDiagnostics,
@@ -170,7 +177,11 @@ export function OverlayPanel({
         </div>
       )}
 
-      {liveSessionState === 'waiting' && (
+      {activeMode === 'arena' && lcuPhase === 'ChampSelect' && (
+        <ArenaTeammateCard state={arenaTeammateState} />
+      )}
+
+      {liveSessionState === 'waiting' && !(activeMode === 'arena' && lcuPhase === 'ChampSelect') && (
         <SessionWaitingView connectionStatusLabel={connectionStatusLabel} />
       )}
 

@@ -6,6 +6,7 @@ export type DetectedGameSession = {
   matchId: string
   mode: GameMode
   phase?: LcuGamePhase
+  localSummonerName?: string
   players?: LcuPlayerSnapshot[]
   source: 'mock' | 'lcu'
 }
@@ -22,7 +23,7 @@ function findClosestMatch(mode: GameMode) {
   return visibleMatches().find((match) => match.mode === mode) ?? visibleMatches()[0]
 }
 
-function createRiotAccountFromLcu(player: LcuPlayerSnapshot): PlayerRiotAccount | undefined {
+export function createRiotAccountFromLcu(player: LcuPlayerSnapshot): PlayerRiotAccount | undefined {
   const account = player.riotAccount
   if (!account?.gameName && !account?.puuid) return undefined
 
@@ -109,6 +110,7 @@ export function createCompanionDataSource(lcuAdapter: LcuAdapter, fallback: Comp
         matchId: match.id,
         mode,
         phase: session.phase,
+        localSummonerName: session.localSummonerName,
         players: session.players ?? [],
         source: 'lcu',
       }

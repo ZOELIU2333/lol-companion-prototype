@@ -21,6 +21,7 @@ pub struct LcuSessionPayload {
 #[serde(rename_all = "camelCase")]
 struct LcuPlayerPayload {
     id: String,
+    is_local_player: bool,
     team: String,
     role: Option<String>,
     champion_id: Option<u16>,
@@ -334,6 +335,7 @@ async fn read_champ_select_players(
     else {
         return Vec::new();
     };
+    let local_player_cell_id = session.local_player_cell_id;
     let participants = session
         .my_team
         .unwrap_or_default()
@@ -386,6 +388,8 @@ async fn read_champ_select_players(
                     .or_else(|| player.summoner_id.map(|value| value.to_string()))
                     .unwrap_or_else(|| index.to_string())
             ),
+            is_local_player: local_player_cell_id.is_some()
+                && player.cell_id == local_player_cell_id,
             team,
             role: map_position_to_role(player.assigned_position.as_deref()),
             champion_id: player.champion_id.filter(|id| *id > 0),
@@ -567,7 +571,10 @@ pub(crate) async fn read_arena_lcu_session_from_credentials(
 
 #[cfg(test)]
 mod tests {
-    use super::{map_queue_to_mode, parse_arena_fields, CandidateCapability};
+    use super::{
+        map_queue_to_mode, parse_arena_fields, CandidateCapability, LcuPlayerPayload,
+        LcuRiotAccountPayload,
+    };
     use crate::lcu::lockfile::parse as parse_lockfile;
     use serde_json::json;
 
@@ -603,5 +610,25 @@ mod tests {
         assert_eq!(parsed.round, Some(2));
         assert_eq!(parsed.candidate_capability, CandidateCapability::Available);
         assert!(parsed.candidate_augment_ids.is_empty());
+    }
+
+    #[test]
+    fn serializes_local_participant_without_exposing_raw_session_data() {
+        let player = LcuPlayerPayload {
+            id: "ally-1".to_string(),
+            is_local_player: true,
+            team: "ally".to_string(),
+            role: None,
+            champion_id: Some(103),
+            summoner_id: Some(7),
+            summoner_name: Some("Local".to_string()),
+            riot_account: LcuRiotAccountPayload {
+                game_name: Some("Local".to_string()),
+                puuid: None,
+                tag_line: Some("KR1".to_string()),
+            },
+        };
+        let value = serde_json::to_value(player).expect("payload serializes");
+        assert_eq!(value["isLocalPlayer"], true);
     }
 }
