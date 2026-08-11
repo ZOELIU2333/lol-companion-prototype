@@ -223,7 +223,7 @@ git commit -m "feat: add searchable manual Arena state"
 - Produces `ManualArenaPersistenceSnapshot` with `schemaVersion: 1`, champion key, selected/candidate IDs, and game time.
 - Produces `createManualArenaPersistence(storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>, knownAugmentIds: ReadonlySet<number>, key?: string)`.
 - Persistence object exposes `load`, `save`, and `clear`.
-- Produces `isManualArenaSnapshotCompatible(saved, current): boolean` for champion/mode/time validation.
+- Produces `isManualArenaSnapshotCompatible(saved, current): boolean` for champion/mode freshness/time validation. `current` includes `mode: 'arena' | 'ranked' | null`, `modeState: ArenaObservationState`, optional champion key, and optional game time.
 
 - [ ] **Step 1: Write failing persistence tests**
 
@@ -274,13 +274,16 @@ Expected: module import fails.
 
 Use storage key `lol-companion:arena-manual:v1`. Parse records with explicit type checks, deduplicate IDs, retain at most four selected augments and three candidates, remove unknown IDs, and write repaired state back. Return `null` and remove storage for malformed JSON or the wrong schema.
 
-Compatibility rules:
+Compatibility rules distinguish a confirmed fresh mode change from unavailable/reconnecting data:
 
 ```ts
-if (current.mode !== 'arena') return false
-if (saved.championKey !== current.championKey) return false
+if (current.mode === 'ranked' && current.modeState === 'live') return false
+if (current.championKey !== null && saved.championKey !== current.championKey) return false
+if (current.mode !== 'arena' || current.gameTimeSeconds === null) return true
 return current.gameTimeSeconds >= saved.gameTimeSeconds - 30
 ```
+
+An unavailable, stale, or reconnecting mode observation therefore preserves saved manual state; only a fresh confirmed non-Arena session clears it.
 
 - [ ] **Step 4: Integrate restore/save/reset into the session hook**
 
