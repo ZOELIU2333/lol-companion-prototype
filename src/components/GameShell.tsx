@@ -10,10 +10,13 @@ import { createTauriOpggMcpHost } from '../services/tauriHost'
 import { createTauriRiotApiHost } from '../services/tauriRiotHost'
 import type { OpggMcpPlayerProfile } from '../services/opggMcpAdapter'
 import type { RiotPlayerProfile } from '../services/riotApiAdapter'
+import type { LiveSessionState } from '../app/liveSessionAuthority'
 
 type GameShellProps = {
   activeMode: GameMode
   champion: Champion
+  hasRealPlayerIntel: boolean
+  liveSessionState: LiveSessionState
   match: Match
   children: ReactNode
 }
@@ -22,8 +25,7 @@ type PlayerDataStatus = 'demo' | 'loading' | 'opgg' | 'riot'
 
 const modeLabels: Record<GameMode, string> = {
   ranked: '匹配/排位',
-  augment: '海克斯',
-  arena: '海克斯',
+  arena: '竞技场',
 }
 
 const masteryChampions = ['伊泽瑞尔', '阿狸', '卡莎', '盲僧', '青钢影', '泰坦', '辛德拉', '德莱文']
@@ -130,7 +132,7 @@ function PlayerDataSource({ status }: { status: PlayerDataStatus }) {
   )
 }
 
-export function GameShell({ activeMode, champion, match, children }: GameShellProps) {
+export function GameShell({ activeMode, champion, hasRealPlayerIntel, liveSessionState, match, children }: GameShellProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerIntel | null>(null)
   const [selectedHistoryMatch, setSelectedHistoryMatch] = useState<PlayerRecentMatch | null>(null)
   const [matchDetailById, setMatchDetailById] = useState<Record<string, PlayerMatchDetail>>({})
@@ -148,7 +150,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
   )
   const allyPlayers = hydratedPlayers.filter((player) => player.team === 'ally')
   const enemyPlayers = hydratedPlayers.filter((player) => player.team === 'enemy')
-  const hasStageIntel = allyPlayers.length > 0 || enemyPlayers.length > 0
+  const hasStageIntel = hasRealPlayerIntel && (allyPlayers.length > 0 || enemyPlayers.length > 0)
   const parties = [...createDemoPartyGroups(hydratedPlayers, 'ally'), ...createDemoPartyGroups(hydratedPlayers, 'enemy')]
   const playerById = new Map(hydratedPlayers.map((player) => [player.id, player]))
   const playerPartyMap = new Map(
@@ -257,7 +259,7 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
   const selectedMatchDetailStatus = selectedHistoryMatch ? matchDetailStatusById[selectedHistoryMatch.id] ?? 'demo' : 'demo'
 
   useEffect(() => {
-    if (!riotHost) return undefined
+    if (!hasRealPlayerIntel || liveSessionState === 'waiting' || !riotHost) return undefined
 
     const playersToLoad = match.players
       .map((player) => ({ player, account: getRiotAccountForPlayer(player) }))
@@ -311,6 +313,8 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
     }
   }, [
     historyStatusByPlayerId,
+    hasRealPlayerIntel,
+    liveSessionState,
     match.players,
     opggProfileByPlayerId,
     profileByPlayerId,
@@ -417,8 +421,15 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
   }, [matchDetailById, opggHost, selectedHistoryMatch, selectedPlayer])
 
   return (
-    <main className="game-shell" data-tauri-drag-region>
-      <section className="game-stage" aria-label="模拟游戏画面" data-tauri-drag-region>
+    <main
+      className={[
+        'game-shell',
+        activeMode === 'arena' ? 'arena-shell' : '',
+        liveSessionState === 'waiting' ? 'waiting-shell' : '',
+      ].filter(Boolean).join(' ')}
+      data-tauri-drag-region
+    >
+      {liveSessionState !== 'waiting' && activeMode === 'ranked' && <section className="game-stage" aria-label="实时游戏信息" data-tauri-drag-region>
         <div className="top-hud">
           <div>
             <span>{modeLabels[activeMode]}</span>
@@ -436,9 +447,12 @@ export function GameShell({ activeMode, champion, match, children }: GameShellPr
             </div>
           </div>
         )}
-      </section>
+        {!hasRealPlayerIntel && (
+          <p className="stage-intel-unavailable">玩家信息暂不可用</p>
+        )}
+      </section>}
       {children}
-      {selectedPlayer && createPortal(
+      {liveSessionState !== 'waiting' && hasRealPlayerIntel && selectedPlayer && createPortal(
         <div className="player-detail-backdrop" role="dialog" aria-modal="true" aria-label={`${selectedPlayer.name} 玩家详情`}>
           <div className={`player-detail-panel ${selectedPlayer.team}`}>
             <div className="player-detail-header">

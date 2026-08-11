@@ -28,24 +28,24 @@ describe('recommendation rules', () => {
   })
 
   it('raises augment scores when tags match the champion', () => {
-    const ranked = rankAugments(match, champion)
+    const ranked = rankAugments(match.augmentCandidates, match.liveState.selectedAugments, champion)
 
     expect(ranked[0].score).toBeGreaterThan(ranked[ranked.length - 1].score)
     expect(ranked[0].synergy).toContain('契合')
   })
 
   it('uses previously selected augments when ranking hex candidates', () => {
-    const augmentMatch = mockMatches.find((candidate) => candidate.mode === 'augment')!
+    const augmentMatch = mockMatches.find((candidate) => candidate.mode === 'arena')!
     const augmentChampion = augmentMatch.champions.find((candidate) => candidate.id === augmentMatch.currentChampionId)!
-    const ranked = rankAugments(augmentMatch, augmentChampion)
+    const ranked = rankAugments(augmentMatch.augmentCandidates, augmentMatch.liveState.selectedAugments, augmentChampion)
 
     expect(ranked[0].selectedSynergyScore).toBeGreaterThan(0)
     expect(ranked[0].selectedSynergy).toContain('已选')
   })
 
   it('creates an augment-aware item icon plan for live hex recommendations', () => {
-    const augmentMatch = mockMatches.find((candidate) => candidate.mode === 'augment')!
-    const recommendations = createRecommendations(augmentMatch, 'augment')
+    const augmentMatch = mockMatches.find((candidate) => candidate.mode === 'arena')!
+    const recommendations = createRecommendations(augmentMatch, 'arena')
 
     expect(recommendations.live.augmentContext.itemPlan.items.length).toBeGreaterThan(0)
     expect(recommendations.live.augmentContext.itemPlan.score).toBeGreaterThan(0)

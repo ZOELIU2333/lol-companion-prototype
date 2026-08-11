@@ -13,13 +13,14 @@ export type LcuGamePhase =
 
 export type LcuSessionSnapshot = {
   phase: LcuGamePhase
-  mode: Exclude<GameMode, 'arena'> | null
+  mode: GameMode | null
   localSummonerName?: string
   players?: LcuPlayerSnapshot[]
 }
 
 export type LcuPlayerSnapshot = {
   id: string
+  isLocalPlayer: boolean
   team: TeamSide
   role?: string
   championId?: number
@@ -86,11 +87,16 @@ export const unavailableLcuAdapter: LcuAdapter = {
   },
 }
 
-export function mapLcuQueueToMode(queueDescription?: string): Exclude<GameMode, 'arena'> | null {
+export function mapLcuQueueToMode(queueDescription?: string): GameMode | null {
   const normalized = queueDescription?.toLowerCase() ?? ''
 
-  if (normalized.includes('arena') || normalized.includes('海克斯')) {
-    return 'augment'
+  if (
+    normalized.includes('arena')
+    || normalized.includes('cherry')
+    || normalized.includes('kiwi')
+    || normalized.includes('海克斯')
+  ) {
+    return 'arena'
   }
 
   if (normalized.includes('rank') || normalized.includes('normal') || normalized.includes('匹配') || normalized.includes('排位')) {
@@ -121,6 +127,7 @@ async function readChampSelectPlayers(
 ): Promise<LcuPlayerSnapshot[]> {
   const champSelect = await request<LcuChampSelectSession>('/lol-champ-select/v1/session')
   if (!champSelect) return []
+  const localPlayerCellId = champSelect.localPlayerCellId
 
   const participants = [
     ...(champSelect.myTeam ?? []).map((player) => ({ ...player, team: 'ally' as const })),
@@ -141,6 +148,7 @@ async function readChampSelectPlayers(
 
     return {
       id: `${player.team}-${player.cellId ?? player.summonerId ?? index}`,
+      isLocalPlayer: localPlayerCellId !== undefined && player.cellId === localPlayerCellId,
       team: player.team,
       role: mapLcuPositionToRole(player.assignedPosition),
       championId: player.championId && player.championId > 0 ? player.championId : undefined,

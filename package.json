@@ -1,11 +1,11 @@
 {
   "name": "lol-companion-prototype",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/check-desktop-entry.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -16,13 +16,17 @@
     "data:opgg:check": "node scripts/import-opgg-stats.mjs --check",
     "data:opgg:details:import": "node scripts/import-opgg-champion-details.mjs",
     "data:opgg:details:check": "node scripts/import-opgg-champion-details.mjs --from-cache --check",
-    "data:arena:augments:import": "node scripts/import-cdragon-arena-augments.mjs",
-    "data:arena:augments:check": "node scripts/import-cdragon-arena-augments.mjs --from-cache --check",
-    "data:arena:metabot:import": "node scripts/import-metabot-arena-augments.mjs",
-    "data:arena:metabot:check": "node scripts/import-metabot-arena-augments.mjs --from-cache --check",
+    "data:arena:import": "node scripts/arena-data/import-catalog.mjs",
+    "data:arena:check": "node scripts/arena-data/import-catalog.mjs --from-cache --check",
+    "data:game:import": "node scripts/arena-data/import-ddragon.mjs",
+    "data:game:check": "node scripts/arena-data/import-ddragon.mjs --from-cache --check",
+    "verify": "npm run data:arena:check && npm run data:game:check && npm run test && npm run lint && npm run build && cargo check --manifest-path src-tauri/Cargo.toml",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
+  },
+  "engines": {
+    "node": ">=22.22.2"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
@@ -33,6 +37,9 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tauri-apps/cli": "^2.11.2",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
@@ -41,9 +48,14 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "jsdom": "^30.0.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
     "vitest": "^4.1.6"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.60.4",
+    "@rollup/rollup-win32-x64-msvc": "4.60.4"
   }
 }

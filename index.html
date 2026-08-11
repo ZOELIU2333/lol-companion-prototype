@@ -2,12 +2,52 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>lol-companion-prototype</title>
   </head>
-  <body>
+  <body style="margin: 0; background: #070b12; color: #e5e7eb;">
     <div id="root"></div>
+    <section
+      id="boot-fallback"
+      hidden
+      style="box-sizing: border-box; min-height: 100vh; padding: 32px 24px; font: 14px/1.6 system-ui, sans-serif;"
+    >
+      <h1 style="margin: 0 0 12px; font-size: 20px;">LOL Companion 界面加载失败</h1>
+      <p style="margin: 0; color: #94a3b8;">请关闭应用后重新打开。若仍然出现此页面，请发送最新诊断日志。</p>
+      <code style="display: block; margin-top: 16px; color: #60a5fa;">%LOCALAPPDATA%\LOL Companion\logs</code>
+    </section>
+    <script>
+      (function () {
+        function report(stage, detail) {
+          var internals = window.__TAURI_INTERNALS__
+          if (!internals || typeof internals.invoke !== 'function') return
+          internals.invoke('report_frontend_status', {
+            stage: stage,
+            detail: detail ? String(detail).slice(0, 500) : null,
+          }).catch(function () {})
+        }
+
+        window.__LOL_COMPANION_BOOT__ = { ready: false, report: report }
+        window.addEventListener('error', function (event) {
+          var location = [event.filename, event.lineno, event.colno].filter(Boolean).join(':')
+          var stack = event.error && event.error.stack ? event.error.stack : ''
+          report('module-error', [event.message, location, stack].filter(Boolean).join(' | '))
+        })
+        window.addEventListener('unhandledrejection', function (event) {
+          report('unhandled-rejection', event.reason && event.reason.message ? event.reason.message : String(event.reason))
+        })
+        window.addEventListener('DOMContentLoaded', function () {
+          report('html-loaded', window.location.href)
+        })
+        window.setTimeout(function () {
+          if (window.__LOL_COMPANION_BOOT__.ready) return
+          var fallback = document.getElementById('boot-fallback')
+          if (fallback) fallback.hidden = false
+          report('frontend-timeout', 'React did not report ready within 6000ms')
+        }, 6000)
+      })()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

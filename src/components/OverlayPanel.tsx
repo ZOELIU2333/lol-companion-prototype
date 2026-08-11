@@ -1,61 +1,94 @@
 import { useState } from 'react'
 import { Activity, Minimize2, Pin, RefreshCcw } from 'lucide-react'
 import type { Champion, ConnectionDiagnostic, DiagnosticStatus, GameMode, Match, RecommendationViewModel } from '../types'
-import { AugmentRecommendation } from './AugmentRecommendation'
+import { ArenaDecisionView } from '../features/arena/ui/ArenaDecisionView'
+import { ArenaManualControls } from '../features/arena/ui/ArenaManualControls'
+import { ArenaTeammateCard } from '../features/arena/teammate/ArenaTeammateCard'
+import type { ArenaTeammateState } from '../features/arena/teammate/useArenaTeammateRating'
+import { DiagnosticsPanel } from '../features/arena/ui/DiagnosticsPanel'
+import type { ArenaDecisionViewModel } from '../features/arena/ui/types'
+import type { DesktopHealthSnapshot } from '../services/tauriHost'
+import type { LiveSessionState } from '../app/liveSessionAuthority'
 import { ChampionSummary } from './ChampionSummary'
 import { ChatBriefPanel } from './ChatBriefPanel'
-import { DemoScenarioSwitcher } from './DemoScenarioSwitcher'
-import { LiveDecisionPanel } from './LiveDecisionPanel'
+import { SessionWaitingView } from './SessionWaitingView'
 import type { InfoPhase } from '../types'
+import type { LcuGamePhase } from '../services/lcuAdapter'
 import { getRecommendationSourceDisplay } from '../services/recommendationMeta'
 
 type OverlayPanelProps = {
   activeMode: GameMode
   activePhase: InfoPhase
+  arenaDecisionModel: ArenaDecisionViewModel | null
+  arenaCandidateSlots: readonly [number | null, number | null, number | null]
+  arenaSelectedAugmentIds: number[]
+  arenaTeammateState: ArenaTeammateState
   brief: string
   champion: Champion
   connectionStatusLabel: string
   diagnostics: ConnectionDiagnostic[]
+  desktopHealth: DesktopHealthSnapshot | null
   isAlwaysOnTop: boolean
   isChampionDataSyncing: boolean
   isCompact: boolean
   isDetected: boolean
+  liveSessionState: LiveSessionState
+  lcuPhase: LcuGamePhase | null
   match: Match
-  matches: Match[]
   recommendations: RecommendationViewModel
   onRefreshDiagnostics: () => void
   onCopy: () => void
+  onDiscardRuntimeCache: () => Promise<boolean>
+  onExportDiagnostics: () => Promise<string>
+  onSelectLeaguePath: (kind: 'directory' | 'lockfile') => Promise<string | null>
   onApplyLoadout: (loadoutName: string) => void
   onApplyRunePage: (pageName: string) => void
+  onAddSelectedArenaAugment: (augmentId: number) => void
+  onRemoveSelectedArenaAugment: (augmentId: number) => void
+  onSetArenaCandidateSlot: (slot: 0 | 1 | 2, augmentId: number) => void
+  onClearArenaCandidateSlot: (slot: 0 | 1 | 2) => void
+  onConfirmArenaCandidate: (augmentId: number) => void
+  onResetArenaMatch: () => void
   onToggleAlwaysOnTop: () => void
   onToggleCompact: () => void
-  onRefresh: () => void
-  onScenarioChange: (matchId: string) => void
   onSimulateSend: () => void
 }
 
 export function OverlayPanel({
   activeMode,
   activePhase,
+  arenaDecisionModel,
+  arenaCandidateSlots,
+  arenaSelectedAugmentIds,
+  arenaTeammateState,
   brief,
   champion,
   connectionStatusLabel,
   diagnostics,
+  desktopHealth,
   isAlwaysOnTop,
   isChampionDataSyncing,
   isCompact,
   isDetected,
+  liveSessionState,
+  lcuPhase,
   match,
-  matches,
   recommendations,
   onRefreshDiagnostics,
   onCopy,
+  onDiscardRuntimeCache,
+  onExportDiagnostics,
+  onSelectLeaguePath,
   onApplyLoadout,
   onApplyRunePage,
+  onAddSelectedArenaAugment,
+  onRemoveSelectedArenaAugment,
+  onSetArenaCandidateSlot,
+  onClearArenaCandidateSlot,
+  onConfirmArenaCandidate,
+  onResetArenaMatch,
   onToggleAlwaysOnTop,
   onToggleCompact,
-  onRefresh,
-  onScenarioChange,
   onSimulateSend,
 }: OverlayPanelProps) {
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false)
@@ -94,7 +127,7 @@ export function OverlayPanel({
           >
             <Minimize2 size={16} />
           </button>
-          <button className="icon-button" type="button" onClick={onRefresh} aria-label="刷新情报" title="刷新情报">
+          <button className="icon-button" type="button" onClick={onRefreshDiagnostics} aria-label="刷新连接状态" title="刷新连接状态">
             <RefreshCcw size={17} />
           </button>
         </div>
@@ -122,7 +155,7 @@ export function OverlayPanel({
       {isDiagnosticsOpen && (
         <div className="diagnostic-panel">
           <button className="diagnostic-refresh" type="button" onClick={onRefreshDiagnostics}>
-            重新检测
+            刷新状态
           </button>
           {diagnostics.map((item) => (
             <div className="diagnostic-row" key={item.id}>
@@ -132,12 +165,27 @@ export function OverlayPanel({
               <p>{item.detail}</p>
             </div>
           ))}
+          {activeMode === 'ranked' && (
+            <DiagnosticsPanel
+              health={desktopHealth}
+              onRetry={onRefreshDiagnostics}
+              onDiscardCache={onDiscardRuntimeCache}
+              onExport={onExportDiagnostics}
+              onSelectLeaguePath={onSelectLeaguePath}
+            />
+          )}
         </div>
       )}
 
-      <DemoScenarioSwitcher matches={matches} selectedMatchId={match.id} onSelect={onScenarioChange} />
+      {activeMode === 'arena' && lcuPhase === 'ChampSelect' && (
+        <ArenaTeammateCard state={arenaTeammateState} />
+      )}
 
-      {activeMode === 'ranked' && activePhase === 'pregame' && (
+      {liveSessionState === 'waiting' && !(activeMode === 'arena' && lcuPhase === 'ChampSelect') && (
+        <SessionWaitingView connectionStatusLabel={connectionStatusLabel} />
+      )}
+
+      {liveSessionState !== 'waiting' && activeMode === 'ranked' && activePhase === 'pregame' && (
         <>
           <div className="recommendation-source-line" title={sourceDisplay.title}>
             <span>数据来源：{sourceDisplay.label}</span>
@@ -155,11 +203,31 @@ export function OverlayPanel({
         </>
       )}
 
-      {activeMode === 'augment' && (
-        <>
-          <LiveDecisionPanel activeMode={activeMode} match={match} recommendations={recommendations} />
-          <AugmentRecommendation augments={recommendations.augments} />
-        </>
+      {liveSessionState !== 'waiting' && activeMode === 'arena' && (
+        arenaDecisionModel ? (
+          <>
+            <ArenaManualControls
+              catalog={arenaDecisionModel.catalog}
+              selectedIds={arenaSelectedAugmentIds}
+              candidateSlots={arenaCandidateSlots}
+              onAddSelected={onAddSelectedArenaAugment}
+              onRemoveSelected={onRemoveSelectedArenaAugment}
+              onSetCandidateSlot={onSetArenaCandidateSlot}
+              onClearCandidateSlot={onClearArenaCandidateSlot}
+              onConfirmCandidate={onConfirmArenaCandidate}
+              onResetMatch={onResetArenaMatch}
+            />
+            <ArenaDecisionView
+              model={arenaDecisionModel}
+              onConfirmCandidate={onConfirmArenaCandidate}
+              health={desktopHealth}
+              onRetry={onRefreshDiagnostics}
+              onDiscardCache={onDiscardRuntimeCache}
+              onExport={onExportDiagnostics}
+              onSelectLeaguePath={onSelectLeaguePath}
+            />
+          </>
+        ) : <p className="arena-loading">正在校验海克斯与装备目录…</p>
       )}
     </aside>
   )

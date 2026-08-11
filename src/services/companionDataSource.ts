@@ -4,8 +4,9 @@ import type { LcuAdapter, LcuGamePhase, LcuPlayerSnapshot } from './lcuAdapter'
 
 export type DetectedGameSession = {
   matchId: string
-  mode: Exclude<GameMode, 'arena'>
+  mode: GameMode
   phase?: LcuGamePhase
+  localSummonerName?: string
   players?: LcuPlayerSnapshot[]
   source: 'mock' | 'lcu'
 }
@@ -16,13 +17,13 @@ export type CompanionDataSource = {
   getMatch: (matchId: string) => Match | null
 }
 
-const visibleMatches = () => mockMatches.filter((match) => match.mode !== 'arena')
+const visibleMatches = () => mockMatches
 
-function findClosestMatch(mode: Exclude<GameMode, 'arena'>) {
+function findClosestMatch(mode: GameMode) {
   return visibleMatches().find((match) => match.mode === mode) ?? visibleMatches()[0]
 }
 
-function createRiotAccountFromLcu(player: LcuPlayerSnapshot): PlayerRiotAccount | undefined {
+export function createRiotAccountFromLcu(player: LcuPlayerSnapshot): PlayerRiotAccount | undefined {
   const account = player.riotAccount
   if (!account?.gameName && !account?.puuid) return undefined
 
@@ -81,7 +82,7 @@ export const mockCompanionDataSource: CompanionDataSource = {
 
     return {
       matchId: match.id,
-      mode: match.mode === 'arena' ? 'ranked' : match.mode,
+      mode: match.mode,
       source: 'mock',
     }
   },
@@ -109,6 +110,7 @@ export function createCompanionDataSource(lcuAdapter: LcuAdapter, fallback: Comp
         matchId: match.id,
         mode,
         phase: session.phase,
+        localSummonerName: session.localSummonerName,
         players: session.players ?? [],
         source: 'lcu',
       }

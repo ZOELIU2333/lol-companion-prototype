@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { setOverlayAlwaysOnTop, setOverlayCompact, tauriLcuAdapter } from './tauriHost'
+import {
+  chooseLeagueInstallation,
+  createTauriArenaLcuPort,
+  discardRuntimeCache,
+  exportDesktopDiagnostics,
+  readDesktopHealth,
+  setOverlayAlwaysOnTop,
+  setOverlayCompact,
+  tauriLcuAdapter,
+} from './tauriHost'
 import { createTauriRiotApiHost } from './tauriRiotHost'
 
 const tauriMocks = vi.hoisted(() => ({
@@ -35,6 +44,7 @@ describe('tauri host bridge', () => {
       players: [
         {
           id: 'ally-3',
+          isLocalPlayer: false,
           team: 'ally',
           role: '下路',
           summonerName: 'Live ADC',
@@ -56,6 +66,7 @@ describe('tauri host bridge', () => {
       players: [
         {
           id: 'ally-3',
+          isLocalPlayer: false,
           team: 'ally',
           role: '下路',
           summonerName: 'Live ADC',
@@ -81,6 +92,30 @@ describe('tauri host bridge', () => {
     await expect(tauriLcuAdapter.readSession()).resolves.toBeNull()
   })
 
+  it('reads capability-probed Arena fields through the Tauri port', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockResolvedValue({
+      mode: 'arena',
+      championKey: 103,
+      round: 2,
+      selectedAugmentIds: [27],
+      candidateAugmentIds: [],
+      candidateCapability: 'unsupported',
+      source: 'lcu',
+    })
+    const port = createTauriArenaLcuPort(() => 200)
+
+    await expect(port?.read(new AbortController().signal)).resolves.toMatchObject({
+      mode: { value: 'arena' },
+      championKey: { value: 103 },
+      round: { value: 2 },
+      selectedAugments: { value: [27] },
+      candidates: { value: [], state: 'unsupported' },
+      capabilities: { candidates: 'unsupported' },
+    })
+    expect(tauriMocks.invoke).toHaveBeenCalledWith('read_arena_lcu_session')
+  })
+
   it('proxies overlay window commands when running in Tauri', async () => {
     tauriMocks.isTauri.mockReturnValue(true)
     tauriMocks.invoke.mockResolvedValue(null)
@@ -102,5 +137,62 @@ describe('tauri host bridge', () => {
     expect(tauriMocks.invoke).toHaveBeenCalledWith('riot_api_get', {
       url: 'https://asia.api.riotgames.com/lol/match/v5/matches/KR_1',
     })
+  })
+
+  it('reads typed desktop health and returns null outside Tauri', async () => {
+    tauriMocks.isTauri.mockReturnValue(false)
+    await expect(readDesktopHealth()).resolves.toBeNull()
+
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockResolvedValue({
+      generatedAtMs: 123,
+      shell: { code: 'shell', status: 'ready', detail: 'Tauri ready' },
+      webview2: { code: 'webview2', status: 'ready', detail: 'WebView2 ready' },
+    })
+    await expect(readDesktopHealth()).resolves.toMatchObject({ generatedAtMs: 123 })
+    expect(tauriMocks.invoke).toHaveBeenCalledWith('get_desktop_health')
+  })
+
+  it('exports diagnostics and discards a corrupt runtime cache through typed commands', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke
+      .mockResolvedValueOnce('C:\\Logs\\LOL-Companion-diagnostics.zip')
+      .mockResolvedValueOnce(true)
+
+    await expect(exportDesktopDiagnostics()).resolves.toContain('diagnostics.zip')
+    await expect(discardRuntimeCache()).resolves.toBe(true)
+    expect(tauriMocks.invoke).toHaveBeenNthCalledWith(1, 'export_diagnostics')
+    expect(tauriMocks.invoke).toHaveBeenNthCalledWith(2, 'discard_runtime_cache')
+  })
+
+  it('surfaces diagnostic export failure to the recovery UI', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockRejectedValue(new Error('zip unavailable'))
+
+    await expect(exportDesktopDiagnostics()).rejects.toThrow('zip unavailable')
+  })
+
+  it('opens the native League directory picker in Tauri', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockResolvedValue('D:\\Riot Games\\League of Legends')
+
+    await expect(chooseLeagueInstallation('directory')).resolves.toContain('League of Legends')
+    expect(tauriMocks.invoke).toHaveBeenCalledWith('choose_league_installation', { kind: 'directory' })
+  })
+
+  it('does not open a League picker outside Tauri', async () => {
+    tauriMocks.isTauri.mockReturnValue(false)
+
+    await expect(chooseLeagueInstallation('lockfile')).resolves.toBeNull()
+    expect(tauriMocks.invoke).not.toHaveBeenCalled()
+  })
+
+  it('preserves a safe string error from League validation', async () => {
+    tauriMocks.isTauri.mockReturnValue(true)
+    tauriMocks.invoke.mockRejectedValue('所选 lockfile 无法解析（字段数量不正确）')
+
+    await expect(chooseLeagueInstallation('lockfile')).rejects.toThrow(
+      '所选 lockfile 无法解析（字段数量不正确）',
+    )
   })
 })
