@@ -5,6 +5,11 @@ import type { ArenaCatalogIndex } from '../features/arena/catalog/types'
 import { createCompositeArenaSession } from '../features/arena/session/composite'
 import { classifyArenaChange, createEmptyArenaSession, mergeArenaSession } from '../features/arena/session/fusion'
 import { createManualArenaSessionStore } from '../features/arena/session/manualStore'
+import {
+  createManualArenaPersistence,
+  isManualArenaSnapshotCompatible,
+  type ManualArenaPersistence,
+} from '../features/arena/session/manualPersistence'
 import type { ArenaSession } from '../features/arena/session/types'
 import { createArenaDecisionModel } from '../features/arena/ui/createDecisionModel'
 import { buildChatBrief } from '../lib/chatBrief'
@@ -113,6 +118,7 @@ export function useCompanionSession() {
   const [arenaGameData, setArenaGameData] = useState<CurrentGameData | null>(null)
   const [arenaSession, setArenaSession] = useState<ArenaSession>(() => createEmptyArenaSession())
   const arenaSessionRef = useRef(arenaSession)
+  const restoredManualStoreRef = useRef<ReturnType<typeof createManualArenaSessionStore> | null>(null)
   const liveReadingRef = useRef(liveReading)
   const activeModeRef = useRef(activeMode)
   const isDesktopShell = useMemo(() => isRunningInTauri(), [])
@@ -121,6 +127,15 @@ export function useCompanionSession() {
   const manualArenaStore = useMemo(
     () => arenaCatalog
       ? createManualArenaSessionStore(new Set(arenaCatalog.catalog.augments.map((augment) => augment.id)))
+      : null,
+    [arenaCatalog],
+  )
+  const manualArenaPersistence = useMemo<ManualArenaPersistence | null>(
+    () => arenaCatalog && typeof window !== 'undefined' && window.localStorage
+      ? createManualArenaPersistence(
+          window.localStorage,
+          new Set(arenaCatalog.catalog.augments.map((augment) => augment.id)),
+        )
       : null,
     [arenaCatalog],
   )
@@ -205,25 +220,44 @@ export function useCompanionSession() {
   }, [])
 
   useEffect(() => {
-    if (activeMode !== 'arena' || !manualArenaStore || !arenaCatalog || !arenaGameData) return
-    const championDefinition = [...arenaGameData.champions.values()].find((definition) =>
-      definition.id.toLowerCase() === champion.id.toLowerCase() || definition.name === champion.name)
-    if (championDefinition) manualArenaStore.setChampion(championDefinition.key)
-    const aliases: Record<string, string> = {
-      earthwake: 'Earthwake',
-      phenomenal: 'PhenomenalEvil',
-      'bread-butter': 'BreadAndButter',
-      jewelled: 'JeweledGauntlet',
-      goliath: 'Goliath',
-      spellwake: 'Spellwake',
+    if (activeMode !== 'arena' || !manualArenaStore || !manualArenaPersistence) return
+    if (restoredManualStoreRef.current === manualArenaStore) return
+
+    const saved = manualArenaPersistence.load()
+    if (!saved) {
+      restoredManualStoreRef.current = manualArenaStore
+      return
     }
-    const candidateIds = match.augmentCandidates.map((candidate) =>
-      arenaCatalog.find(aliases[candidate.id] ?? candidate.name)?.id).filter((id): id is number => id !== undefined)
-    if (candidateIds.length === 3) manualArenaStore.setCandidates(candidateIds)
-    const seeded = mergeArenaSession(arenaSessionRef.current, manualArenaStore.read())
-    arenaSessionRef.current = seeded
-    setArenaSession(seeded)
-  }, [activeMode, arenaCatalog, arenaGameData, champion, manualArenaStore, match.augmentCandidates])
+
+    const current = arenaSessionRef.current
+    const championKey = current.championKey.state === 'live' && current.championKey.source !== 'manual'
+      ? current.championKey.value
+      : null
+    if (championKey === null) return
+
+    const compatible = isManualArenaSnapshotCompatible(saved, {
+      mode: current.mode.value,
+      modeState: current.mode.state,
+      championKey,
+      gameTimeSeconds: current.gameTimeSeconds.state === 'live' || current.gameTimeSeconds.state === 'stale'
+        ? current.gameTimeSeconds.value
+        : null,
+    })
+    if (!compatible) {
+      manualArenaPersistence.clear()
+      restoredManualStoreRef.current = manualArenaStore
+      return
+    }
+
+    manualArenaStore.restore({
+      selectedAugmentIds: saved.selectedAugmentIds,
+      candidateAugmentIds: saved.candidateAugmentIds,
+    })
+    const restored = mergeArenaSession(current, manualArenaStore.read())
+    arenaSessionRef.current = restored
+    setArenaSession(restored)
+    restoredManualStoreRef.current = manualArenaStore
+  }, [activeMode, arenaSession, manualArenaPersistence, manualArenaStore])
 
   useEffect(() => {
     if (activeMode !== 'arena' || !manualArenaStore || !arenaGameData) return undefined
@@ -457,10 +491,83 @@ export function useCompanionSession() {
       const next = mergeArenaSession(arenaSessionRef.current, manualArenaStore.read())
       arenaSessionRef.current = next
       setArenaSession(next)
+      restoredManualStoreRef.current = manualArenaStore
+      persistManualArenaState(next)
       setToast('已更新本轮三个候选')
     } catch (error) {
       setToast(error instanceof Error ? error.message : '候选更新失败')
     }
+  }
+
+  const persistManualArenaState = (next: ArenaSession) => {
+    if (!manualArenaPersistence || !Number.isInteger(next.championKey.value) || next.championKey.value === null) return
+    const manual = manualArenaStore?.read()
+    manualArenaPersistence.save({
+      schemaVersion: 1,
+      championKey: next.championKey.value,
+      selectedAugmentIds: manual?.selectedAugments?.value ?? [],
+      candidateAugmentIds: manual?.candidates?.value ?? [],
+      gameTimeSeconds: Math.max(0, next.gameTimeSeconds.value),
+    })
+  }
+
+  const applyManualArenaAction = (action: () => void, successMessage: string) => {
+    if (!manualArenaStore) return
+    try {
+      action()
+      const next = mergeArenaSession(arenaSessionRef.current, manualArenaStore.read())
+      arenaSessionRef.current = next
+      setArenaSession(next)
+      restoredManualStoreRef.current = manualArenaStore
+      persistManualArenaState(next)
+      setToast(successMessage)
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : '海克斯更新失败')
+    }
+  }
+
+  const addSelectedArenaAugment = (augmentId: number) => {
+    applyManualArenaAction(() => manualArenaStore?.addSelectedAugment(augmentId), '已添加已选海克斯')
+  }
+
+  const removeSelectedArenaAugment = (augmentId: number) => {
+    applyManualArenaAction(() => manualArenaStore?.removeSelectedAugment(augmentId), '已撤销已选海克斯')
+  }
+
+  const setArenaCandidateSlot = (slot: 0 | 1 | 2, augmentId: number) => {
+    applyManualArenaAction(() => manualArenaStore?.setCandidateSlot(slot, augmentId), `已更新候选 ${slot + 1}`)
+  }
+
+  const clearArenaCandidateSlot = (slot: 0 | 1 | 2) => {
+    applyManualArenaAction(() => manualArenaStore?.clearCandidateSlot(slot), `已清空候选 ${slot + 1}`)
+  }
+
+  const confirmArenaCandidate = (augmentId: number) => {
+    applyManualArenaAction(() => manualArenaStore?.confirmCandidate(augmentId), '已记录本轮选择')
+  }
+
+  const resetArenaMatch = () => {
+    if (!manualArenaStore) return
+    manualArenaStore.resetMatch()
+    manualArenaPersistence?.clear()
+    const empty = createEmptyArenaSession()
+    const current = arenaSessionRef.current
+    const next: ArenaSession = {
+      ...current,
+      championKey: current.championKey.source === 'manual' ? empty.championKey : current.championKey,
+      selectedAugments: current.selectedAugments.source === 'manual' ? empty.selectedAugments : current.selectedAugments,
+      candidates: current.candidates.source === 'manual' ? empty.candidates : current.candidates,
+      capabilities: {
+        ...current.capabilities,
+        champion: current.championKey.source === 'manual' ? 'unavailable' : current.capabilities.champion,
+        selectedAugments: current.selectedAugments.source === 'manual' ? 'unavailable' : current.capabilities.selectedAugments,
+        candidates: current.candidates.source === 'manual' ? 'unavailable' : current.capabilities.candidates,
+      },
+    }
+    arenaSessionRef.current = next
+    setArenaSession(next)
+    restoredManualStoreRef.current = manualArenaStore
+    setToast('已重置本局海克斯')
   }
 
   const copyBrief = async () => {
@@ -502,6 +609,7 @@ export function useCompanionSession() {
   }
 
   return {
+    addSelectedArenaAugment,
     activeMode,
     activePhase,
     arenaDecisionModel,
@@ -512,6 +620,7 @@ export function useCompanionSession() {
     connectionStatus: connectionPresentation.status,
     connectionStatusLabel: connectionPresentation.label,
     copyBrief,
+    clearArenaCandidateSlot,
     diagnostics,
     desktopHealth,
     discardInvalidRuntimeCache,
@@ -527,11 +636,15 @@ export function useCompanionSession() {
     playerFilter,
     recommendations,
     refreshDiagnostics,
+    removeSelectedArenaAugment,
+    resetArenaMatch,
     selectLeagueInstallation,
     setArenaCandidates,
+    setArenaCandidateSlot,
     setActivePhase,
     setPlayerFilter,
     simulateSend,
+    confirmArenaCandidate,
     toggleAlwaysOnTop,
     toggleCompact,
     toast,
