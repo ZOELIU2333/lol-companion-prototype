@@ -168,6 +168,14 @@ export function useCompanionSession() {
       : null,
     [activeMode, arenaCatalog, arenaGameData, arenaSession, champion],
   )
+  const arenaCandidateSlots = useMemo<readonly [number | null, number | null, number | null]>(() => {
+    if (manualArenaStore?.read().candidates) return manualArenaStore.getCandidateSlots()
+    return [
+      arenaSession.candidates.value[0] ?? null,
+      arenaSession.candidates.value[1] ?? null,
+      arenaSession.candidates.value[2] ?? null,
+    ]
+  }, [arenaSession, manualArenaStore])
   const brief = useMemo(() => buildChatBrief(match, match.players), [match])
   const diagnostics = useMemo(
     () => [
@@ -484,21 +492,6 @@ export function useCompanionSession() {
     }
   }
 
-  const setArenaCandidates = (candidateIds: number[]) => {
-    if (!manualArenaStore) return
-    try {
-      manualArenaStore.setCandidates(candidateIds)
-      const next = mergeArenaSession(arenaSessionRef.current, manualArenaStore.read())
-      arenaSessionRef.current = next
-      setArenaSession(next)
-      restoredManualStoreRef.current = manualArenaStore
-      persistManualArenaState(next)
-      setToast('已更新本轮三个候选')
-    } catch (error) {
-      setToast(error instanceof Error ? error.message : '候选更新失败')
-    }
-  }
-
   const persistManualArenaState = (next: ArenaSession) => {
     if (!manualArenaPersistence || !Number.isInteger(next.championKey.value) || next.championKey.value === null) return
     const manual = manualArenaStore?.read()
@@ -613,6 +606,8 @@ export function useCompanionSession() {
     activeMode,
     activePhase,
     arenaDecisionModel,
+    arenaCandidateSlots,
+    arenaSelectedAugmentIds: arenaSession.selectedAugments.value,
     applyLoadout,
     applyRunePage,
     brief,
@@ -639,7 +634,6 @@ export function useCompanionSession() {
     removeSelectedArenaAugment,
     resetArenaMatch,
     selectLeagueInstallation,
-    setArenaCandidates,
     setArenaCandidateSlot,
     setActivePhase,
     setPlayerFilter,

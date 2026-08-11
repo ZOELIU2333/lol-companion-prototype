@@ -10,10 +10,7 @@ export type ManualArenaSessionStore = {
   confirmCandidate: (augmentId: number) => void
   restore: (snapshot: ManualArenaSnapshotInput) => void
   resetMatch: () => void
-  /** Compatibility wrapper for the legacy picker until its caller is replaced. */
-  setCandidates: (candidateIds: number[]) => void
-  /** Compatibility wrapper for the legacy picker until its caller is replaced. */
-  selectAugment: (augmentId: number) => void
+  getCandidateSlots: () => readonly [number | null, number | null, number | null]
   resetRound: () => void
   read: () => PartialArenaSession
   port: ArenaSessionPort
@@ -158,16 +155,8 @@ export function createManualArenaSessionStore(
       selectedObservedAt = 0
       candidatesObservedAt = 0
     },
-    setCandidates(candidateIds) {
-      if (candidateIds.length !== 3) throw new Error('Arena candidate confirmation requires exactly three augments')
-      candidateIds.forEach(validateAugmentId)
-      if (new Set(candidateIds).size !== candidateIds.length) throw new Error('Arena candidates contain a duplicate id')
-      if (candidateIds.some((id) => selectedAugmentIds.includes(id))) throw new Error('Arena candidate is already selected')
-      candidateSlots = [candidateIds[0], candidateIds[1], candidateIds[2]]
-      touchCandidates()
-    },
-    selectAugment(augmentId) {
-      store.confirmCandidate(augmentId)
+    getCandidateSlots() {
+      return [candidateSlots[0], candidateSlots[1], candidateSlots[2]] as const
     },
     resetRound() {
       candidateSlots = [null, null, null]

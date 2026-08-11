@@ -2784,7 +2784,7 @@ a,
 }
 
 .arena-decision,
-.arena-manual-details,
+.arena-manual,
 .arena-loading {
   order: 5;
   margin: 0.55rem 0.8rem;
@@ -2904,6 +2904,70 @@ a,
   -webkit-line-clamp: 2;
 }
 
+.arena-candidate-confirm {
+  min-height: 1.65rem;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  border-radius: 5px;
+  background: #111c2c;
+  color: #bfdbfe;
+  cursor: pointer;
+  font-size: 0.6rem;
+  font-weight: 850;
+}
+
+.arena-combination-label {
+  margin: 0;
+  color: #93c5fd;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.arena-combination-routes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.38rem;
+}
+
+.arena-combination-route {
+  display: grid;
+  min-width: 0;
+  gap: 0.22rem;
+  padding: 0.42rem;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-top: 2px solid #475569;
+  border-radius: 7px;
+  background: #0b111a;
+}
+
+.arena-combination-route--stable { border-top-color: #60a5fa; }
+.arena-combination-route--ceiling { border-top-color: #a78bfa; }
+.arena-combination-route--off-meta { border-top-color: #f59e0b; }
+
+.arena-combination-route > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.2rem;
+}
+
+.arena-combination-route strong,
+.arena-combination-route span,
+.arena-combination-route small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arena-combination-route strong { color: #e5e7eb; font-size: 0.62rem; }
+.arena-combination-route em {
+  color: #93c5fd;
+  font-size: 0.48rem;
+  font-style: normal;
+  font-weight: 850;
+}
+.arena-combination-route span { color: #cbd5e1; font-size: 0.62rem; }
+.arena-combination-route small { color: #718096; font-size: 0.54rem; }
+
 .arena-purchase-row {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) auto minmax(0, 1.3fr) auto auto;
@@ -2997,8 +3061,7 @@ a,
   font-weight: 850;
 }
 
-.arena-expand-button,
-.arena-picker-confirm {
+.arena-expand-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3176,31 +3239,142 @@ a,
 
 .desktop-health-operation-error { margin: 0; color: #fca5a5; font-size: 0.58rem; }
 
-.arena-manual-details {
-  color: #94a3b8;
-  font-size: 0.68rem;
-}
-
-.arena-manual-details summary {
-  cursor: pointer;
-  font-weight: 800;
-}
-
-.arena-picker {
+.arena-manual {
   display: grid;
-  gap: 0.45rem;
-  margin-top: 0.5rem;
-  padding: 0.55rem;
-  border-radius: 8px;
+  gap: 0.5rem;
+  color: #e5e7eb;
+}
+
+.arena-manual-section,
+.arena-search {
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.56rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 9px;
   background: #101722;
 }
 
-.arena-picker label {
+.arena-manual-title,
+.arena-manual-title > div,
+.arena-search-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.arena-manual-title strong { font-size: 0.72rem; }
+.arena-manual-title span,
+.arena-manual-title small { color: #718096; font-size: 0.56rem; }
+
+.arena-reset,
+.arena-add-selected,
+.arena-slot-empty,
+.arena-slot-clear,
+.arena-slot-confirm,
+.arena-search-head button {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 6px;
+  background: #0b111a;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.56rem;
+  font-weight: 800;
+}
+
+.arena-reset {
+  min-height: 1.5rem;
+  padding: 0 0.42rem;
+}
+
+.arena-reset.active { border-color: rgba(251, 113, 133, 0.45); color: #fda4af; }
+
+.arena-selected-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+}
+
+.arena-selected-chip,
+.arena-add-selected {
+  min-height: 2rem;
+}
+
+.arena-selected-chip {
   display: grid;
+  grid-template-columns: 1.45rem minmax(0, auto) auto;
+  align-items: center;
+  gap: 0.28rem;
+  max-width: 9rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 6px;
+  background: #0b111a;
+  color: #d1d5db;
+  padding: 0.22rem 0.34rem;
+  cursor: pointer;
+}
+
+.arena-selected-chip img { width: 1.45rem; height: 1.45rem; border-radius: 4px; }
+.arena-selected-chip span { overflow: hidden; font-size: 0.58rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.arena-selected-chip i { color: #64748b; font-size: 0.7rem; font-style: normal; }
+.arena-add-selected { padding: 0 0.5rem; color: #93c5fd; }
+.arena-add-selected:disabled { cursor: not-allowed; opacity: 0.42; }
+
+.arena-rarity-silver { border-color: rgba(203, 213, 225, 0.3) !important; }
+.arena-rarity-gold { border-color: rgba(245, 158, 11, 0.38) !important; }
+.arena-rarity-prismatic { border-color: rgba(167, 139, 250, 0.42) !important; }
+
+.arena-candidate-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.38rem;
+}
+
+.arena-candidate-slots article {
+  position: relative;
+  display: grid;
+  min-width: 0;
   gap: 0.25rem;
 }
 
-.arena-picker input {
+.arena-slot-main,
+.arena-slot-empty {
+  display: grid;
+  width: 100%;
+  min-height: 4.3rem;
+  place-items: center;
+  gap: 0.25rem;
+  border: 1px dashed rgba(148, 163, 184, 0.22);
+  border-radius: 7px;
+  background: #0b111a;
+  color: #94a3b8;
+  padding: 0.35rem;
+  cursor: pointer;
+}
+
+.arena-slot-main { border-style: solid; }
+.arena-slot-main img { width: 2.25rem; height: 2.25rem; border-radius: 6px; object-fit: cover; }
+.arena-slot-main strong { overflow: hidden; max-width: 100%; color: #e5e7eb; font-size: 0.6rem; text-overflow: ellipsis; white-space: nowrap; }
+.arena-slot-empty span { display: grid; width: 1.35rem; height: 1.35rem; place-items: center; border-radius: 999px; background: #172554; color: #93c5fd; }
+
+.arena-slot-clear {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  padding: 0;
+}
+
+.arena-slot-confirm { min-height: 1.5rem; color: #bfdbfe; }
+
+.arena-search { background: #0c121c; }
+.arena-search-head label { display: grid; flex: 1; gap: 0.2rem; }
+.arena-search-head label span { color: #94a3b8; font-size: 0.58rem; font-weight: 800; }
+.arena-search-head button { min-height: 1.9rem; padding: 0 0.45rem; }
+
+.arena-search input {
   min-height: 2rem;
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 6px;
@@ -3210,10 +3384,10 @@ a,
   padding: 0 0.5rem;
 }
 
-.arena-picker input:focus { border-color: #60a5fa; }
-.arena-picker p { margin: 0; }
+.arena-search input:focus { border-color: #60a5fa; }
+.arena-search-empty { margin: 0; color: #718096; font-size: 0.62rem; }
 
-.arena-picker-results {
+.arena-search-results {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.32rem;
@@ -3221,7 +3395,7 @@ a,
   overflow-y: auto;
 }
 
-.arena-picker-option {
+.arena-search-option {
   display: grid;
   grid-template-columns: 1.8rem minmax(0, 1fr);
   align-items: center;
@@ -3235,13 +3409,17 @@ a,
   text-align: left;
 }
 
-.arena-picker-option.active { border-color: #60a5fa; }
-.arena-picker-option img { width: 1.8rem; height: 1.8rem; border-radius: 5px; }
-.arena-picker-option strong,
-.arena-picker-option small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.arena-picker-option strong { font-size: 0.62rem; }
-.arena-picker-option small { color: #64748b; font-size: 0.52rem; }
-.arena-picker-confirm:disabled { cursor: not-allowed; opacity: 0.45; }
+.arena-search-option:disabled { cursor: not-allowed; opacity: 0.58; }
+.arena-search-option--silver { border-color: rgba(203, 213, 225, 0.2); }
+.arena-search-option--gold { border-color: rgba(245, 158, 11, 0.24); }
+.arena-search-option--prismatic { border-color: rgba(167, 139, 250, 0.28); }
+.arena-search-option img { width: 1.8rem; height: 1.8rem; border-radius: 5px; }
+.arena-search-option strong,
+.arena-search-option small,
+.arena-search-option em { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arena-search-option strong { font-size: 0.62rem; }
+.arena-search-option small { color: #64748b; font-size: 0.52rem; }
+.arena-search-option em { color: #fbbf24; font-size: 0.48rem; font-style: normal; }
 .arena-empty-state,
 .arena-loading { color: #94a3b8; font-size: 0.7rem; }
 

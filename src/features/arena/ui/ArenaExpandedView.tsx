@@ -6,7 +6,6 @@ type ArenaExpandedViewProps = {
   routes: ArenaRouteSet
   health?: DesktopHealthSnapshot | null
   onRetry?: () => void | Promise<void>
-  onManualMode?: () => void
   onDiscardCache?: () => boolean | Promise<boolean>
   onExport?: () => Promise<string>
   onSelectLeaguePath?: (kind: 'directory' | 'lockfile') => Promise<string | null>
@@ -16,7 +15,6 @@ export function ArenaExpandedView({
   routes,
   health = null,
   onRetry,
-  onManualMode,
   onDiscardCache,
   onExport,
   onSelectLeaguePath,
@@ -56,7 +54,6 @@ export function ArenaExpandedView({
       <DiagnosticsPanel
         health={health}
         onRetry={onRetry}
-        onManualMode={onManualMode}
         onDiscardCache={onDiscardCache}
         onExport={onExport}
         onSelectLeaguePath={onSelectLeaguePath}

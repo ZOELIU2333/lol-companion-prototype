@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Activity, Minimize2, Pin, RefreshCcw } from 'lucide-react'
 import type { Champion, ConnectionDiagnostic, DiagnosticStatus, GameMode, Match, RecommendationViewModel } from '../types'
 import { ArenaDecisionView } from '../features/arena/ui/ArenaDecisionView'
-import { AugmentPicker } from '../features/arena/ui/AugmentPicker'
+import { ArenaManualControls } from '../features/arena/ui/ArenaManualControls'
 import { DiagnosticsPanel } from '../features/arena/ui/DiagnosticsPanel'
 import type { ArenaDecisionViewModel } from '../features/arena/ui/types'
 import type { DesktopHealthSnapshot } from '../services/tauriHost'
@@ -17,6 +17,8 @@ type OverlayPanelProps = {
   activeMode: GameMode
   activePhase: InfoPhase
   arenaDecisionModel: ArenaDecisionViewModel | null
+  arenaCandidateSlots: readonly [number | null, number | null, number | null]
+  arenaSelectedAugmentIds: number[]
   brief: string
   champion: Champion
   connectionStatusLabel: string
@@ -36,7 +38,12 @@ type OverlayPanelProps = {
   onSelectLeaguePath: (kind: 'directory' | 'lockfile') => Promise<string | null>
   onApplyLoadout: (loadoutName: string) => void
   onApplyRunePage: (pageName: string) => void
-  onArenaCandidates: (candidateIds: number[]) => void
+  onAddSelectedArenaAugment: (augmentId: number) => void
+  onRemoveSelectedArenaAugment: (augmentId: number) => void
+  onSetArenaCandidateSlot: (slot: 0 | 1 | 2, augmentId: number) => void
+  onClearArenaCandidateSlot: (slot: 0 | 1 | 2) => void
+  onConfirmArenaCandidate: (augmentId: number) => void
+  onResetArenaMatch: () => void
   onToggleAlwaysOnTop: () => void
   onToggleCompact: () => void
   onSimulateSend: () => void
@@ -46,6 +53,8 @@ export function OverlayPanel({
   activeMode,
   activePhase,
   arenaDecisionModel,
+  arenaCandidateSlots,
+  arenaSelectedAugmentIds,
   brief,
   champion,
   connectionStatusLabel,
@@ -65,13 +74,17 @@ export function OverlayPanel({
   onSelectLeaguePath,
   onApplyLoadout,
   onApplyRunePage,
-  onArenaCandidates,
+  onAddSelectedArenaAugment,
+  onRemoveSelectedArenaAugment,
+  onSetArenaCandidateSlot,
+  onClearArenaCandidateSlot,
+  onConfirmArenaCandidate,
+  onResetArenaMatch,
   onToggleAlwaysOnTop,
   onToggleCompact,
   onSimulateSend,
 }: OverlayPanelProps) {
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false)
-  const [isManualPickerOpen, setIsManualPickerOpen] = useState(false)
   const sourceDisplay = getRecommendationSourceDisplay(recommendations.build.meta, isChampionDataSyncing)
   const worstStatus = diagnostics.some((item) => item.status === 'offline')
     ? 'offline'
@@ -149,7 +162,6 @@ export function OverlayPanel({
             <DiagnosticsPanel
               health={desktopHealth}
               onRetry={onRefreshDiagnostics}
-              onManualMode={() => setIsManualPickerOpen(true)}
               onDiscardCache={onDiscardRuntimeCache}
               onExport={onExportDiagnostics}
               onSelectLeaguePath={onSelectLeaguePath}
@@ -183,25 +195,26 @@ export function OverlayPanel({
       {liveSessionState !== 'waiting' && activeMode === 'arena' && (
         arenaDecisionModel ? (
           <>
+            <ArenaManualControls
+              catalog={arenaDecisionModel.catalog}
+              selectedIds={arenaSelectedAugmentIds}
+              candidateSlots={arenaCandidateSlots}
+              onAddSelected={onAddSelectedArenaAugment}
+              onRemoveSelected={onRemoveSelectedArenaAugment}
+              onSetCandidateSlot={onSetArenaCandidateSlot}
+              onClearCandidateSlot={onClearArenaCandidateSlot}
+              onConfirmCandidate={onConfirmArenaCandidate}
+              onResetMatch={onResetArenaMatch}
+            />
             <ArenaDecisionView
               model={arenaDecisionModel}
+              onConfirmCandidate={onConfirmArenaCandidate}
               health={desktopHealth}
               onRetry={onRefreshDiagnostics}
-              onManualMode={() => setIsManualPickerOpen(true)}
               onDiscardCache={onDiscardRuntimeCache}
               onExport={onExportDiagnostics}
               onSelectLeaguePath={onSelectLeaguePath}
             />
-            <details
-              className="arena-manual-details"
-              open={isManualPickerOpen}
-              onToggle={(event) => setIsManualPickerOpen(event.currentTarget.open)}
-            >
-              <summary>手动修正三个候选</summary>
-              {isManualPickerOpen && (
-                <AugmentPicker catalog={arenaDecisionModel.catalog} onConfirm={onArenaCandidates} />
-              )}
-            </details>
           </>
         ) : <p className="arena-loading">正在校验海克斯与装备目录…</p>
       )}

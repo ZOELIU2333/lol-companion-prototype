@@ -7,9 +7,9 @@ import type { DesktopHealthSnapshot } from '../../../services/tauriHost'
 
 type ArenaDecisionViewProps = {
   model: ArenaDecisionViewModel
+  onConfirmCandidate: (augmentId: number) => void
   health?: DesktopHealthSnapshot | null
   onRetry?: () => void | Promise<void>
-  onManualMode?: () => void
   onDiscardCache?: () => boolean | Promise<boolean>
   onExport?: () => Promise<string>
   onSelectLeaguePath?: (kind: 'directory' | 'lockfile') => Promise<string | null>
@@ -17,9 +17,9 @@ type ArenaDecisionViewProps = {
 
 export function ArenaDecisionView({
   model,
+  onConfirmCandidate,
   health = null,
   onRetry,
-  onManualMode,
   onDiscardCache,
   onExport,
   onSelectLeaguePath,
@@ -28,9 +28,8 @@ export function ArenaDecisionView({
   const candidates = model.session.candidates.value.slice(0, 3)
     .map((id) => model.catalog.find(id))
     .filter((candidate) => candidate !== null)
-  const leadingRoute = model.routes.routes.find((route) => !route.alternativeUnavailable)
+  const leadingRoute = model.routes.routes.find((route) => !route.alternativeUnavailable && route.purchasePlan)
   const purchase = leadingRoute?.purchasePlan
-  const leadingCandidate = leadingRoute?.candidates[0]
 
   return (
     <div className="arena-decision">
@@ -52,17 +51,52 @@ export function ArenaDecisionView({
                   <ArenaIcon alt={augment.name} src={augment.iconLargeUrl ?? augment.iconSmallUrl} />
                   <div><strong>{augment.name}</strong><span>{routeCandidate ? Math.round(routeCandidate.total) : '—'}</span></div>
                   <small>{routeCandidate?.components[0]?.reason ?? augment.description}</small>
+                  <button
+                    aria-label={`我选了${augment.name}`}
+                    className="arena-candidate-confirm"
+                    type="button"
+                    onClick={() => onConfirmCandidate(augment.id)}
+                  >我选了这个</button>
                 </article>
               )
             })}
           </div>
         ) : (
-          <p className="arena-empty-state">未自动识别到三个候选，请打开手动图标选择器。</p>
+          <p className="arena-empty-state">还需录入 {3 - candidates.length} 个候选；组合与装备基础路线已经可用。</p>
         )}
       </section>
 
+      <section className="arena-step" aria-labelledby="arena-combination-heading">
+        <div className="arena-step-heading"><span>02</span><h2 id="arena-combination-heading">组合方向</h2></div>
+        <p className="arena-combination-label">{model.comboLabel}</p>
+        <div className="arena-combination-routes">
+          {model.routes.routes.map((route) => {
+            const candidate = route.candidates[0]
+            if (!candidate) {
+              return <article className={`arena-combination-route arena-combination-route--${route.kind}`} key={route.kind}>
+                <strong>{route.label}</strong><span>{route.unavailableReason}</span>
+              </article>
+            }
+            const sourceLabel = candidate.source === 'future-target'
+              ? '后续寻找'
+              : candidate.source === 'baseline'
+                ? '英雄基础'
+                : candidate.source === 'selected-combination'
+                  ? '已选联动'
+                  : '本轮候选'
+            return (
+              <article className={`arena-combination-route arena-combination-route--${route.kind}`} key={route.kind}>
+                <div><strong>{route.label}</strong><em>{sourceLabel}</em></div>
+                <span>{candidate.augmentName}</span>
+                {route.purchasePlan && <small>→ {route.purchasePlan.firstCompletedItem.name}</small>}
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
       <section className="arena-step" aria-labelledby="arena-buy-heading">
-        <div className="arena-step-heading"><span>02</span><h2 id="arena-buy-heading">回城买什么</h2></div>
+        <div className="arena-step-heading"><span>03</span><h2 id="arena-buy-heading">回城买什么</h2></div>
         {purchase ? (
           <div className="arena-purchase-row">
             {purchase.buyNow && (
@@ -83,18 +117,6 @@ export function ArenaDecisionView({
         ) : <p className="arena-empty-state">等待装备与金币数据。</p>}
       </section>
 
-      <section className="arena-step" aria-labelledby="arena-chain-heading">
-        <div className="arena-step-heading"><span>03</span><h2 id="arena-chain-heading">这套怎么成型</h2></div>
-        <div className="arena-chain">
-          <strong>{model.comboLabel}</strong>
-          <div>
-            <span>{leadingCandidate?.augmentName ?? '核心海克斯'}</span><i>触发</i>
-            <span>{purchase?.firstCompletedItem.name ?? '核心装备'}</span><i>放大</i>
-            <span>{purchase?.laterItems[0]?.name ?? '后续补强'}</span>
-          </div>
-        </div>
-      </section>
-
       <button className="arena-expand-button" type="button" onClick={() => setExpanded((value) => !value)}>
         {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         {expanded ? '收起路线详情' : '展开路线详情'}
@@ -104,7 +126,6 @@ export function ArenaDecisionView({
           routes={model.routes}
           health={health}
           onRetry={onRetry}
-          onManualMode={onManualMode}
           onDiscardCache={onDiscardCache}
           onExport={onExport}
           onSelectLeaguePath={onSelectLeaguePath}

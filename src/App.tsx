@@ -21,6 +21,8 @@ function App() {
           activeMode={session.activeMode}
           activePhase={session.effectivePhase}
           arenaDecisionModel={session.arenaDecisionModel}
+          arenaCandidateSlots={session.arenaCandidateSlots}
+          arenaSelectedAugmentIds={session.arenaSelectedAugmentIds}
           brief={session.brief}
           champion={session.champion}
           connectionStatusLabel={session.connectionStatusLabel}
@@ -35,7 +37,12 @@ function App() {
           recommendations={session.recommendations}
           onApplyLoadout={session.applyLoadout}
           onApplyRunePage={session.applyRunePage}
-          onArenaCandidates={session.setArenaCandidates}
+          onAddSelectedArenaAugment={session.addSelectedArenaAugment}
+          onRemoveSelectedArenaAugment={session.removeSelectedArenaAugment}
+          onSetArenaCandidateSlot={session.setArenaCandidateSlot}
+          onClearArenaCandidateSlot={session.clearArenaCandidateSlot}
+          onConfirmArenaCandidate={session.confirmArenaCandidate}
+          onResetArenaMatch={session.resetArenaMatch}
           onCopy={session.copyBrief}
           onDiscardRuntimeCache={session.discardInvalidRuntimeCache}
           onExportDiagnostics={session.exportDiagnostics}

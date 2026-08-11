@@ -9,19 +9,21 @@ describe('manual Arena session store', () => {
     expect(store.read().selectedAugments).toBeUndefined()
   })
 
-  it('requires exactly three unique candidates', () => {
+  it('validates candidate ids and duplicate slots', () => {
     const store = createManualArenaSessionStore(new Set([27, 65, 135]))
 
-    expect(() => store.setCandidates([27, 65])).toThrow('exactly three')
-    expect(() => store.setCandidates([27, 27, 65])).toThrow('duplicate')
-    expect(() => store.setCandidates([27, 65, 999])).toThrow('unknown')
+    store.setCandidateSlot(0, 27)
+    expect(() => store.setCandidateSlot(1, 27)).toThrow('duplicate')
+    expect(() => store.setCandidateSlot(1, 999)).toThrow('unknown')
   })
 
   it('stores a champion and confirmed candidate with stable ids', () => {
     const store = createManualArenaSessionStore(new Set([27, 65, 135]), () => 200)
     store.setChampion(103)
-    store.setCandidates([27, 65, 135])
-    store.selectAugment(27)
+    store.setCandidateSlot(0, 27)
+    store.setCandidateSlot(1, 65)
+    store.setCandidateSlot(2, 135)
+    store.confirmCandidate(27)
 
     expect(store.read()).toMatchObject({
       championKey: { value: 103, source: 'manual' },
@@ -40,9 +42,13 @@ describe('manual Arena session store', () => {
 
   it('resets only the current round candidates', () => {
     const store = createManualArenaSessionStore(new Set([9, 27, 65, 135]))
-    store.setCandidates([27, 65, 135])
-    store.selectAugment(65)
-    store.setCandidates([9, 27, 135])
+    store.setCandidateSlot(0, 27)
+    store.setCandidateSlot(1, 65)
+    store.setCandidateSlot(2, 135)
+    store.confirmCandidate(65)
+    store.setCandidateSlot(0, 9)
+    store.setCandidateSlot(1, 27)
+    store.setCandidateSlot(2, 135)
     store.resetRound()
 
     expect(store.read().candidates?.value).toEqual([])
@@ -54,6 +60,7 @@ describe('manual Arena session store', () => {
     store.setCandidateSlot(0, 27)
     store.setCandidateSlot(1, 65)
     store.setCandidateSlot(2, 135)
+    expect(store.getCandidateSlots()).toEqual([27, 65, 135])
     store.confirmCandidate(65)
 
     expect(store.read().selectedAugments?.value).toEqual([65])

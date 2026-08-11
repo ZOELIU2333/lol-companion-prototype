@@ -5,7 +5,6 @@ import type { DesktopHealthCheck, DesktopHealthSnapshot } from '../../../service
 type DiagnosticsPanelProps = {
   health: DesktopHealthSnapshot | null
   onRetry?: () => void | Promise<void>
-  onManualMode?: () => void
   onDiscardCache?: () => boolean | Promise<boolean>
   onExport?: () => Promise<string>
   onSelectLeaguePath?: (kind: 'directory' | 'lockfile') => Promise<string | null>
@@ -26,7 +25,6 @@ type RecoveryItem = {
 export function DiagnosticsPanel({
   health,
   onRetry = () => undefined,
-  onManualMode = () => undefined,
   onDiscardCache = () => false,
   onExport,
   onSelectLeaguePath,
@@ -78,8 +76,12 @@ export function DiagnosticsPanel({
     recoveries.push({
       check: health.augmentCapability,
       message: '自动候选不可用，请改用三个图标手动选择',
-      actionLabel: '使用手动模式',
-      action: onManualMode,
+      actionLabel: '定位手动输入',
+      action: () => {
+        const manual = document.querySelector<HTMLElement>('.arena-manual')
+        manual?.scrollIntoView?.({ block: 'start' })
+        manual?.querySelector<HTMLButtonElement>('[aria-label="添加已选海克斯"]')?.focus()
+      },
     })
   }
   if (health.catalog.status !== 'ready') {
