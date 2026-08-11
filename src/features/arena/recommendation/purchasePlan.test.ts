@@ -28,7 +28,7 @@ const itemList = [
 const items = new Map<number, ArenaItemDefinition>(itemList.map((definition) => [definition.id, definition]))
 
 const cosmicRoute: ArenaRoutePathInput = {
-  id: 'cosmic', augmentApiName: 'Spellwake', augmentName: '法术苏醒',
+  id: 'cosmic', source: 'current-candidate', augmentApiName: 'Spellwake', augmentName: '法术苏醒',
   completedItemIds: [4629, 3157], edges: [], missingNodes: [], championFit: 8,
   selectedSynergy: 8, immediateValue: 7, contextValue: 6, novelty: 4, risk: 2,
 }

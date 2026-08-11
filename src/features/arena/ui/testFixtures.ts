@@ -34,6 +34,7 @@ const route = (kind: ArenaPlannedRoute['kind'], augmentIndex: number): ArenaPlan
   coreSignature: `${kind}-${augmentIndex}`,
   candidates: [{
     id: `${kind}-candidate`,
+    source: 'current-candidate',
     augmentApiName: fixtureAugments[augmentIndex].apiName,
     augmentName: fixtureAugments[augmentIndex].name,
     completedItemIds: [4629, 3157],
@@ -76,4 +77,5 @@ export const fixtureModel: ArenaDecisionViewModel = {
   catalog: createArenaCatalogIndex(catalog),
   comboLabel: '位移爆发循环',
   sourceLabel: '实时数据 · 本地机制图谱',
+  futureTargets: [],
 }

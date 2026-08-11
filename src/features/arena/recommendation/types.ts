@@ -2,6 +2,7 @@ import type { EvidenceRecord, MechanismEdge } from '../graph/types'
 import type { ArenaItemDefinition } from '../catalog/gameData'
 
 export type ArenaRouteKind = 'stable' | 'ceiling' | 'off-meta'
+export type ArenaRoutePathSource = 'baseline' | 'selected-combination' | 'current-candidate' | 'future-target'
 
 export type ArenaScoreComponentKey =
   | 'championFit'
@@ -15,6 +16,7 @@ export type ArenaScoreComponentKey =
 
 export type ArenaRoutePathInput = {
   id: string
+  source: ArenaRoutePathSource
   augmentApiName: string
   augmentName: string
   completedItemIds: number[]

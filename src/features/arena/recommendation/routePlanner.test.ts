@@ -19,6 +19,7 @@ function edge(from: string, to: string, relation: MechanismEdge['relation'], evi
 
 function path(overrides: Partial<ArenaRoutePathInput> & Pick<ArenaRoutePathInput, 'id' | 'augmentApiName'>): ArenaRoutePathInput {
   return {
+    source: 'current-candidate',
     augmentName: overrides.augmentApiName,
     completedItemIds: [4629],
     edges: [edge('champion:103', `augment:${overrides.augmentApiName}`, 'triggers')],
@@ -66,6 +67,12 @@ describe('Arena route planner', () => {
 
     expect(candidate.total).toBe(candidate.components.reduce((sum, part) => sum + part.points, 0))
     expect(candidate.explanation).toContain(candidate.components[0].label)
+  })
+
+  it('preserves route provenance through scoring', () => {
+    const candidate = planArenaRoutes(ahriFixture).routes[0].candidates[0]
+
+    expect(candidate.source).toBe('current-candidate')
   })
 
   it('uses deterministic candidate ids to break exact ties', () => {
